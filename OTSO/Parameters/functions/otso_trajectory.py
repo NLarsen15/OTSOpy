@@ -2,7 +2,6 @@ import time
 from datetime import datetime
 import multiprocessing as mp
 import os
-from .. import *
 from . import fortran_calls, readme_generators,cores, misc, trajectory_inputs
 import pandas as pd
 import sys
@@ -92,7 +91,7 @@ def OTSO_trajectory(Stations,rigidity, customlocations,startaltitude,
         # Queue is empty, but processes are still running, so we continue checking
         pass
       
-      time.sleep(1)
+      time.sleep(0.0001)
 
     for b in ChildProcesses:
         b.join()

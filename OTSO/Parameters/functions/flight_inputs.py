@@ -103,7 +103,12 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
               print("If not using livedata or server data all provided variable lists must be the same length")
               exit()
     
-    if internalmag == "IGRF":
+    if internalmag == "None":
+         Internal = 0
+         if not g or not h: 
+            g = [0] * 105
+            h = [0] * 105
+    elif internalmag == "IGRF":
          Internal = 1
          if not g or not h: 
             g = [0] * 105
@@ -124,7 +129,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
          elif len(h) != 105:
               print(f"There should be 105 h coefficents in the inputted list, you have enetered {len(h)}")
     else:
-         print("Please enter a valid internalmag model: ""IGRF"",""Dipole"", or ""Custom Gauss""")
+         print("Please enter a valid internalmag model: ""None"",""IGRF"",""Dipole"", or ""Custom Gauss""")
          exit()
       
     if externalmag == "NONE":

@@ -4,49 +4,15 @@ import os
 from . import date, solar_wind, stations
 from . import misc, Request, Server
 
-def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude,zenith,azimuth,
-           maxdistance,maxtime,
+def MagFieldInputs(Locations,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           intmodel,coordsystem,gyropercent,magnetopause,corenum,g,h):
+           coordsystemIN,g,h,corenum):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
     DateArray = DateCreate.GetDate()
-
-    if anti == "YES":
-         AntiCheck = 1
-    elif anti == "NO":
-         AntiCheck = 0
-    else:
-         print("Please enter a valid anti value: ""YES"" or ""NO"" ")
-         exit()
-
-    if magnetopause == "Sphere":
-         Magnetopause = 0
-    elif magnetopause == "aFormisano":
-         Magnetopause = 1
-    elif magnetopause == "Sibeck":
-         Magnetopause = 2
-    elif magnetopause == "Kobel":
-         Magnetopause = 3
-    else:
-         print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"" ")
-         exit()
-
-
-    if intmodel == "4RK":
-         IntModel = 0
-    elif intmodel == "Boris":
-         IntModel = 1
-    elif intmodel == "Vay":
-         IntModel = 2
-    elif intmodel == "HC":
-         IntModel = 3
-    else:
-         print("Please enter a valid intmodel model: ""4RK"", ""Boris"", ""Vay"", ""HC"" ")
-         exit()
 
     if serverdata == "ON":
          ServerData = 1
@@ -113,14 +79,11 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
          print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
          exit()
 
-    if coordsystem not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
+    if coordsystemIN not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
          print("Please select a valid coordsystem: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
          exit()
 
     misc.DataCheck(ServerData,LiveData,EventDate)
-
-    Azimuth = azimuth
-    Zenith = zenith
 
     IOPTinput = misc.IOPTprocess(kp)
     KpS = 0
@@ -151,26 +114,12 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
           WindCreate = solar_wind.Solar_Wind(vx, vy, vz, by, bz, density, pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6)
           WindArray = WindCreate.GetWind()
 
-    Rigidity = rigidity
-
     MagFieldModel = np.array([Internal,External])
 
-    EndParams = [minaltitude,maxdistance,maxtime]
-
-    CreateStations = stations.Stations(Stations, startaltitude, Zenith, Azimuth)
-    InputtedStations = CreateStations
-    if 'customlocations' in locals() or 'customlocations' in globals():
-          CreateStations.AddLocation(customlocations)
-    Used_Stations_Temp = CreateStations.GetStations()
-    temp = list(Used_Stations_Temp)
-    Station_Array = temp
-
-    
-    ParticleArray = [Anum,AntiCheck]
-
+    startaltitude = 100
+    EndParams = [20,100,0]
     misc.ParamCheck(startaltitude,year,Internal,EndParams)
 
-    TrajectoryInputArray = [Rigidity,DateArray,MagFieldModel,IntModel,ParticleArray,IOPTinput,WindArray,Magnetopause,
-    coordsystem,gyropercent,EndParams, Station_Array, InputtedStations, KpS, corenum, LiveData, ServerData, g, h]
+    MagfieldInputArray = [Locations,DateArray,MagFieldModel,IOPTinput,WindArray,coordsystemIN,KpS,corenum,LiveData,serverdata,g,h]
 
-    return TrajectoryInputArray
+    return MagfieldInputArray

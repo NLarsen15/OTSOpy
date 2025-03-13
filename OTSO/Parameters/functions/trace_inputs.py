@@ -4,24 +4,20 @@ import os
 from . import date, solar_wind, stations
 from . import misc, Request, Server
 
-def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude,zenith,azimuth,
-           maxdistance,maxtime,
+def TraceInputs(startaltitude,Coordsys,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           intmodel,coordsystem,gyropercent,magnetopause,corenum,g,h):
+           gyropercent,magnetopause,corenum,
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
     DateArray = DateCreate.GetDate()
 
-    if anti == "YES":
-         AntiCheck = 1
-    elif anti == "NO":
-         AntiCheck = 0
-    else:
-         print("Please enter a valid anti value: ""YES"" or ""NO"" ")
-         exit()
+    if Coordsys not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
+      print("Please select a valid coordsystem: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
+      exit()
 
     if magnetopause == "Sphere":
          Magnetopause = 0
@@ -33,19 +29,6 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
          Magnetopause = 3
     else:
          print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"" ")
-         exit()
-
-
-    if intmodel == "4RK":
-         IntModel = 0
-    elif intmodel == "Boris":
-         IntModel = 1
-    elif intmodel == "Vay":
-         IntModel = 2
-    elif intmodel == "HC":
-         IntModel = 3
-    else:
-         print("Please enter a valid intmodel model: ""4RK"", ""Boris"", ""Vay"", ""HC"" ")
          exit()
 
     if serverdata == "ON":
@@ -112,15 +95,19 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
     else:
          print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
          exit()
-
-    if coordsystem not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
-         print("Please select a valid coordsystem: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
-         exit()
+    
+    MinAlt = 0
+    MaxDist = 1000
+    MaxTime = 0
+    AtomicNum = 1
+    AntiCheck = 1
+    IntModel = 2
+    gyropercent = 20
+    Rigidity = 1
+    Zenith = 0
+    Azimuth = 0
 
     misc.DataCheck(ServerData,LiveData,EventDate)
-
-    Azimuth = azimuth
-    Zenith = zenith
 
     IOPTinput = misc.IOPTprocess(kp)
     KpS = 0
@@ -151,26 +138,27 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
           WindCreate = solar_wind.Solar_Wind(vx, vy, vz, by, bz, density, pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6)
           WindArray = WindCreate.GetWind()
 
-    Rigidity = rigidity
-
     MagFieldModel = np.array([Internal,External])
+    ParticleArray = [AtomicNum,AntiCheck]
 
-    EndParams = [minaltitude,maxdistance,maxtime]
+    EndParams = [MinAlt,MaxDist,MaxTime]
 
-    CreateStations = stations.Stations(Stations, startaltitude, Zenith, Azimuth)
-    InputtedStations = CreateStations
-    if 'customlocations' in locals() or 'customlocations' in globals():
-          CreateStations.AddLocation(customlocations)
-    Used_Stations_Temp = CreateStations.GetStations()
-    temp = list(Used_Stations_Temp)
-    Station_Array = temp
+    if latstep > 0:
+         latstep = -1*latstep
 
-    
-    ParticleArray = [Anum,AntiCheck]
+    if not ((maxlat-minlat)/abs(latstep)).is_integer():
+          print(f"Latitude range selected can not be split into integer number of steps using inputted latstep. \nlat range:{maxlat-minlat} \nlatstep:{abs(latstep)} \nlatrange/latstep:{(maxlat-minlat)/abs(latstep)}\nPlease edit the inputs appropriately.")
+          exit()
+
+    if not ((maxlong-minlong)/abs(longstep)).is_integer():
+          print(f"Longitude range selected can not be split into integer number of steps using inputted longstep. \nlong range:{maxlong-minlong} \nlongstep:{abs(longstep)} \nlongrange/longstep:{(maxlong-minlong)/abs(longstep)}\nPlease edit the inputs appropriately.")
+          exit()
+
+    LatitudeList = np.arange(maxlat,minlat + latstep,latstep)
+    LongitudeList = np.arange(minlong,maxlong + longstep,longstep)
 
     misc.ParamCheck(startaltitude,year,Internal,EndParams)
 
-    TrajectoryInputArray = [Rigidity,DateArray,MagFieldModel,IntModel,ParticleArray,IOPTinput,WindArray,Magnetopause,
-    coordsystem,gyropercent,EndParams, Station_Array, InputtedStations, KpS, corenum, LiveData, ServerData, g, h]
+    TraceInputArray = [LongitudeList,LatitudeList,Rigidity,ParticleArray,DateArray,MagFieldModel,IntModel,IOPTinput,WindArray,Magnetopause,gyropercent,EndParams, Zenith, Azimuth, corenum, startaltitude, LiveData, AntiCheck, g, h]
 
-    return TrajectoryInputArray
+    return TraceInputArray

@@ -229,3 +229,80 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
          queue.put(df)
 
   return
+
+
+def fortrancallMagfield(Data, DateArray, Model, IOPT, WindArray, CoordinateSystem, queue ,g,h):
+    for x in Data:
+      Position = x
+      
+      Bfield = OTSOLib.magstrength(Position, DateArray, Model, IOPT, WindArray, CoordinateSystem, g, h)
+      combined_array = np.concatenate((Position, Bfield))
+      coord_suffix = f"_{CoordinateSystem}"  # Add the coordinate system suffix
+      columns = [f"X{coord_suffix} [Re]", f"Y{coord_suffix} [Re]", f"Z{coord_suffix} [Re]", f"GSM_Bx [nT]", f"GSM_By [nT]", f"GSM_Bz [nT]"]
+      df = pd.DataFrame(columns=columns)
+      df.loc[len(df)] = combined_array
+      queue.put(df)
+
+    return
+
+def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue):
+    for x,y in zip(Data,DateArray):
+      Position = x
+
+      datetimeobj = date.convert_to_datetime(y)
+
+      year = y[0]
+      day = y[1]
+      hour = y[2]
+      minute = y[3]
+      secint = y[4]
+      sectot = y[5]
+      
+      Coords = OTSOLib.coordtrans(Position,year,day,hour,minute,secint,sectot,CoordIN,CoordOUT)
+      combined_array = np.concatenate(([datetimeobj], Position, Coords))
+
+      coord_suffix = f"_{CoordIN}"
+      coord_suffix2 = f"_{CoordOUT}"
+      columns = ["Date",f"X{coord_suffix} [Re]", f"Y{coord_suffix} [Re]", f"Z{coord_suffix} [Re]", f"X{coord_suffix2} [Re]", f"Y{coord_suffix2} [Re]", f"Z{coord_suffix2} [Re]"]
+      if CoordOUT == "GDZ" or CoordOUT == "SPH":
+         columns = ["Date",f"X{coord_suffix} [Re]", f"Y{coord_suffix} [Re]", f"Z{coord_suffix} [Re]", f"altitude{coord_suffix2} [km]", f"latitude{coord_suffix2}", f"longitude{coord_suffix2}"]
+      df = pd.DataFrame(columns=columns)
+      df.loc[len(df)] = combined_array
+      queue.put(df)
+
+    return
+
+def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, queue, g, h):
+    for x in Data:
+      
+      Position = [x[3],x[1],x[2],x[4],x[5]]
+
+      AtomicNum = ParticleArray[0]
+      AntiCheck = ParticleArray[1]
+
+      Filename = f"{x[1]}_{x[2]}.csv"
+      name = f"{x[1]}_{x[2]}"
+
+      OTSOLib.fieldtrace(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, Filename, g, h)
+
+      Trace = pd.read_csv(Filename)
+      coordsystem2 = "GSM"
+      columns = Trace.columns
+
+
+
+      new_columns = [f"{col}_{CoordinateSystem} [Re]" if i < 3 else f"{col}_{coordsystem2} [nT]" for i, col in enumerate(columns)]
+      if CoordinateSystem == "GDZ" or CoordinateSystem == "SPH":
+        column_names = ["alt [km]", "latitude", "longitude"]
+        new_columns = [f"{col}_{column_names[i]}" if i < 3 else f"{col}_{coordsystem2} [nT]" for i, col in enumerate(columns)]
+
+      Trace.columns = new_columns
+
+      Trace.columns = new_columns
+            
+      dataframe_dict = {name: Trace}
+  
+      queue.put(dataframe_dict)
+      os.remove(Filename)
+    
+    return

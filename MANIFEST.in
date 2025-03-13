@@ -1,0 +1,4 @@
+include OTSO/Parameters/functions/*.so
+include OTSO/Parameters/functions/*.pyd
+include OTSO/Parameters/functions/StationList.csv
+include OTSO/Parameters/functions/Parameters.par

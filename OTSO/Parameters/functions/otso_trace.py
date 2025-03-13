@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 import multiprocessing as mp
 import os
-from . import fortran_calls, readme_generators,cores, misc, planet_inputs
+from . import fortran_calls, readme_generators,cores, misc, trace_inputs
 import pandas as pd
 import sys
 import queue
@@ -10,47 +10,41 @@ import random
 import numpy as np
 
 
-def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
+def OTSO_trace(startaltitude,Coordsys,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,anti,year,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
+           gyropercent,magnetopause,corenum,
            latstep,longstep,maxlat,minlat,maxlong,minlong,g,h):
 
     Anum = 1
-    PlanetInputArray = planet_inputs.PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
+    TraceInputArray = trace_inputs.TraceInputs(startaltitude,Coordsys,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
+           gyropercent,magnetopause,corenum,
            latstep,longstep,maxlat,minlat,maxlong,minlong,g,h)
 
-    LongitudeList = PlanetInputArray[0]
-    LatitudeList = PlanetInputArray[1]
-    RigidityArray = PlanetInputArray[2]
-    DateArray = PlanetInputArray[3]
-    Model = PlanetInputArray[4]
-    IntModel = PlanetInputArray[5]
-    ParticleArray = PlanetInputArray[6]
-    IOPT = PlanetInputArray[7]
-    WindArray = PlanetInputArray[8]
-    Magnetopause = PlanetInputArray[9]
-    MaxStepPercent = PlanetInputArray[10]/100
-    EndParams = PlanetInputArray[11]
-    Rcomp = PlanetInputArray[12]
-    Rscan = PlanetInputArray[13]
-    Zenith = PlanetInputArray[14]
-    Azimuth = PlanetInputArray[15]
-    CoreNum = PlanetInputArray[16]
-    asymptotic = PlanetInputArray[17]
-    asymlevels = PlanetInputArray[18]
-    Alt = PlanetInputArray[19]
-    LiveData = PlanetInputArray[20]
-    AntiCheck = PlanetInputArray[21]
-    g = PlanetInputArray[22]
-    h = PlanetInputArray[23]
+    LongitudeList = TraceInputArray[0]
+    LatitudeList = TraceInputArray[1]
+    Rigidity = TraceInputArray[2]
+    ParticleArray = TraceInputArray[3]
+    DateArray = TraceInputArray[4]
+    Model = TraceInputArray[5]
+    IntModel = TraceInputArray[6]
+    IOPT = TraceInputArray[7]
+    WindArray = TraceInputArray[8]
+    Magnetopause = TraceInputArray[9]
+    MaxStepPercent = TraceInputArray[10]/100
+    EndParams = TraceInputArray[11]
+    Zenith = TraceInputArray[12]
+    Azimuth = TraceInputArray[13]
+    CoreNum = TraceInputArray[14]
+    Alt = TraceInputArray[15]
+    LiveData = TraceInputArray[16]
+    AntiCheck = TraceInputArray[17]
+    g = TraceInputArray[18]
+    h = TraceInputArray[19]
 
     ChildProcesses = []
 
@@ -77,7 +71,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     CoreList = np.arange(1, CoreNum + 1)
     start = time.time()
 
-    print("OTSO Planet Computation Started")
+    print("OTSO Trace Computation Started")
     sys.stdout.write(f"\r{0:.2f}% complete")
 # Set the process creation method to 'forkserver'
     try:
@@ -90,17 +84,16 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 # Create a shared message queue for the processes to produce/consume data
     ProcessQueue = mp.Manager().Queue()
     for Data,Core in zip(DataLists, CoreList):
-            Child = mp.Process(target=fortran_calls.fortrancallPlanet,  args=(Data, RigidityArray, DateArray, Model, IntModel, 
+            Child = mp.Process(target=fortran_calls.fortrancallTrace,  args=(Data, Rigidity, DateArray, Model, IntModel, 
                                                                               ParticleArray, IOPT, WindArray, 
-                                                                              Magnetopause, MaxStepPercent, EndParams, 
-                                                                              Rcomp, Rscan, asymptotic, asymlevels, unit,
+                                                                              Magnetopause, Coordsys, MaxStepPercent, EndParams,
                                                                               ProcessQueue,g,h))
             ChildProcesses.append(Child)
 
     for a in ChildProcesses:
         a.start()
 
-    results = []
+    results = {}
     processed = 0
     while processed < totalprocesses:
         try:
@@ -115,7 +108,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                     break
     
             # Append all collected results to the main results list
-            results.extend(result_collector)
+            for x in result_collector:
+                results.update(x)
     
             # Calculate and print the progress
             percent_complete = (processed / totalprocesses) * 100
@@ -127,29 +121,33 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
             pass
         
         # Wait for 5 seconds before the next iteration
-        time.sleep(2)
+        time.sleep(0.0001)
 
     for b in ChildProcesses:
         b.join()
 
-    combined_planet = pd.concat(results, ignore_index=True)
-    combined_planet['Longitude'] = pd.to_numeric(combined_planet['Longitude'])
-    combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'])
-    planet = combined_planet.sort_values(by=["Latitude", "Longitude"], ascending=[False, True]).reset_index(drop=True)
+    print("\nOTSO Trace Computation Complete")
 
-    print("\nOTSO Planet Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
     print("Whole Program Took: " + str(Printtime) + " seconds")
+
+    # Sorting the dictionary by its keys
+    sorted_results = dict(sorted(results.items(), key=lambda item: parse_key(item[0])))
     
     EventDate = datetime(year,month,day,hour,minute,second)
-    readme = readme_generators.READMEPlanet(Data, RigidityArray, EventDate, Model, IntModel, 
-                                            AntiCheck, IOPT, WindArray, Magnetopause, Printtime,
-                                            maxlat,maxlong,minlat,minlong, latstep, longstep,
-                                            MaxStepPercent*100, EndParams, cutoff_comp, Rscan, 
-                                            LiveData, asymptotic, asymlevels, unit, serverdata, kp)
+    readme = readme_generators.READMETrace(Data, EventDate, Model, IntModel, 
+                                             AntiCheck, IOPT, WindArray, Magnetopause, Printtime,
+                                             maxlat,maxlong,minlat,minlong, latstep, longstep,
+                                             MaxStepPercent*100, EndParams, 
+                                             LiveData, serverdata, kp)
 
     if LiveData == 1:
         misc.remove_files()
 
-    return [planet, readme]
+    return [sorted_results,readme]
+
+
+def parse_key(key):
+    lat, lon = key.split('_')
+    return (int(lat), int(lon))

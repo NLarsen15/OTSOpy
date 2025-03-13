@@ -2,7 +2,6 @@ import time
 from datetime import datetime
 import multiprocessing as mp
 import os
-from .. import *
 from . import fortran_calls, readme_generators,cores, misc, cone_inputs
 import pandas as pd
 import sys
@@ -93,7 +92,7 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
         # Queue is empty, but processes are still running, so we continue checking
         pass
       
-      time.sleep(1)
+      time.sleep(0.0001)
 
     # Ensure that all processes have completed
     for b in ChildProcesses:
