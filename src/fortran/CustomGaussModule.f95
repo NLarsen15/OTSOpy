@@ -32,7 +32,7 @@ integer(8) :: model(2)
 IF (model(1) == 3) THEN
     CUSTGAUSSINT = 1
 ELSE IF (model(1) == 4) THEN
-    CUSTGAUSSINT = 1
+    Gausschoice = 1
 ELSE
     CUSTGAUSSINT = 0
 END IF
