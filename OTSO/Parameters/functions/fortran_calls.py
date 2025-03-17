@@ -104,7 +104,7 @@ def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
             if P == P_List[0]:  # Check if it's the first value in P_List
                 while True:
                     bool, Lat, Long = OTSOLib.trajectory(Position, P, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
-                    P += 0.001
+                    P += Rigidity[2]
                     if bool == 1:
                         lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
                         break 
@@ -199,7 +199,7 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
             if P == P_List[0]:  # Check if it's the first value in P_List
                 while True:
                     bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
-                    P += 0.001
+                    P += RigidityStep
                     if bool == 1:
                         lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
                         break 
