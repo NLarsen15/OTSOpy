@@ -51,68 +51,78 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
     WindLists = np.array_split(WindArray, corenum)
     IOPTLists = np.array_split(IOPT, corenum)
     DateArrayLists = np.array_split(DateArray, corenum)
+
+
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    flight_list = [os.path.join(current_dir, f"Planet{i}.csv") for i in range(1, (corenum) + 1)]
     
     print("OTSO Flight Computation Started")
     start = time.time()
     sys.stdout.write(f"\r{0:.2f}% complete")
 
- # Set the process creation method to 'forkserver'
+    results = []
+    resultsfinal = []
+    processed = 0
+    totalp = 0
+    total_stations = len(Station_Array)
+
     try:
-         # Check if the start method is already set
         if not mp.get_start_method(allow_none=True):
              mp.set_start_method('spawn')
     except RuntimeError:
-         # If the start method is already set, a RuntimeError will be raised
-         # You can log or handle this as needed
          pass
- # Create a shared message queue for the processes to produce/consume data
 
     ProcessQueue = mp.Manager().Queue()
-    for Data, Core, Date, I, Wind in zip(Positionlists,CoreList,DateArrayLists, IOPTLists, WindLists):
+    for Data, Core, Date, I, Wind, flightFile in zip(Positionlists,CoreList,DateArrayLists, IOPTLists, WindLists, flight_list):
         Child = mp.Process(target=fortran_calls.fortrancallFlight,  args=(Data, RigidityArray, Date, Model, IntModel, 
                                                                               ParticleArray, I, Wind, 
                                                                               Magnetopause, MaxStepPercent, EndParams, 
                                                                               Rcomp, Rscan, asymptotic, asymlevels, unit,
-                                                                              ProcessQueue,g,h,CoordinateSystem))
+                                                                              ProcessQueue,g,h,CoordinateSystem, flightFile))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:
         a.start()
 
- # Wait for child processes to complete
-
-    total_stations = len(Station_Array)
-    processed = 0
-    results = []
-
     while processed < total_stations:
-       try:
-        # Check if the ProcessQueue has any new results
-        result_df = ProcessQueue.get(timeout=0.001)  # Use timeout to avoid blocking forever
-        results.append(result_df)
-        processed += 1
+        try:
+            result_collector = []
+            while True:
+                try:
+                    countint = ProcessQueue.get(timeout=0.001)
+                    result_collector.append(countint)
+                    processed += 1
+                    totalp = totalp + sum(result_collector)
+                    result_collector = []
+                except queue.Empty:
+                    break
+    
+            percent_complete = (totalp / total_stations) * 100
+            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+            sys.stdout.flush()
 
-        # Calculate and print the progress
-        percent_complete = (processed / total_stations) * 100
-        sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-        sys.stdout.flush()
-
-       except queue.Empty:
-        # Queue is empty, but processes are still running, so we continue checking
-        pass
+    
+        except queue.Empty:
+            pass
       
-       time.sleep(0.0001)
+        time.sleep(0.01)
 
-    # Ensure that all processes have completed
     for b in ChildProcesses:
         b.join()
+        b.close()
 
+    for x in flight_list:
+        df = pd.read_csv(x, header=0)
+        for col in df.columns[:3]:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        df = df.dropna(subset=df.columns[:3])
+        resultsfinal.append(df)
+        os.remove(x)
 
-    # Concatenate the results on the index
-    merged_df = pd.concat(results, ignore_index=True)
+    merged_df = pd.concat(resultsfinal, ignore_index=True)
     merged_df = merged_df.sort_index(axis=0)
 
-    print("\nOTSO Cone Computation Complete")
+    print("\nOTSO Flight Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
     print("Whole Program Took: " + str(Printtime) + " seconds")

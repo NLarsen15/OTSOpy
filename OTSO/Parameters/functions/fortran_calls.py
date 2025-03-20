@@ -9,6 +9,12 @@ import csv
 import numpy as np
 import multiprocessing as mp
 from . import date
+import gc
+import sys
+import psutil
+import tracemalloc
+
+process = psutil.Process()
 
 def fortrancallCutoff(Data, Core, RigidityArray, DateArray, model, IntModel, ParticleArray, IOPT, 
 WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, 
@@ -69,68 +75,78 @@ def fortrancallCone(Data, Core, RigidityArray, DateArray, model, IntModel, Parti
     
     return
 
-def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h):
-  for x in Data:
-      
-      Position = [x[3],x[1],x[2],x[4],x[5]]
-      Station = x[0]
 
-      AtomicNum = ParticleArray[0]
-      AntiCheck = ParticleArray[1]
+def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, PlanetFile):
+  with open(PlanetFile, mode='a', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
+    if asymptotic == "YES":
+      asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
+      defualt_headers = ["Latitude", "Longitude", "Rc GV", "Rc Asym"]
+      headers = defualt_headers + asymlevels_with_units
+      writer.writerow(headers)
+    else:
+       headers = ["Latitude", "Longitude", "Rl", "Rc", "Ru"]
+       writer.writerow(headers)
 
-      NMname = Station
-      Rigidities = [0,0,0]
-
-      FileName = NMname + ".csv"
-      Rigidities = OTSOLib.planet(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName, MaxStepPercent, EndParams, Rcomp, Rscan, g, h)
-      CoordinateSystem = "GEO"
-
-      lat_long_pairs = []
-      P_List = []
-
-      if asymptotic == "YES":
-        Energy_List = asymlevels.copy()
-        if unit == "GeV":   
-          E_0 = 0.938
-          for i in Energy_List:
-            R = (i**2 + 2*i*E_0)**(0.5)
-            P_List.append(R)
-          P_List.insert(0, Rigidities[1])
+    for x in Data:
+        
+        Position = [x[3],x[1],x[2],x[4],x[5]]
+        Station = x[0]
+  
+        AtomicNum = ParticleArray[0]
+        AntiCheck = ParticleArray[1]
+  
+        NMname = Station
+        Rigidities = [0,0,0]
+  
+        FileName = NMname + ".csv"
+        Rigidities = OTSOLib.planet(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName, MaxStepPercent, EndParams, Rcomp, Rscan, g, h)
+        CoordinateSystem = "GEO"
+  
+        lat_long_pairs = []
+        P_List = []
+  
+        if asymptotic == "YES":
+          Energy_List = asymlevels.copy()
+          if unit == "GeV":   
+            E_0 = 0.938
+            for i in Energy_List:
+              R = (i**2 + 2*i*E_0)**(0.5)
+              P_List.append(R)
+            P_List.insert(0, Rigidities[1])
+          else:
+            if unit == "GV": 
+              P_List = Energy_List.copy()
+            P_List.insert(0, Rigidities[1])
+          for P in P_List:
+              if P == P_List[0]:  # Check if it's the first value in P_List
+                  while True:
+                      bool, Lat, Long = OTSOLib.trajectory(Position, P, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
+                      P += Rigidity[2]
+                      if bool == 1:
+                          lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
+                          break 
+              else:
+                  bool, Lat, Long = OTSOLib.trajectory(Position, P, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
+                  lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
+  
+          formatted_list = [f"{bool};{lat};{long}" for bool, lat, long in lat_long_pairs]
+  
+          formatted_list.insert(0, Position[1])
+          formatted_list.insert(1, Position[2])
+          formatted_list.insert(2, Rigidities[1])
+          writer.writerow(formatted_list)
+          queue.put(1)
+  
         else:
-          if unit == "GV": 
-            P_List = Energy_List.copy()
-          P_List.insert(0, Rigidities[1])
-        for P in P_List:
-            if P == P_List[0]:  # Check if it's the first value in P_List
-                while True:
-                    bool, Lat, Long = OTSOLib.trajectory(Position, P, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
-                    P += Rigidity[2]
-                    if bool == 1:
-                        lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
-                        break 
-            else:
-                bool, Lat, Long = OTSOLib.trajectory(Position, P, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
-                lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
-        asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
-        defualt_headers = ["Latitude", "Longitude", "Rc GV", "Rc Asym"]
-        headers = defualt_headers + asymlevels_with_units
-        df = pd.DataFrame(columns=headers)
-
-        formatted_list = [f"{bool};{lat};{long}" for bool, lat, long in lat_long_pairs]
-
-        formatted_list.insert(0, Position[1])
-        formatted_list.insert(1, Position[2])
-        formatted_list.insert(2, Rigidities[1])
-        df.loc[len(df)] = formatted_list + [None] * (len(headers) - len(formatted_list))
-        queue.put(df)
-
-      else:
-         headers = ["Latitude", "Longitude", "Rl", "Rc", "Ru"]
-         data = [[x[1],x[2],Rigidities[0],Rigidities[1], Rigidities[2]]]
-         df = pd.DataFrame(data, columns=headers)
-         queue.put(df)
+           data = [[x[1],x[2],Rigidities[0],Rigidities[1], Rigidities[2]]]
+           writer.writerow(data)
+           queue.put(1)
+           
+    file.close()
 
   return
+
   
 
 def fortrancallTrajectory(Data, Core, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, queue, g, h):
@@ -157,77 +173,79 @@ def fortrancallTrajectory(Data, Core, Rigidity, DateArray, model, IntModel, Part
   return
 
 def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, 
-                      MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, CoordinateSystem):
-  for x,y,z,I in zip(Data,DateArray,WindArray,IOPT):
-      
-      Position = [x[3],x[1],x[2],x[4],x[5]]
-      Station = x[0]
-      
-      datetimeobj = date.convert_to_datetime(y)
-      Wind = z
-
-      StartRigidity = Rigidity[0]
-      EndRigidity = Rigidity[1]
-      RigidityStep = Rigidity[2]
-      AtomicNum = ParticleArray[0]
-      AntiCheck = ParticleArray[1]
-      AtomicNum = ParticleArray[0]
-      AntiCheck = ParticleArray[1]
-
-      NMname = Station
-      Rigidities = [0,0,0]
-
-      FileName = NMname + ".csv"
-      Rigidities = Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h)
-
-      lat_long_pairs = []
-      P_List = []
-
-      if asymptotic == "YES":
-        Energy_List = asymlevels.copy()
-        if unit == "GeV":   
-          E_0 = 0.938
-          for i in Energy_List:
-            R = (i**2 + 2*i*E_0)**(0.5)
-            P_List.append(R)
-          P_List.insert(0, Rigidities[1])
-        else:
-          if unit == "GV": 
-            P_List = Energy_List.copy()
-          P_List.insert(0, Rigidities[1])
-        for P in P_List:
-            if P == P_List[0]:  # Check if it's the first value in P_List
-                while True:
-                    bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
-                    P += RigidityStep
-                    if bool == 1:
-                        lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
-                        break 
-            else:
-                bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
-                lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
+                      MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, CoordinateSystem, FlightFile):
+  with open(FlightFile, mode='a', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)  
+    for x,y,z,I in zip(Data,DateArray,WindArray,IOPT):
         
-        asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
-        defualt_headers = ["Date","Latitude","Longitude","Altitude","Rc GV","Rc Asym"]
-        headers = defualt_headers + asymlevels_with_units
-        df = pd.DataFrame(columns=headers)
-
-        formatted_list = [f"{bool};{lat};{long}" for bool, lat, long in lat_long_pairs]
-
-        formatted_list.insert(0, datetimeobj)
-        formatted_list.insert(1, Position[1])
-        formatted_list.insert(2, Position[2])
-        formatted_list.insert(3, Position[0])
-        formatted_list.insert(4, Rigidities[1])
-        df.loc[len(df)] = formatted_list + [None] * (len(headers) - len(formatted_list))
-        queue.put(df)
-
-      else:
-         headers = ["Date","Latitude", "Longitude","Altitude", "Rl", "Rc", "Ru"]
-         data = [[datetimeobj,x[1],x[2],x[0],Rigidities[0],Rigidities[1], Rigidities[2]]]
-         df = pd.DataFrame(data, columns=headers)
-         queue.put(df)
-
+        Position = [x[3],x[1],x[2],x[4],x[5]]
+        Station = x[0]
+        
+        datetimeobj = date.convert_to_datetime(y)
+        Wind = z
+  
+        StartRigidity = Rigidity[0]
+        EndRigidity = Rigidity[1]
+        RigidityStep = Rigidity[2]
+        AtomicNum = ParticleArray[0]
+        AntiCheck = ParticleArray[1]
+        AtomicNum = ParticleArray[0]
+        AntiCheck = ParticleArray[1]
+  
+        NMname = Station
+        Rigidities = [0,0,0]
+  
+        FileName = NMname + ".csv"
+        Rigidities = Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h)
+  
+        lat_long_pairs = []
+        P_List = []
+  
+        if asymptotic == "YES":
+          Energy_List = asymlevels.copy()
+          if unit == "GeV":   
+            E_0 = 0.938
+            for i in Energy_List:
+              R = (i**2 + 2*i*E_0)**(0.5)
+              P_List.append(R)
+            P_List.insert(0, Rigidities[1])
+          else:
+            if unit == "GV": 
+              P_List = Energy_List.copy()
+            P_List.insert(0, Rigidities[1])
+          for P in P_List:
+              if P == P_List[0]:
+                  while True:
+                      bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
+                      P += RigidityStep
+                      if bool == 1:
+                          lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
+                          break 
+              else:
+                  bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, g, h)
+                  lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
+          
+          asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
+          defualt_headers = ["Date","Latitude","Longitude","Altitude","Rc GV","Rc Asym"]
+          headers = defualt_headers + asymlevels_with_units
+          df = pd.DataFrame(columns=headers)
+  
+          formatted_list = [f"{bool};{lat};{long}" for bool, lat, long in lat_long_pairs]
+  
+          formatted_list.insert(0, datetimeobj)
+          formatted_list.insert(1, Position[1])
+          formatted_list.insert(2, Position[2])
+          formatted_list.insert(3, Position[0])
+          formatted_list.insert(4, Rigidities[1])
+          writer.writerow(formatted_list)
+          queue.put(1)
+  
+        else:
+           headers = ["Date","Latitude", "Longitude","Altitude", "Rl", "Rc", "Ru"]
+           data = [[datetimeobj,x[1],x[2],x[3],Rigidities[0],Rigidities[1], Rigidities[2]]]
+           writer.writerow(data)
+           queue.put(1)
+    file.close()
   return
 
 
@@ -247,7 +265,7 @@ def fortrancallMagfield(Data, DateArray, Model, IOPT, WindArray, CoordinateSyste
 
 def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue):
     for x,y in zip(Data,DateArray):
-      Position = x
+      Position = [1+(x[2]/6371.0),x[0],x[1]]
 
       datetimeobj = date.convert_to_datetime(y)
 

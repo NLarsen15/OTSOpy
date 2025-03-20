@@ -8,7 +8,7 @@ import sys
 import queue
 import random
 import numpy as np
-
+import gc
 
 def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -17,6 +17,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
            latstep,longstep,maxlat,minlat,maxlong,minlong,g,h):
+    gc.enable()
 
     Anum = 1
     PlanetInputArray = planet_inputs.PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
@@ -52,6 +53,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     g = PlanetInputArray[22]
     h = PlanetInputArray[23]
 
+    del(PlanetInputArray)
+
     ChildProcesses = []
 
     totalprocesses = len(LongitudeList)*len(LatitudeList)
@@ -74,12 +77,22 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     shuffled_list = DataPlanet.copy()
     random.shuffle(shuffled_list)
     DataLists = np.array_split(shuffled_list, CoreNum)
+
     CoreList = np.arange(1, CoreNum + 1)
     start = time.time()
 
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+
+    planet_list = [os.path.join(current_dir, f"Planet{i}.csv") for i in range(1, (CoreNum) + 1)]
+    ProcessQueue = mp.Manager().Queue()
+
+    results = []
+    resultsfinal = []
+    processed = 0
+    totalp = 0
+
     print("OTSO Planet Computation Started")
     sys.stdout.write(f"\r{0:.2f}% complete")
-# Set the process creation method to 'forkserver'
     try:
         if not mp.get_start_method(allow_none=True):
             mp.set_start_method('spawn')
@@ -87,56 +100,67 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
         pass
 
-# Create a shared message queue for the processes to produce/consume data
-    ProcessQueue = mp.Manager().Queue()
-    for Data,Core in zip(DataLists, CoreList):
+    i = 0
+    
+    ChildProcesses = []
+    for Data, Core, planetfile in zip(DataLists, CoreList, planet_list):
             Child = mp.Process(target=fortran_calls.fortrancallPlanet,  args=(Data, RigidityArray, DateArray, Model, IntModel, 
                                                                               ParticleArray, IOPT, WindArray, 
                                                                               Magnetopause, MaxStepPercent, EndParams, 
                                                                               Rcomp, Rscan, asymptotic, asymlevels, unit,
-                                                                              ProcessQueue,g,h))
+                                                                              ProcessQueue,g,h,planetfile))
             ChildProcesses.append(Child)
-
+        
     for a in ChildProcesses:
         a.start()
-
-    results = []
-    processed = 0
+ 
     while processed < totalprocesses:
         try:
-            # Collect all results available in the queue at this moment
             result_collector = []
             while True:
                 try:
-                    result_df = ProcessQueue.get_nowait()  # Non-blocking, does not wait
-                    result_collector.append(result_df)
+                    countint = ProcessQueue.get(timeout=0.001)
+                    result_collector.append(countint)
                     processed += 1
+                    totalp = totalp + sum(result_collector)
+                    result_collector = []
                 except queue.Empty:
                     break
     
-            # Append all collected results to the main results list
-            results.extend(result_collector)
-    
-            # Calculate and print the progress
-            percent_complete = (processed / totalprocesses) * 100
+            
+            gc.collect()
+            percent_complete = (totalp / totalprocesses) * 100
             sys.stdout.write(f"\r{percent_complete:.2f}% complete")
             sys.stdout.flush()
+
     
         except queue.Empty:
-            # Queue is empty, but processes are still running, so we continue checking
             pass
         
-        # Wait for 5 seconds before the next iteration
         time.sleep(2)
 
     for b in ChildProcesses:
         b.join()
+        b.close()
 
-    combined_planet = pd.concat(results, ignore_index=True)
+    processed = 0
+    
+    ChildProcesses.clear()
+
+    for x in planet_list:
+        df = pd.read_csv(x, header=0)
+        for col in df.columns[:3]:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        df = df.dropna(subset=df.columns[:3])
+        resultsfinal.append(df)
+        os.remove(x)
+     
+    combined_planet = pd.concat(resultsfinal, ignore_index=True)
+    del resultsfinal
     combined_planet['Longitude'] = pd.to_numeric(combined_planet['Longitude'])
     combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'])
     planet = combined_planet.sort_values(by=["Latitude", "Longitude"], ascending=[False, True]).reset_index(drop=True)
-
+   
     print("\nOTSO Planet Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
