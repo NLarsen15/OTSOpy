@@ -139,7 +139,7 @@ def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
           queue.put(1)
   
         else:
-           data = [[x[1],x[2],Rigidities[0],Rigidities[1], Rigidities[2]]]
+           data = [x[1],x[2],Rigidities[0],Rigidities[1], Rigidities[2]]
            writer.writerow(data)
            queue.put(1)
            
@@ -242,7 +242,7 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
   
         else:
            headers = ["Date","Latitude", "Longitude","Altitude", "Rl", "Rc", "Ru"]
-           data = [[datetimeobj,x[1],x[2],x[3],Rigidities[0],Rigidities[1], Rigidities[2]]]
+           data = [datetimeobj,x[1],x[2],x[3],Rigidities[0],Rigidities[1], Rigidities[2]]
            writer.writerow(data)
            queue.put(1)
     file.close()
