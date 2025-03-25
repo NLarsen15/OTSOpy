@@ -669,160 +669,178 @@ end subroutine trajectory
 ! **********************************************************************************************************************
 subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti, I, Wind, Pause, &
      FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO, Rigidities)
-USE Particle
-USE SolarWind
-USE MagneticFieldFunctions
-USE MagnetopauseFunctions
-USE IntegrationFunctions
-USE Magnetopause
-USE CUSTOMGAUSS
-implicit none
-real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityStep, Date(6), End(3)
-real(8) :: Wind(17), Re, Rigidity(3), GyroPercent, RigidityScan, Zenith(9), Azimuth(9)
-real(8) :: RuMemory(9), RlMemory(9), RefMemory(9), EndLoop, sumrl, sumru, sumref
-integer(8) :: mode(2), IntMode, Anti, AtomicNumber
-integer(4) :: I, Limit, bool, Pause, scan, stepNum, Rcomputation, loop, scanchoice, LastCheck
-character(len=30) :: FileName
-real(8) :: gOTSO(105), hOTSO(105)
+    USE Particle
+    USE SolarWind
+    USE MagneticFieldFunctions
+    USE MagnetopauseFunctions
+    USE IntegrationFunctions
+    USE GEOPACK1
+    USE GEOPACK2
+    USE Magnetopause
+    USE CUSTOMGAUSS
+    implicit none
+    
+    real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
+    real(8) :: Wind(17), Re, Lat, Long, GyroPercent, EndLoop
+    real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
+    real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
+    integer(8) :: mode(2), IntMode, Anti, AtomicNumber
+    integer(4) :: I, Limit, bool, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
+    character(len=50) :: FileName
+    character(len=3) :: CoordSystem
+    real(8) :: gOTSO(105), hOTSO(105)
 
-real(8), intent(out) :: Rigidities(3)
+    real(8), intent(out) :: Rigidities(3)
+    
+    R = real(StartRigidity, kind = selected_real_kind(15,307))
+    Re = 6371.2
+    Limit = 0
+    Acount = 0
+    Result = 0
+    stepNum = 0
+    loop = 1
+    forbiddencount = 0
+    NeverFail = 0
+    Step = RigidityStep
+    SubResult = 0
+    MaxGyroPercent = GyroPercent
+    sumrl = 0
+    sumref = 0
+    sumru = 0
+    LastCheck = 0
+    FailCheck = 0
 
-Zenith(1) = 0
-Zenith(2) = 30
-Zenith(3) = 30
-Zenith(4) = 30
-Zenith(5) = 30
-Zenith(6) = 30
-Zenith(7) = 30
-Zenith(8) = 30
-Zenith(9) = 30
+    if (mode(1) == 4) then
+    Ginput = gOTSO
+    Hinput = hOTSO
+    end if
 
-Azimuth(1) = 0
-Azimuth(2) = 0
-Azimuth(3) = 45
-Azimuth(4) = 90
-Azimuth(5) = 135
-Azimuth(6) = 180
-Azimuth(7) = 225
-Azimuth(8) = 270
-Azimuth(9) = 315
-            
-StartRigidity = Rigidity(1)
-EndRigidity = Rigidity(2)
-RigidityScan = 0.50
-RigidityStep = 0.50
+    Rigidity(1) = StartRigidity
+    Rigidity(2) = EndRigidity
+    Rigidity(3) = RigidityStep
 
-R = StartRigidity
-Ru = StartRigidity
-Re = 6371.2
-Limit = 0
-Acount = 0
-Result = 0
-loop = 1
-NeverFail = 0
-stepNum = 0
-forbiddencount = 0
-Step = RigidityStep
-SubResult = 0
-MaxGyroPercent = GyroPercent
-LastCheck = 0
-FailCheck = 0
+    RigidityScan = 0.50
+    RigidityStep = 0.50
 
-if (mode(1) == 4) then
-Ginput = gOTSO
-Hinput = hOTSO
-end if
+    Zenith(1) = 0
+    Zenith(2) = 30
+    Zenith(3) = 30
+    Zenith(4) = 30
+    Zenith(5) = 30
+    Zenith(6) = 30
+    Zenith(7) = 30
+    Zenith(8) = 30
+    Zenith(9) = 30
 
-IF (scanchoice == 1) THEN
-    scan = 0
-    RigidityStep = RigidityScan
-ELSE
-    scan = 1
-    RigidityStep = Rigidity(3)
-END IF
+    Azimuth(1) = 0
+    Azimuth(2) = 0
+    Azimuth(3) = 45
+    Azimuth(4) = 90
+    Azimuth(5) = 135
+    Azimuth(6) = 180
+    Azimuth(7) = 225
+    Azimuth(8) = 270
+    Azimuth(9) = 315
 
-sumref = 0
-sumrl = 0
-sumru = 0
-
-PositionIN(4) = Zenith(loop)
-PositionIN(5) = Azimuth(loop)
+    IF (scanchoice == 1) THEN
+        scan = 0
+        RigidityStep = RigidityScan
+    ELSE
+        scan = 1
+        RigidityStep = Rigidity(3)
+    END IF
 
 
-IF (Rcomputation == 0) THEN
-    EndLoop = 1.0
-ELSE
-    EndLoop = 9.0
-END IF
-        
-!open(unit=10,file=FileName,action='write',position='append')
-!write(10,"(a)")"Latitude,Longitude,Ru,Rc,Rl"
-do while (loop <= EndLoop)
-100 do while (R > EndRigidity)
+    IF (Rcomputation == 0) THEN
+        EndLoop = 1.0
+    ELSE
+        EndLoop = 9.0
+    END IF
 
-    R = real(R, kind = selected_real_kind(10,307))
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
+
+    do while (loop <= EndLoop)
+   
+    100 do while (R > EndRigidity)
+
     PositionIN(4) = Zenith(loop)
     PositionIN(5) = Azimuth(loop)
-
+    
     IF (R < Rigidity(3)) THEN
         R = EndRigidity
         GOTO 50
     END IF
 
-    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode)        
+    R = real(R, kind = selected_real_kind(10,307))
+    RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
+    
+    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode)
+    
     call initializeWind(Wind, I, mode)
     call initializeCustomGauss(mode)
 
     call MagneticFieldAssign(mode)
     call MagnetopauseAssign(Pause)
     call IntegrationAssign(IntMode)
-            
+
     call FirstTimeStep()
-            
-    do while (Result == 0) 
-            
-        call IntegrationPointer
-        
-        call EscapeCheck()
+    test = 0
 
-        call FinalStepCheck()
-            
-        IF (Position(1) < End(1)) THEN
-            bool = -1
-            Limit = 1
-            forbiddencount = forbiddencount + 1
-            NeverFail = 1
-            FailCheck = 1
-            EXIT
-        END IF
-        
-        IF (End(2) == 0) THEN
-            
-        ELSE IF (DistanceTraveled/1000.0 > End(2) * Re) THEN
-            bool = 0
-            Limit = 1
-            forbiddencount = forbiddencount + 1
-            NeverFail = 1
-            FailCheck = 1
-            EXIT
-        END IF
+    do while (Result == 0)
+    
+    call IntegrationPointer()
 
-        IF (End(3) == 0) THEN
-            
-        ELSE IF (TimeElapsed > End(3)) THEN
-            bool = 0
-            Limit = 1
-            forbiddencount = forbiddencount + 1
-            NeverFail = 1
-            FailCheck = 1
-            EXIT
-        END IF
-            
-        IF (Result == 1) THEN
-            forbiddencount = 0
-            bool = 1
-            RL = R
+    call EscapeCheck()
+
+    !call FinalStepCheck()
+    
+    IF (Position(1) < End(1) ) THEN
+        bool = -1
+        Limit = 1
+        forbiddencount = forbiddencount + 1
+        NeverFail = 1
+        FailCheck = 1
+        call AsymptoticDirection(Lat, Long)
+        call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        !print *, R, " ", "Returned to Earth"
+        EXIT
+    END IF
+
+    IF (End(2) == 0) THEN
+        
+    ELSE IF (DistanceTraveled/1000.0 > End(2) * Re) THEN
+        bool = 0
+        Limit = 1
+        forbiddencount = forbiddencount + 1
+        NeverFail = 1
+        FailCheck = 1
+        call AsymptoticDirection(Lat, Long)
+        call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        !print *, R, " ", "Trapped"
+        EXIT
+    END IF
+
+    IF (End(3) == 0) THEN
+        
+    ELSE IF (TimeElapsed > End(3)) THEN
+        bool = 0
+        Limit = 1
+        forbiddencount = forbiddencount + 1
+        NeverFail = 1
+        FailCheck = 1
+        call AsymptoticDirection(Lat, Long)
+        call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        !print *, R, " ", "Time Elapsed"
+        EXIT
+    END IF
+    
+    IF (Result == 1) THEN
+        call AsymptoticDirection(Lat, Long)
+        call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        forbiddencount = 0
+        bool = 1
+        RL = R
+        !print *, R, " ", "Escaped"
         IF (Limit == 0) THEN
             RU = R
         ELSE IF (Limit == 1) THEN
@@ -830,10 +848,11 @@ do while (loop <= EndLoop)
         END IF
         EXIT
     END IF
+    
     end do
 
     stepNum = stepNum + 1
-            
+
     R = (StartRigidity - (stepNum*RigidityStep))
     IF(R < EndRigidity) THEN
         R = EndRigidity
@@ -854,93 +873,94 @@ do while (loop <= EndLoop)
     PositionIN(4) = Zenith(loop)
     PositionIN(5) = Azimuth(loop)
 
-end do
-        
-call EffectiveRigidity(RigidityStep)
+    end do
 
-IF (scan == 0) THEN
-    scan = 1
-    StartRigidity = RU + 2.0*RigidityScan
-    EndRigidity = RL - 2.0*RigidityScan
-    IF (EndRigidity < 0) THEN
-        EndRigidity = 0
+    call EffectiveRigidity(RigidityStep)
+
+    IF (scan == 0) THEN
+        scan = 1
+        StartRigidity = RU + 1.5*RigidityScan
+        EndRigidity = RL - 1.5*RigidityScan
+        IF (EndRigidity < 0) THEN
+            EndRigidity = 0
+        END IF
+        R = StartRigidity
+        RigidityStep = Rigidity(3)
+        Limit = 0
+        Acount = 0
+        Result = 0
+        forbiddencount = 0
+        SubResult = 0
+        stepNum = 0
+        IF(NeverFail == 1) THEN
+            NeverFail = 0
+            GOTO 100
+        ELSE IF(NeverFail == 0) THEN
+            RU = 0
+            RL = 0
+            Ref = 0
+        END IF
     END IF
-    R = StartRigidity
-    RigidityStep = Rigidity(3)
+
+    RlMemory(loop) = Rl
+    RefMemory(loop) = Ref
+    RuMemory(loop) = Ru
+
+    IF (scanchoice == 1) THEN
+        scan = 0
+        RigidityStep = RigidityScan
+        StartRigidity = Rigidity(1)
+        EndRigidity = Rigidity(2)
+    ELSE
+        scan = 1
+        RigidityStep = Rigidity(3)
+    END IF
+
+    !write(10,'(*(G0.6,:""))')PositionIN(4), ",", PositionIN(5), ",", Ru, ",", Ref, ",", Rl 
+
+    loop = loop + 1
+    PositionIN(4) = Zenith(loop)
+    PositionIN(5) = Azimuth(loop)
+    R = real(StartRigidity, kind = selected_real_kind(15,307))
+    Re = 6371.2
     Limit = 0
     Acount = 0
     Result = 0
-    forbiddencount = 0
-    SubResult = 0
     stepNum = 0
-    IF(NeverFail == 1) THEN
-        NeverFail = 0
-        GOTO 100
-    ELSE IF(NeverFail == 0) THEN
-        RU = 0
-        RL = 0
-        Ref = 0
+    forbiddencount = 0
+    NeverFail = 0
+    SubResult = 0
+    LastCheck = 0
+    FailCheck = 0
+
+    end do
+
+    IF(Rcomputation /= 0) THEN
+        sumrl = RLMemory(1)/2.0
+        do i = 2, 9
+            sumrl = sumrl + RLMemory(i)/16.0
+        end do
+        sumru = RUMemory(1)/2.0
+        do i = 2, 9
+            sumru = sumru + RUMemory(i)/16.0
+        end do
+        sumref = RefMemory(1)/2.0
+        do i = 2, 9
+            sumref = sumref + RefMemory(i)/16.0
+        end do
+
+        RU = sumru
+        RL = sumrl
+        Ref = sumref
     END IF
-END IF
 
-RlMemory(loop) = Rl
-RefMemory(loop) = Ref
-RuMemory(loop) = Ru
+    !print *, "Ru:", RU
+    !print *, "Rl:", RL
+    !print *, "Rc:", Ref
 
-!print *, PositionIN(4), " ", PositionIN(5)
-!print *, Rl, " ", Ref, " ", Ru
-
-loop = loop + 1
-R = real(StartRigidity, kind = selected_real_kind(15,307))
-Re = 6371.2
-Limit = 0
-Acount = 0
-Result = 0
-stepNum = 0
-forbiddencount = 0
-NeverFail = 0
-SubResult = 0
-LastCheck = 0
-FailCheck = 0
-
-IF (scanchoice == 1) THEN
-    scan = 0
-    RigidityStep = RigidityScan
-    StartRigidity = Rigidity(1)
-    EndRigidity = Rigidity(2)
-ELSE
-    scan = 1
-    RigidityStep = Rigidity(3)
-END IF
-
-IF(Rcomputation /= 0) THEN
-    sumrl = RLMemory(1)/2.0
-    do i = 2, 9
-        sumrl = sumrl + RLMemory(i)/16.0
-    end do
-    sumru = RUMemory(1)/2.0
-    do i = 2, 9
-        sumru = sumru + RUMemory(i)/16.0
-    end do
-    sumref = RefMemory(1)/2.0
-    do i = 2, 9
-        sumref = sumref + RefMemory(i)/16.0
-    end do
-
-    RU = sumru
-    RL = sumrl
-    Ref = sumref
-END IF
-
-end do
-
-sumrl = 0
-sumru = 0
-sumref = 0
-
-rigidities(1) = RU
-rigidities(2) = Ref
-rigidities(3) = RL
+    Rigidities(1) = RU
+    Rigidities(2) = Ref
+    Rigidities(3) = RL
         
 end subroutine planet
 
