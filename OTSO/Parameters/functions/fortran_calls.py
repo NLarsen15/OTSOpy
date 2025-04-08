@@ -79,20 +79,12 @@ def fortrancallCone(Data, Core, RigidityArray, DateArray, model, IntModel, Parti
 def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, PlanetFile):
   with open(PlanetFile, mode='a', newline='', encoding='utf-8') as file:
     writer = csv.writer(file)
-    if asymptotic == "YES":
-      asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
-      defualt_headers = ["Latitude", "Longitude", "Rc GV", "Rc Asym"]
-      headers = defualt_headers + asymlevels_with_units
-      writer.writerow(headers)
-    else:
-       headers = ["Latitude", "Longitude", "Rl", "Rc", "Ru"]
-       writer.writerow(headers)
 
     for x in Data:
         
         Position = [x[3],x[1],x[2],x[4],x[5]]
         Station = x[0]
-  
+
         AtomicNum = ParticleArray[0]
         AntiCheck = ParticleArray[1]
   

@@ -681,10 +681,10 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(17), Re, Lat, Long, GyroPercent, EndLoop
+    real(8) :: Wind(17), Re, Lat, Long, GyroPercent
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
-    integer(8) :: mode(2), IntMode, Anti, AtomicNumber
+    integer(8) :: mode(2), IntMode, Anti, AtomicNumber,EndLoop
     integer(4) :: I, Limit, bool, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
     character(len=50) :: FileName
     character(len=3) :: CoordSystem
@@ -692,7 +692,9 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
     real(8), intent(out) :: Rigidities(3)
     
-    R = real(StartRigidity, kind = selected_real_kind(15,307))
+
+    R = real(Rigidity(1), kind = selected_real_kind(15,307))
+    StartRigidity = real(Rigidity(1), kind = selected_real_kind(15,307))
     Re = 6371.2
     Limit = 0
     Acount = 0
@@ -710,14 +712,12 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     LastCheck = 0
     FailCheck = 0
 
+    CoordSystem = "GEO"
+
     if (mode(1) == 4) then
     Ginput = gOTSO
     Hinput = hOTSO
     end if
-
-    Rigidity(1) = StartRigidity
-    Rigidity(2) = EndRigidity
-    Rigidity(3) = RigidityStep
 
     RigidityScan = 0.50
     RigidityStep = 0.50
@@ -752,20 +752,23 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
 
     IF (Rcomputation == 0) THEN
-        EndLoop = 1.0
+        EndLoop = 1
     ELSE
-        EndLoop = 9.0
+        EndLoop = 9
     END IF
 
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
 
     do while (loop <= EndLoop)
-   
+
+
     100 do while (R > EndRigidity)
+
 
     PositionIN(4) = Zenith(loop)
     PositionIN(5) = Azimuth(loop)
     
+
     IF (R < Rigidity(3)) THEN
         R = EndRigidity
         GOTO 50
@@ -821,7 +824,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     END IF
 
     IF (End(3) == 0) THEN
-        
+
     ELSE IF (TimeElapsed > End(3)) THEN
         bool = 0
         Limit = 1
@@ -961,6 +964,8 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     Rigidities(1) = RU
     Rigidities(2) = Ref
     Rigidities(3) = RL
+
+    !write(10,'(*(G0.6,:""))')"Ru:", RU, ",  Rc:", Ref, ",  Rl:", RL 
         
 end subroutine planet
 

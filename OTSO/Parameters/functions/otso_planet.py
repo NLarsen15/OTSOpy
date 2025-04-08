@@ -9,6 +9,8 @@ import queue
 import random
 import numpy as np
 import gc
+import csv
+from collections import defaultdict
 
 def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -59,14 +61,20 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
     totalprocesses = len(LongitudeList)*len(LatitudeList)
 
-    combined_coordinates = [(lat, lon) for lat in LatitudeList for lon in LongitudeList]
-
     NewCoreNum = misc.CheckCoreNumPlanet(CoreNum)
     FileNamesPlanet = []
 
-    combined_coordinates = [(lat, lon) for lat in LatitudeList for lon in LongitudeList]
-    for list in combined_coordinates:
-        FileNamesPlanet.append(str(list[0]) + "_" + str(list[1]))
+    combined_coordinates = [(round(lat, 6), round(lon, 6)) for lat in LatitudeList for lon in LongitudeList]
+    
+    lat_grid, lon_grid = np.meshgrid(LatitudeList, LongitudeList, indexing='ij')  
+
+    combined_coordinates = list(zip(lat_grid.ravel(), lon_grid.ravel()))
+    combined_coordinates = list(set((round(lat, 6), round(lon, 6)) for lat, lon in combined_coordinates))
+
+    coord_dict = defaultdict(list)
+
+    for coordlist in combined_coordinates:
+        FileNamesPlanet.append(str(coordlist[0]) + "_" + str(coordlist[1]))
     DataPlanet = []
     i = 1
     for point,name in zip(combined_coordinates, FileNamesPlanet):
@@ -84,6 +92,19 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
     planet_list = [os.path.join(current_dir, f"Planet{i}.csv") for i in range(1, (CoreNum) + 1)]
+    for planet_file in planet_list:
+        with open(planet_file, mode='a', newline='', encoding='utf-8') as file:  # Open in write ('w') mode
+            writer = csv.writer(file)
+            
+            if asymptotic == "YES":
+                asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
+                default_headers = ["Latitude", "Longitude", "Rc GV", "Rc Asym"]
+                headers = default_headers + asymlevels_with_units
+            else:
+                headers = ["Latitude", "Longitude", "Rl", "Rc", "Ru"]
+            writer.writerow(headers)
+    
+    
     ProcessQueue = mp.Manager().Queue()
 
     results = []
@@ -147,19 +168,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     
     ChildProcesses.clear()
 
-    for x in planet_list:
-        df = pd.read_csv(x, header=0)
-        for col in df.columns[:3]:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-        df = df.dropna(subset=df.columns[:3])
-        resultsfinal.append(df)
-        os.remove(x)
-     
-    combined_planet = pd.concat(resultsfinal, ignore_index=True)
-    del resultsfinal
-    combined_planet['Longitude'] = pd.to_numeric(combined_planet['Longitude'])
-    combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'])
-    planet = combined_planet.sort_values(by=["Latitude", "Longitude"], ascending=[False, True]).reset_index(drop=True)
+    planet = combine_planet_files(planet_list)
    
     print("\nOTSO Planet Computation Complete")
     stop = time.time()
@@ -177,3 +186,21 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
         misc.remove_files()
 
     return [planet, readme]
+
+
+def combine_planet_files(planet_list):
+    resultsfinal = []
+    for x in planet_list:
+        df = pd.read_csv(x, header=0)
+        for col in df.columns[:3]:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        df = df.dropna(subset=df.columns[:3])
+        df = df.drop_duplicates(subset=['Latitude', 'Longitude'])
+        resultsfinal.append(df)
+        os.remove(x)
+    combined_planet = pd.concat(resultsfinal, ignore_index=True)
+    combined_planet = combined_planet.drop_duplicates(subset=['Latitude', 'Longitude'])
+    combined_planet['Longitude'] = pd.to_numeric(combined_planet['Longitude'], errors='coerce')
+    combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'], errors='coerce')
+    planet = combined_planet.sort_values(by=["Latitude", "Longitude"], ignore_index=True)
+    return planet
