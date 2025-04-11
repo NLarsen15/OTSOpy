@@ -4,12 +4,21 @@ subroutine MHDField(InputPosition,outputBfield)
     implicit none
     real(8) :: x_target, y_target, z_target, InputPosition(3)
     real(8) :: Bx_target, By_target, Bz_target, outputBfieldTemp(3)
-    real(8) :: outputBfield(3)
+    real(8) :: outputBfield(3),targetposition(3)
     integer, allocatable :: x_values(:), y_values(:), z_values(:)
+    character(len=3) :: CoordIN
 
-    x_target = InputPosition(1)
-    y_target = InputPosition(2)
-    z_target = InputPosition(3)
+    if (model(1) == 4) then
+    CoordIN = "GEO"
+    else
+    CoordIN = "GSM"
+    end if
+
+    call CoordinateTransform(CoordIN, CoordINMHD, year, day, secondINT, InputPosition, targetposition)
+
+    x_target = targetposition(1)
+    y_target = targetposition(2)
+    z_target = targetposition(3)
 
     call Interpolate(x_target, y_target, z_target, MHDposition, MHDB, n_x, n_y, n_z, Bx_target,By_target,Bz_target)
     
