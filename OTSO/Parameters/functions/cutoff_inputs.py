@@ -9,7 +9,8 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h):
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,
+           MHDfile, MHDcoordsys):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -80,7 +81,7 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
          print("Please enter a valid livedata value: ""ON"" or ""OFF"" ")
          exit()
     
-    if internalmag == "None":
+    if internalmag == "NONE":
          Internal = 0
          if not g or not h: 
             g = [0] * 105
@@ -106,7 +107,7 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
          elif len(h) != 105:
               print(f"There should be 105 h coefficents in the inputted list, you have enetered {len(h)}")
     else:
-         print("Please enter a valid internalmag model: ""None"",""IGRF"",""Dipole"", or ""Custom Gauss""")
+         print("Please enter a valid internalmag model: ""NONE"",""IGRF"",""Dipole"", or ""Custom Gauss""")
          exit()
       
     if externalmag == "NONE":
@@ -125,6 +126,11 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
          External = 6
     elif externalmag == "TSY04":
          External = 7
+    elif externalmag == "MHD":
+         External = 99
+         if not os.path.exists(MHDfile):
+            print(f"The file '{MHDfile}' does not exist.")
+            exit()
     else:
          print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
          exit()
@@ -165,7 +171,6 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
          DstLive, VxLive, DensityLive, ByLive, BzLive, IOPTLive, G1Live, G2Live, G3Live, KpLive = Request.Get_Data(EventDate)
          PdynLive = misc.Pdyn_comp(DensityLive,VxLive)
          IOPTinput = IOPTLive
-         KpS=KpLive
          WindCreate = solar_wind.Solar_Wind(VxLive, vy, vz, ByLive, BzLive, DensityLive, PdynLive, DstLive, G1Live, G2Live, G3Live, W1, W2, W3, W4, W5, W6)
          WindArray = WindCreate.GetWind()
 

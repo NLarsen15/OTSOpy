@@ -12,13 +12,13 @@ def OTSO_magfield(Locations,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           coordsystemIN,g,h,corenum):
+           coordsystemIN,g,h,corenum,MHDfile,MHDcoordsys):
 
     magfieldInputArray = magfield_inputs.MagFieldInputs(Locations,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           coordsystemIN,g,h,corenum)
+           coordsystemIN,g,h,corenum,MHDfile,MHDcoordsys)
 
     Locations = magfieldInputArray[0]
     DateArray = magfieldInputArray[1]
@@ -52,7 +52,8 @@ def OTSO_magfield(Locations,
 # Create a shared message queue for the processes to produce/consume data
     ProcessQueue = mp.Manager().Queue()
     for Data in LocationsList:
-        Child = mp.Process(target=fortran_calls.fortrancallMagfield,  args=(Data, DateArray, Model, IOPT, WindArray, CoordinateSystem, ProcessQueue,g,h))
+        Child = mp.Process(target=fortran_calls.fortrancallMagfield,  args=(Data, DateArray, Model, IOPT, WindArray, CoordinateSystem, ProcessQueue,g,h,
+                                                                            MHDfile, MHDcoordsys))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:

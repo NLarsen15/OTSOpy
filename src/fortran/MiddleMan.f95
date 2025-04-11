@@ -9,7 +9,7 @@
 ! **********************************************************************************************************************
 subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, Rcomputation, scanchoice, &
-    gOTSO, hOTSO, Rigidities)
+    gOTSO, hOTSO, MHDCoordSys, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -19,6 +19,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     USE GEOPACK2
     USE Magnetopause
     USE CUSTOMGAUSS
+    USE Interpolation
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
@@ -28,10 +29,15 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
     integer(4) :: I, Limit, bool, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
     character(len=50) :: FileName
-    character(len=3) :: CoordSystem
+    character(len=3) :: CoordSystem, MHDCoordSys
     real(8) :: gOTSO(105), hOTSO(105)
 
     real(8), intent(out) :: Rigidities(3)
+
+    IF (mode(2) == 99) THEN
+        CoordINMHD = MHDCoordSys
+        CoordOUTMHD = "GSM"
+    END IF
     
     R = real(StartRigidity, kind = selected_real_kind(15,307))
     Re = 6371.2
@@ -144,7 +150,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, " ", "Returned to Earth"
         EXIT
@@ -158,7 +164,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, " ", "Trapped"
         EXIT
@@ -172,14 +178,14 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, " ", "Time Elapsed"
         EXIT
     END IF
     
     IF (Result == 1) THEN
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         forbiddencount = 0
         bool = 1
@@ -325,7 +331,7 @@ end subroutine cutoff
 ! **********************************************************************************************************************
 subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    length, gOTSO, hOTSO, ConeArray, Rigidities)
+    length, gOTSO, hOTSO, MHDCoordSys, ConeArray, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -335,6 +341,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     USE GEOPACK2
     USE Magnetopause
     USE CUSTOMGAUSS
+    USE Interpolation
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityStep, Date(6), End(3)
@@ -343,7 +350,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
     integer(4) :: I, Limit, bool, Pause, stepNum
     character(len=50) :: FileName
-    character(len=3) :: CoordSystem
+    character(len=3) :: CoordSystem, MHDCoordSys
     character(len=100) :: ConeArray(1, length)
     character(len=100) :: temp_array(1, length)
     character(len=100) :: temp_string
@@ -351,6 +358,11 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     real(8) :: gOTSO(105), hOTSO(105)
 
     intent(out) :: ConeArray, Rigidities
+
+    IF (mode(2) == 99) THEN
+        CoordINMHD = MHDCoordSys
+        CoordOUTMHD = "GSM"
+    END IF
     
     R = real(StartRigidity, kind = selected_real_kind(15,307))
     Re = 6371.2
@@ -415,7 +427,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, lat, Long, "Forbidden", "      Encountered Earth" !(Prints the outputs to the command module while running (Can lead to delays with multi-core proccessing))
         EXIT
@@ -429,7 +441,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, lat, Long, "Forbidden",  "      Exceeded Travel Distance Without Escape" !(Prints the outputs to the command module while running (Can lead to delays with multi-core proccessing))
         EXIT
@@ -443,14 +455,14 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, lat, Long, "Forbidden",  "      Maximum Time Exceeded" !(Prints the outputs to the command module while running (Can lead to delays with multi-core proccessing))
         EXIT
     END IF
     
     IF (Result == 1) THEN
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         forbiddencount = 0
         bool = 1
@@ -506,7 +518,7 @@ end subroutine cone
 ! **********************************************************************************************************************
 subroutine trajectory(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    gOTSO, hOTSO, bool, Lat, Long)
+    gOTSO, hOTSO,MHDCoordSys, bool, Lat, Long)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -516,6 +528,7 @@ USE MagnetopauseFunctions
 USE IntegrationFunctions
 USE Magnetopause
 USE CUSTOMGAUSS
+USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
@@ -524,11 +537,16 @@ real(8) :: Xnew(3), XnewConverted(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
 character(len=50) :: FileName
-character(len=3) :: CoordSystem
+character(len=3) :: CoordSystem, MHDCoordSys
 
 real(8), intent(out) :: Lat, Long
 integer(4), intent(out) :: bool
 real(8) :: gOTSO(105), hOTSO(105)
+
+IF (mode(2) == 99) THEN
+    CoordINMHD = MHDCoordSys
+    CoordOUTMHD = "GSM"
+END IF
 
 
 Re = 6371.2
@@ -598,7 +616,7 @@ end if
 
 IF (Position(1) < End(1) ) THEN
     !print *, "This is Forbidden", "      Encountered Earth"
-    call AsymptoticDirection(Lat, Long)
+    call AsymptoticDirection(Lat, Long, CoordSystem)
     bool = -1
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
@@ -613,7 +631,7 @@ IF (End(2) == 0) THEN
 ELSE IF ( DistanceTraveled/1000.0 > End(2)*Re) THEN
     !print *, "This is Forbidden", "      Exceeded Travel Distance Without Escape"
     !print *, DistanceTraveled
-    call AsymptoticDirection(Lat, Long)
+    call AsymptoticDirection(Lat, Long, CoordSystem)
     bool = 0
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
@@ -628,7 +646,7 @@ IF (End(3) == 0) THEN
 ELSE IF ( TimeElapsed > End(3)) THEN
     !print *, "This is Forbidden", "      Exceeded Maximum Time"
     !print *, TimeElapsed
-    call AsymptoticDirection(Lat, Long)
+    call AsymptoticDirection(Lat, Long, CoordSystem)
     bool = 0
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
@@ -641,7 +659,7 @@ END IF
 
 IF (Result == 1)  THEN
     !print *, "This is Allowed", "      Successfully Escaped"
-    call AsymptoticDirection(Lat, Long)
+    call AsymptoticDirection(Lat, Long, CoordSystem)
     bool = 1
     !print *, "Escape Position (Altitude [km], Latitude, Longitude)"
     !print *, Position
@@ -668,7 +686,7 @@ end subroutine trajectory
 !
 ! **********************************************************************************************************************
 subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti, I, Wind, Pause, &
-     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO, Rigidities)
+     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -678,6 +696,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     USE GEOPACK2
     USE Magnetopause
     USE CUSTOMGAUSS
+    USE Interpolation
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
@@ -687,10 +706,15 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber,EndLoop
     integer(4) :: I, Limit, bool, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
     character(len=50) :: FileName
-    character(len=3) :: CoordSystem
+    character(len=3) :: CoordSystem, MHDCoordSys
     real(8) :: gOTSO(105), hOTSO(105)
 
     real(8), intent(out) :: Rigidities(3)
+
+    IF (mode(2) == 99) THEN
+        CoordINMHD = MHDCoordSys
+        CoordOUTMHD = "GSM"
+    END IF
     
 
     R = real(Rigidity(1), kind = selected_real_kind(15,307))
@@ -803,7 +827,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, " ", "Returned to Earth"
         EXIT
@@ -817,7 +841,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, " ", "Trapped"
         EXIT
@@ -831,14 +855,14 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         !print *, R, " ", "Time Elapsed"
         EXIT
     END IF
     
     IF (Result == 1) THEN
-        call AsymptoticDirection(Lat, Long)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         forbiddencount = 0
         bool = 1
@@ -983,7 +1007,7 @@ end subroutine planet
 ! **********************************************************************************************************************
 subroutine trajectory_full(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, &
-    End, gOTSO, hOTSO)
+    End, gOTSO, hOTSO, MHDCoordSys)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -993,6 +1017,7 @@ USE MagnetopauseFunctions
 USE IntegrationFunctions
 USE Magnetopause
 USE CUSTOMGAUSS
+USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
@@ -1001,7 +1026,7 @@ real(8) :: Xnew(3), XnewConverted(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
 character(len=50) :: FileName
-character(len=3) :: CoordSystem
+character(len=3) :: CoordSystem, MHDCoordSys
 real(8) :: gOTSO(105), hOTSO(105)
 
 Re = 6371.2
@@ -1015,6 +1040,11 @@ if (mode(1) == 4) then
 Ginput = gOTSO
 Hinput = hOTSO
 end if
+
+IF (mode(2) == 99) THEN
+    CoordINMHD = MHDCoordSys
+    CoordOUTMHD = "GSM"
+END IF
 
 IF (PositionIN(4) > 90.0) THEN
     print *, "ERROR: Please enter a zenith angle between 0 and 90 degrees"
@@ -1067,7 +1097,7 @@ write(10,'(*(G0.6,:,","))') XnewConverted/Re
 
 IF (Position(1) < End(1) ) THEN
     !print *, "This is Forbidden", "      Encountered Earth"
-    call AsymptoticDirection(Lat, Long)
+    call AsymptoticDirection(Lat, Long, CoordSystem)
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -1081,7 +1111,7 @@ IF (End(2) == 0) THEN
 ELSE IF ( DistanceTraveled/1000.0 > End(2)*Re) THEN
     !print *, "This is Forbidden", "      Exceeded Travel Distance Without Escape"
     !print *, DistanceTraveled
-    call AsymptoticDirection(Lat, Long)
+    call AsymptoticDirection(Lat, Long, CoordSystem)
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -1095,7 +1125,7 @@ IF (End(3) == 0) THEN
 ELSE IF ( TimeElapsed > End(3)) THEN
     !print *, "This is Forbidden", "      Exceeded Maximum Time"
     !print *, TimeElapsed
-    call AsymptoticDirection(Lat, Long)
+    call AsymptoticDirection(Lat, Long, CoordSystem)
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -1107,7 +1137,7 @@ END IF
 
 IF (Result == 1)  THEN
     !print *, "This is Allowed", "      Successfully Escaped"
-    call AsymptoticDirection(Lat, Long)
+    call AsymptoticDirection(Lat, Long, CoordSystem)
     !print *, "Escape Position (Altitude [km], Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -1167,7 +1197,7 @@ subroutine GETTSY04DATAWINDOWS(OMNIYEAR, length)
 !            magnetosphere. Output is in GSM coordinates.
 !
 ! **********************************************************************************************************************
-subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN, gOTSO, hOTSO, Bfield)
+subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOTSO, Bfield)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -1175,15 +1205,21 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN, gOTSO, hOTSO, Bfield)
     USE GEOPACK1
     USE GEOPACK2
     USE CUSTOMGAUSS
+    USE Interpolation
     implicit none
     
     real(8) :: Pin(3), Pout(3), Wind(17), Date(6)
-    character(len = 3) :: CoordIN
+    character(len = 3) :: CoordIN, MHDCoordSys
     integer(4) :: I
     integer(8) :: mode(2)
     real(8) :: gOTSO(105), hOTSO(105)
 
     real(8), intent(out) :: Bfield(3) 
+
+    IF (mode(2) == 99) THEN
+        CoordINMHD = MHDCoordSys
+        CoordOUTMHD = "GSM"
+    END IF
 
     if (mode(1) == 4) then
        Ginput = gOTSO
@@ -1243,7 +1279,7 @@ subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, Coor
 ! **********************************************************************************************************************
 subroutine FieldTrace(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, CoordSystem, GyroPercent, &
-    End, FileName, gOTSO,hOTSO)
+    End, FileName, gOTSO,hOTSO,MHDCoordSys)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -1253,6 +1289,7 @@ USE MagnetopauseFunctions
 USE IntegrationFunctions
 USE Magnetopause
 USE CUSTOMGAUSS
+USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
@@ -1260,7 +1297,7 @@ real(8) :: Wind(17), Re, GyroPercent, Pin(3), Pout(3)
 real(8) :: Xnew(3), XnewConverted(3), Bfield(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
-character(len=3) :: CoordSystem
+character(len=3) :: CoordSystem, MHDCoordSys
 character(len=50) :: FileName
 real(8) :: gOTSO(105), hOTSO(105)
 
@@ -1275,6 +1312,11 @@ if (mode(1) == 4) then
    Ginput = gOTSO
    Hinput = hOTSO
 end if
+
+IF (mode(2) == 99) THEN
+    CoordINMHD = MHDCoordSys
+    CoordOUTMHD = "GSM"
+END IF
 
 call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode)
 
@@ -1341,3 +1383,18 @@ end do
 Close(10, STATUS='KEEP') 
 
 end subroutine FieldTrace
+
+
+subroutine MHDstartup(Filename)
+USE Interpolation
+implicit none
+
+character(len=200) :: Filename
+character(len=:), allocatable :: trimmed_filename
+
+trimmed_filename = TRIM(Filename)
+
+call InitializeMHD(trimmed_filename)
+
+end subroutine MHDstartup
+

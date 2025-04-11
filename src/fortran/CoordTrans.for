@@ -2767,3 +2767,47 @@ c
         end
 
 
+        SUBROUTINE coord_trans_vec1(ntime,sysaxesIN,sysaxesOUT,
+     &   iyear,idoy,secs,xINV,xOUTV)
+
+      IMPLICIT NONE
+
+      INTEGER*4 nmax,i,ntime, sysaxesIN, sysaxesOUT
+      INTEGER*4 ::NTIME_MAX = 100000
+      INTEGER*4 iyear(ntime_max),idoy(ntime_max),y,d
+      REAL*8 secs(ntime_max),xINV(3,ntime_max),xOUTV(3,ntime_max)
+      REAL*8 :: baddata
+      ! local vars
+      REAL*8 xIN(3),xOUT(3),s
+
+      baddata=-1.d31
+
+      ! Loop over the number of points specified, calling
+      !  coord_trans1 each iteration
+      DO i = 1,ntime
+         y = iyear(i)
+         d = idoy(i)
+         s = secs(i)
+
+        if (xINV(1,i) .eq. baddata .and. xINV(2,i) .eq. baddata
+     &  .and. xINV(3,i) .eq.baddata) then
+           xOUTV(1,i) = baddata
+           xOUTV(2,i) = baddata
+           xOUTV(3,i) = baddata
+           goto 10
+        endif
+       xIN(1) = xINV(1,i) ! copy each array element into 3x1 array
+       xIN(2) = xINV(2,i)
+         xIN(3) = xINV(3,i)
+
+         call coord_trans1( sysaxesIN,sysaxesOUT,y,d,s,xIN,xOUT)
+
+       xOUTV(1,i) = xOUT(1)  ! copy back to 3xN array to pass back
+       xOUTV(2,i) = xOUT(2)
+         xOUTV(3,i) = xOUT(3)
+
+10      continue
+      ENDDO
+
+      END
+

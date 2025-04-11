@@ -29,3 +29,7 @@ def coordtrans(*args, **kwargs):
 def trace(*args, **kwargs):
     from .Trace import trace as trace_func
     return trace_func(*args, **kwargs)
+
+def setup(*args, **kwargs):
+    from .OTSO import setup as setup_func
+    return setup_func(*args, **kwargs)

@@ -12,14 +12,14 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
-           coordsystem,gyropercent,magnetopause,corenum,g,h):
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys):
 
     ConeInputArray = cone_inputs.ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
-           coordsystem,gyropercent,magnetopause,corenum,g,h)
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys)
 
     RigidityArray = ConeInputArray[0]
     DateArray = ConeInputArray[1]
@@ -64,7 +64,8 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
 # Create a shared message queue for the processes to produce/consume data
     ProcessQueue = mp.Manager().Queue()
     for Data,Core in zip(Positionlists,CoreList):
-        Child = mp.Process(target=fortran_calls.fortrancallCone,  args=(Data, Core, RigidityArray, DateArray, Model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, ProcessQueue,g,h))
+        Child = mp.Process(target=fortran_calls.fortrancallCone,  args=(Data, Core, RigidityArray, DateArray, Model, IntModel, ParticleArray, IOPT, WindArray, 
+                                                                        Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, ProcessQueue,g,h,MHDfile, MHDcoordsys))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:
