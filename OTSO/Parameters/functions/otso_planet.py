@@ -16,7 +16,9 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h):
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,
+           array_of_lats_and_longs=None,
+           grid_params_user_set=False):
     gc.enable()
 
     Anum = 1
@@ -26,64 +28,87 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h)
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,
+           array_of_lats_and_longs=array_of_lats_and_longs,
+           grid_params_user_set=grid_params_user_set)
 
-    LongitudeList = PlanetInputArray[0]
-    LatitudeList = PlanetInputArray[1]
-    RigidityArray = PlanetInputArray[2]
-    DateArray = PlanetInputArray[3]
-    Model = PlanetInputArray[4]
-    IntModel = PlanetInputArray[5]
-    ParticleArray = PlanetInputArray[6]
-    IOPT = PlanetInputArray[7]
-    WindArray = PlanetInputArray[8]
-    Magnetopause = PlanetInputArray[9]
-    MaxStepPercent = PlanetInputArray[10]/100
-    EndParams = PlanetInputArray[11]
-    Rcomp = PlanetInputArray[12]
-    Rscan = PlanetInputArray[13]
-    Zenith = PlanetInputArray[14]
-    Azimuth = PlanetInputArray[15]
-    CoreNum = PlanetInputArray[16]
-    asymptotic = PlanetInputArray[17]
-    asymlevels = PlanetInputArray[18]
-    Alt = PlanetInputArray[19]
-    LiveData = PlanetInputArray[20]
-    AntiCheck = PlanetInputArray[21]
-    g = PlanetInputArray[22]
-    h = PlanetInputArray[23]
+    combined_coordinates = PlanetInputArray[0]
+    RigidityArray = PlanetInputArray[1]
+    DateArray = PlanetInputArray[2]
+    Model = PlanetInputArray[3]
+    IntModel = PlanetInputArray[4]
+    ParticleArray = PlanetInputArray[5]
+    IOPT = PlanetInputArray[6]
+    WindArray = PlanetInputArray[7]
+    Magnetopause = PlanetInputArray[8]
+    MaxStepPercent = PlanetInputArray[9]/100
+    EndParams = PlanetInputArray[10]
+    Rcomp = PlanetInputArray[11]
+    Rscan = PlanetInputArray[12]
+    Zenith = PlanetInputArray[13]
+    Azimuth = PlanetInputArray[14]
+    CoreNum = PlanetInputArray[15]
+    asymptotic = PlanetInputArray[16]
+    asymlevels = PlanetInputArray[17]
+    Alt = PlanetInputArray[18]
+    LiveData = PlanetInputArray[19]
+    AntiCheck = PlanetInputArray[20]
+    g = PlanetInputArray[21]
+    h = PlanetInputArray[22]
 
     del(PlanetInputArray)
 
     ChildProcesses = []
 
-    totalprocesses = len(LongitudeList)*len(LatitudeList)
-
-    combined_coordinates = [(lat, lon) for lat in LatitudeList for lon in LongitudeList]
+    totalprocesses = len(combined_coordinates)
 
     NewCoreNum = misc.CheckCoreNumPlanet(CoreNum)
     FileNamesPlanet = []
 
-    combined_coordinates = [(lat, lon) for lat in LatitudeList for lon in LongitudeList]
-    for list in combined_coordinates:
-        FileNamesPlanet.append(str(list[0]) + "_" + str(list[1]))
+    # Generate filenames based on the coordinate pairs
+    for coord_pair in combined_coordinates:
+        # Ensure formatting is consistent, handle potential floats
+        FileNamesPlanet.append(f"{coord_pair[0]:.8f}_{coord_pair[1]:.8f}".replace(".", "dot")) # Using more precision and replacing dots
+    
     DataPlanet = []
     i = 1
-    for point,name in zip(combined_coordinates, FileNamesPlanet):
+    # Populate DataPlanet directly from combined_coordinates
+    for point, name in zip(combined_coordinates, FileNamesPlanet):
         Core = "Core " + str(i)
-        DataPlanet.append([name,point[0],point[1],Alt,Zenith,Azimuth,Core])
+        # point[0] is latitude, point[1] is longitude
+        DataPlanet.append([name, point[0], point[1], Alt, Zenith, Azimuth, Core]) 
         i = i + 1
+
+    # --- Fix Start: Cap cores and handle empty input --- 
+    if totalprocesses == 0:
+        print("\nWarning: No coordinate pairs provided or generated. Skipping planet computation.")
+        # Need to decide what to return. An empty DataFrame and a basic README?
+        EventDate = datetime(year,month,day,hour,minute,second)
+        readme = readme_generators.READMEPlanet(None, RigidityArray, EventDate, Model, IntModel, 
+                                        AntiCheck, IOPT, WindArray, Magnetopause, 0,
+                                        maxlat,maxlong,minlat,minlong, latstep, longstep,
+                                        MaxStepPercent*100, EndParams, cutoff_comp, Rscan, 
+                                        LiveData, asymptotic, asymlevels, unit, serverdata, kp,
+                                        custom_coords_provided=(array_of_lats_and_longs is not None)) # Added flag back temporarily
+        return [pd.DataFrame(), readme] # Return empty dataframe and readme
+        
+    # Ensure the number of processes doesn't exceed the number of points
+    actual_cores_to_use = min(NewCoreNum, totalprocesses)
+    # --- Fix End --- 
 
     shuffled_list = DataPlanet.copy()
     random.shuffle(shuffled_list)
-    DataLists = np.array_split(shuffled_list, CoreNum)
+    # Use actual_cores_to_use for splitting
+    DataLists = np.array_split(shuffled_list, actual_cores_to_use) 
 
-    CoreList = np.arange(1, CoreNum + 1)
+    # Adjust core list generation based on actual_cores_to_use
+    CoreList = np.arange(1, actual_cores_to_use + 1) 
     start = time.time()
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
-    planet_list = [os.path.join(current_dir, f"Planet{i}.csv") for i in range(1, (CoreNum) + 1)]
+    # Adjust planet file list based on actual_cores_to_use
+    planet_list = [os.path.join(current_dir, f"Planet{i}.csv") for i in range(1, actual_cores_to_use + 1)] 
     ProcessQueue = mp.Manager().Queue()
 
     results = []
@@ -97,11 +122,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
         if not mp.get_start_method(allow_none=True):
             mp.set_start_method('spawn')
     except RuntimeError:
-
         pass
 
-    i = 0
-    
     ChildProcesses = []
     for Data, Core, planetfile in zip(DataLists, CoreList, planet_list):
             Child = mp.Process(target=fortran_calls.fortrancallPlanet,  args=(Data, RigidityArray, DateArray, Model, IntModel, 
@@ -130,14 +152,14 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
             
             gc.collect()
             percent_complete = (totalp / totalprocesses) * 100
-            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+            sys.stdout.write(f"\r{percent_complete:.2f}% complete ({processed}/{totalprocesses} points)")
             sys.stdout.flush()
 
     
         except queue.Empty:
             pass
         
-        time.sleep(2)
+        time.sleep(1)
 
     for b in ChildProcesses:
         b.join()
@@ -148,17 +170,44 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     ChildProcesses.clear()
 
     for x in planet_list:
-        df = pd.read_csv(x, header=0)
-        for col in df.columns[:3]:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-        df = df.dropna(subset=df.columns[:3])
-        resultsfinal.append(df)
-        os.remove(x)
+        try:
+            if os.path.exists(x):
+                df = pd.read_csv(x, header=0)
+                for col in df.columns[:3]:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                df = df.dropna(subset=df.columns[:3])
+                resultsfinal.append(df)
+                os.remove(x)
+            else:
+                print(f"\nWarning: Intermediate file {x} not found.")
+        except pd.errors.EmptyDataError:
+             print(f"\nWarning: Intermediate file {x} was empty.")
+             if os.path.exists(x):
+                 os.remove(x)
+        except Exception as e:
+            print(f"\nError processing file {x}: {e}")
+            if os.path.exists(x):
+                os.remove(x)
      
+    if not resultsfinal:
+        print("\nError: No valid results were collected.")
+        # Return empty DataFrame and a basic README
+        EventDate = datetime(year,month,day,hour,minute,second)
+        # Pass None if DataPlanet is empty, README func needs to handle None
+        readme_context_for_empty = DataPlanet[0] if DataPlanet else None 
+        readme = readme_generators.READMEPlanet(readme_context_for_empty, RigidityArray, EventDate, Model, IntModel, 
+                                        AntiCheck, IOPT, WindArray, Magnetopause, 0,
+                                        maxlat,maxlong,minlat,minlong, latstep, longstep,
+                                        MaxStepPercent*100, EndParams, cutoff_comp, Rscan, 
+                                        LiveData, asymptotic, asymlevels, unit, serverdata, kp,
+                                        custom_coords_provided=(array_of_lats_and_longs is not None))
+        return [pd.DataFrame(), readme]
+
     combined_planet = pd.concat(resultsfinal, ignore_index=True)
     del resultsfinal
     combined_planet['Longitude'] = pd.to_numeric(combined_planet['Longitude'])
     combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'])
+    
     planet = combined_planet.sort_values(by=["Latitude", "Longitude"], ascending=[False, True]).reset_index(drop=True)
    
     print("\nOTSO Planet Computation Complete")
@@ -167,11 +216,23 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     print("Whole Program Took: " + str(Printtime) + " seconds")
     
     EventDate = datetime(year,month,day,hour,minute,second)
-    readme = readme_generators.READMEPlanet(Data, RigidityArray, EventDate, Model, IntModel, 
+    
+    # --- Fix: Use the first element of DataPlanet for README context --- 
+    if not DataPlanet:
+         # This case should ideally be caught earlier, but handle defensively
+         print("\nError: DataPlanet list is empty before final README generation.")
+         readme_context = None 
+    else:
+        readme_context = DataPlanet[0] # Use the first point's data
+    # --- End Fix --- 
+
+    # Pass the representative context to READMEPlanet
+    readme = readme_generators.READMEPlanet(readme_context, RigidityArray, EventDate, Model, IntModel, 
                                             AntiCheck, IOPT, WindArray, Magnetopause, Printtime,
                                             maxlat,maxlong,minlat,minlong, latstep, longstep,
                                             MaxStepPercent*100, EndParams, cutoff_comp, Rscan, 
-                                            LiveData, asymptotic, asymlevels, unit, serverdata, kp)
+                                            LiveData, asymptotic, asymlevels, unit, serverdata, kp,
+                                            custom_coords_provided=(array_of_lats_and_longs is not None))
 
     if LiveData == 1:
         misc.remove_files()
