@@ -91,7 +91,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
-    planet_list = [os.path.join(current_dir, f"Planet{i}.csv") for i in range(1, (CoreNum) + 1)]
+    planet_list = [get_unique_filename(os.path.join(current_dir, f"Planet{i}.csv")) for i in range(1, CoreNum + 1)]
     for planet_file in planet_list:
         with open(planet_file, mode='a', newline='', encoding='utf-8') as file:  # Open in write ('w') mode
             writer = csv.writer(file)
@@ -204,3 +204,13 @@ def combine_planet_files(planet_list):
     combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'], errors='coerce')
     planet = combined_planet.sort_values(by=["Latitude", "Longitude"], ignore_index=True)
     return planet
+
+def get_unique_filename(filepath):
+    """If the file exists, add a numerical suffix to make it unique."""
+    base, ext = os.path.splitext(filepath)
+    counter = 1
+    new_filepath = filepath
+    while os.path.exists(new_filepath):
+        new_filepath = f"{base}_{counter}{ext}"
+        counter += 1
+    return new_filepath
