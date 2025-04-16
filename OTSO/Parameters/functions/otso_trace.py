@@ -15,7 +15,7 @@ def OTSO_trace(startaltitude,Coordsys,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h):
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys):
 
     Anum = 1
     TraceInputArray = trace_inputs.TraceInputs(startaltitude,Coordsys,
@@ -23,7 +23,7 @@ def OTSO_trace(startaltitude,Coordsys,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h)
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys)
 
     LongitudeList = TraceInputArray[0]
     LatitudeList = TraceInputArray[1]
@@ -87,7 +87,7 @@ def OTSO_trace(startaltitude,Coordsys,
             Child = mp.Process(target=fortran_calls.fortrancallTrace,  args=(Data, Rigidity, DateArray, Model, IntModel, 
                                                                               ParticleArray, IOPT, WindArray, 
                                                                               Magnetopause, Coordsys, MaxStepPercent, EndParams,
-                                                                              ProcessQueue,g,h))
+                                                                              ProcessQueue,g,h, MHDfile, MHDcoordsys))
             ChildProcesses.append(Child)
 
     for a in ChildProcesses:

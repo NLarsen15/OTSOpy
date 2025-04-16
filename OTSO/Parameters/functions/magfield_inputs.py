@@ -8,7 +8,7 @@ def MagFieldInputs(Locations,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           coordsystemIN,g,h,corenum):
+           coordsystemIN,g,h,corenum,MHDfile, MHDcoordsys):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -30,7 +30,7 @@ def MagFieldInputs(Locations,
          print("Please enter a valid livedata value: ""ON"" or ""OFF"" ")
          exit()
     
-    if internalmag == "None":
+    if internalmag == "NONE":
          Internal = 0
          if not g or not h: 
             g = [0] * 105
@@ -56,7 +56,7 @@ def MagFieldInputs(Locations,
          elif len(h) != 105:
               print(f"There should be 105 h coefficents in the inputted list, you have enetered {len(h)}")
     else:
-         print("Please enter a valid internalmag model: ""None"",""IGRF"",""Dipole"", or ""Custom Gauss""")
+         print("Please enter a valid internalmag model: ""NONE"",""IGRF"",""Dipole"", or ""Custom Gauss""")
          exit()
       
     if externalmag == "NONE":
@@ -75,6 +75,11 @@ def MagFieldInputs(Locations,
          External = 6
     elif externalmag == "TSY04":
          External = 7
+    elif externalmag == "MHD":
+         External = 99
+         if not os.path.exists(MHDfile):
+            print(f"The file '{MHDfile}' does not exist.")
+            exit()
     else:
          print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
          exit()

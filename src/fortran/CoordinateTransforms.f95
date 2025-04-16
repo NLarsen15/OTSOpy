@@ -64,3 +64,21 @@ subroutine CoordinateTransform(CoordIN, CoordOUT, dateYear, dateDay, dateSec, xI
     call coord_trans1(integers(1), integers(2), dateYear, dateDay, dateSec, xIN, xOUT)
 
 end subroutine CoordinateTransform
+
+
+subroutine CoordinateTransformVec(CoordIN, CoordOUT, dateYear, dateDay, dateSec, xIN, xOUT)
+    implicit none
+
+    integer(8) :: dateYear, dateDay
+    real(8) :: xIN(3), xOUT(3), dateSec
+    character(len = 3) :: CoordIN, CoordOUT
+    integer(4) :: integers(2)
+
+    !f2py intent(in) CoordIN, CoordOUT, dateYear, dateDay, dateSec, xIN
+    !f2py intent(out) xOUT
+
+    call CoordinateValue(CoordIN, CoordOUT, integers)
+
+    call coord_trans_vec1(1,integers(1), integers(2), dateYear, dateDay, dateSec, xIN, xOUT)
+
+end subroutine CoordinateTransformVec

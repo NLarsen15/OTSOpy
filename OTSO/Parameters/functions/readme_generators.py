@@ -30,6 +30,8 @@ def READMECone(UsedStationstemp, RigidityArray, EventDate, model, IntModel, Atom
         "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
     ]
     External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+    if model[1] == 99:
+         External = "MHD file"
 
     PauseModels = [
         "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
@@ -126,6 +128,8 @@ def READMECutoff(UsedStationstemp, RigidityArray, EventDate, model, IntModel, At
         "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
     ]
     External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+    if model[1] == 99:
+         External = "MHD file"
 
     PauseModels = [
         "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
@@ -221,6 +225,8 @@ def READMEFlight(Data, Rigidity, model, IntModel, AntiCheck, IOPT, WindArray, Ma
           "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
       ]
       External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+      if model[1] == 99:
+         External = "MHD file"
   
       PauseModels = [
           "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
@@ -339,6 +345,8 @@ def READMETrajectory(UsedStationstemp, Rigidity, EventDate, model, IntModel, Ato
         "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
     ]
     External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+    if model[1] == 99:
+         External = "MHD file"
 
     PauseModels = [
         "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
@@ -431,6 +439,9 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
           "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
       ]
       External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+      if model[1] == 99:
+         External = "MHD file"
+      
   
       PauseModels = [
           "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
@@ -533,6 +544,8 @@ def READMEMagfield(EventDate, model, IOPT, WindArray, CoordinateSystem, Printtim
         "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
     ]
     External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+    if model[1] == 99:
+         External = "MHD file"
 
     today = date.today()
     result.append(f"\n")
@@ -602,6 +615,8 @@ def READMETrace(Data, EventDate, model, IntModel, AntiCheck, IOPT, WindArray, Ma
           "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
       ]
       External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+      if model[1] == 99:
+         External = "MHD file"
   
       PauseModels = [
           "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",

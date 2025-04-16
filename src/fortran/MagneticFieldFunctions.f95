@@ -209,6 +209,28 @@ end interface
     return
   end function function04
 
+  function functionMHD(x) ! MHD 
+    real(8) :: functionMHD(3), MHDexternal(3), PositionMAG
+    real(8), intent (in) :: x(3)
+  
+    call MHDField(x, MHDexternal)
+    functionMHD = MHDexternal
+  
+    PositionMAG = ((x(1)**2)+(x(2)**2)+(x(3)**2))*(1/2)
+  
+    IF (ISNAN(functionMHD(1))) THEN
+      functionMHD(1) = 0.0
+    END IF
+    IF (ISNAN(functionMHD(2))) THEN
+      functionMHD(2) = 0.0
+    END IF
+    IF (ISNAN(functionMHD(3))) THEN
+      functionMHD(3) = 0.0
+    END IF
+    
+    return
+  end function functionMHD
+
 ! ************************************************************************************************************************************
 ! subroutine MagneticFieldAssign:
 ! Subroutine that assigns the functions for specific magnetic field models to an internal and external pointer. To be used within
@@ -257,6 +279,8 @@ end interface
     ExternalMagPointer => function01S  ! TSYGANENKO 01 STORM
   ELSE IF (mode(2) == 7) THEN
     ExternalMagPointer => function04  ! TSYGANENKO 04
+  ELSE IF (mode(2) == 99) THEN
+    ExternalMagPointer => functionMHD  ! MHD
   ELSE
     print *, "Please enter valid external magnetic field model"
   END IF
