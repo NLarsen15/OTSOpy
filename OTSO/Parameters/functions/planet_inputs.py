@@ -3,6 +3,7 @@ from datetime import datetime,timedelta
 import os
 from . import date, solar_wind, stations
 from . import misc, Request, Server
+import warnings # Import warnings
 
 def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -10,7 +11,9 @@ def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum,azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile, MHDcoordsys):
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile, MHDcoordsys,
+           array_of_lats_and_longs=None,
+           grid_params_user_set=False): # Add flag
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -190,16 +193,74 @@ def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
     EndParams = [minaltitude,maxdistance,maxtime]
 
-    if latstep > 0:
-         latstep = -1*latstep
-
-    LatitudeList = np.arange(maxlat,minlat + latstep,latstep)
-    LongitudeList = np.arange(minlong,maxlong + longstep,longstep)
-
     ParticleArray = [Anum,AntiCheck]
 
     misc.ParamCheck(startaltitude,year,Internal,EndParams)
 
-    PlanetInputArray = [LongitudeList,LatitudeList,RigidityArray,DateArray,MagFieldModel,IntModel,ParticleArray,IOPTinput,WindArray,Magnetopause,gyropercent,EndParams, CutoffComputation, Rscan, Zenith, Azimuth, corenum, asymptotic, asymlevels, startaltitude, LiveData, AntiCheck, g, h]
+    # --- Start: Coordinate Generation Logic --- 
+    coordinate_pairs = []
+    LatitudeList_meta = [] # For metadata/README
+    LongitudeList_meta = [] # For metadata/README
+
+    # Check and handle coordinate input
+    if array_of_lats_and_longs is not None:
+        try:
+            coord_array = np.array(array_of_lats_and_longs)
+            if coord_array.ndim != 2 or coord_array.shape[1] != 2:
+                raise ValueError("array_of_lats_and_longs must be a list of pairs or a Nx2 array.")
+            if not np.issubdtype(coord_array.dtype, np.number):
+                 raise ValueError("Coordinates in array_of_lats_and_longs must be numeric.")
+            coordinate_pairs = coord_array.tolist()
+        except Exception as e:
+            raise ValueError(f"Error processing array_of_lats_and_longs: {e}")
+
+        if not coordinate_pairs:
+             raise ValueError("Provided array_of_lats_and_longs is empty.")
+
+        lats = coord_array[:, 0]
+        lons = coord_array[:, 1]
+        LatitudeList_meta = sorted(np.unique(lats), reverse=True)
+        LongitudeList_meta = sorted(np.unique(lons))
+
+        # --- Conditional Warning --- 
+        # Only warn if grid params were explicitly set by the user
+        if grid_params_user_set:
+        # if latstep is not None or longstep is not None or maxlat is not None or minlat is not None or maxlong is not None or minlong is not None: # Old check
+            warnings.warn("Both array_of_lats_and_longs and step/range parameters were provided. The array_of_lats_and_longs will be used.", UserWarning)
+        # --- End Conditional Warning ---
+    else:
+        # Generate grid using step/range parameters (which now have defaults)
+        # Remove the check for missing parameters, as they have defaults now.
+        # required_params = [latstep, longstep, maxlat, minlat, maxlong, minlong]
+        # if any(p is None for p in required_params):
+        #      raise ValueError("Missing latitude/longitude step or range parameters when array_of_lats_and_longs is not provided.")
+        
+        # Keep the check for zero step
+        if latstep == 0 or longstep == 0:
+            raise ValueError("latstep and longstep must be non-zero for grid generation.")
+
+        if latstep > 0:
+             warnings.warn("latstep is positive. Latitude generation usually expects a negative step to go from maxlat down to minlat. Proceeding, but check your parameters.", UserWarning)
+
+        lat_start, lat_end = (maxlat, minlat) if latstep < 0 else (minlat, maxlat)
+        lon_start, lon_end = (minlong, maxlong)
+
+        epsilon_lat = abs(latstep / 1000.0)
+        epsilon_lon = abs(longstep / 1000.0)
+        
+        _LatitudeList_np = np.arange(lat_start, lat_end + (np.sign(latstep) * epsilon_lat), latstep)
+        _LongitudeList_np = np.arange(lon_start, lon_end + epsilon_lon, longstep)
+
+        if _LatitudeList_np.size == 0:
+            raise ValueError(f"Generated LatitudeList is empty. Check maxlat ({maxlat}), minlat ({minlat}), and latstep ({latstep}).")
+        if _LongitudeList_np.size == 0:
+            raise ValueError(f"Generated LongitudeList is empty. Check maxlong ({maxlong}), minlong ({minlong}), and longstep ({longstep}).")
+
+        LatitudeList_meta = _LatitudeList_np.tolist()
+        LongitudeList_meta = _LongitudeList_np.tolist()
+        coordinate_pairs = [[lat, lon] for lat in LatitudeList_meta for lon in LongitudeList_meta]
+    # --- End: Coordinate Generation Logic --- 
+
+    PlanetInputArray = [coordinate_pairs, RigidityArray, DateArray, MagFieldModel, IntModel, ParticleArray, IOPTinput, WindArray, Magnetopause, gyropercent, EndParams, CutoffComputation, Rscan, Zenith, Azimuth, corenum, asymptotic, asymlevels, startaltitude, LiveData, AntiCheck, g, h, LatitudeList_meta, LongitudeList_meta]
 
     return PlanetInputArray

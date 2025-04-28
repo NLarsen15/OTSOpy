@@ -1,4 +1,3 @@
-
 from datetime import date
 import os
 import shutil
@@ -407,7 +406,7 @@ def READMETrajectory(UsedStationstemp, Rigidity, EventDate, model, IntModel, Ato
 
     return "".join(result)
 
-def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, WindArray, Magnetopause, Printtime,maxlat,maxlong,minlat,minlong,LatStep, LongStep, MaxStepPercent, EndParams, Rcomp, Rscan, LiveData, asymptotic, asymlevels, unit, serverdata, kp):
+def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, WindArray, Magnetopause, Printtime,maxlat,maxlong,minlat,minlong,LatStep, LongStep, MaxStepPercent, EndParams, Rcomp, Rscan, LiveData, asymptotic, asymlevels, unit, serverdata, kp, custom_coords_provided=False):
       result = []
 
       pressure = misc.Pdyn_comp(WindArray[5],abs(WindArray[0]))
@@ -465,9 +464,16 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
       result.append(f"Minimum Altitude: {EndParams[0]}km\n")
       result.append(f"Max Distance: {EndParams[1]}Re\n")
       result.append(f"Max Time: {EndParams[2]}s\n\n")
-      result.append(f"Start Altitude = {Data[0][3]}km \n")
-      result.append(f"Zenith = {Data[0][4]}\n")
-      result.append(f"Azimuth = {Data[0][5]}\n\n")
+      
+      if Data and len(Data[0]) > 5:
+          result.append(f"Start Altitude = {Data[0][3]}km \n")
+          result.append(f"Zenith = {Data[0][4]}\n")
+          result.append(f"Azimuth = {Data[0][5]}\n\n")
+      else:
+          result.append(f"Start Altitude = Not Available\n")
+          result.append(f"Zenith = Not Available\n")
+          result.append(f"Azimuth = Not Available\n\n")
+
       result.append(f"Kp = {kp}\n")
       result.append(f"IOPT = {IOPT}\n\n")
       result.append(f"Solar Wind Speed [km/s]:\n")
@@ -498,12 +504,19 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
       result.append(f"Start = {Rigidity[0]} [GV]\n")
       result.append(f"End = {Rigidity[1]} [GV]\n")
       result.append(f"Step = {Rigidity[2]} [GV]\n\n")
-      result.append("Max and Min Latitude and Longitude:"+ "\n")
-      result.append("Latitude: Max = " + str(maxlat) + " Min = " + str(minlat) + "\n")
-      result.append("Longitude: Max = " + str(maxlong) + " Min = " + str(minlong) + "\n\n")
-      result.append("Latitude and Longitude Steps:"+ "\n")
-      result.append("Latitude = " + str(abs(LatStep)) + " degree steps" + "\n")
-      result.append("Longitude = " + str(abs(LongStep)) + " degree steps" + "\n\n")
+
+      if custom_coords_provided:
+          result.append("Coordinate Input: Custom list of (Latitude, Longitude) pairs provided.\n\n")
+      else:
+          result.append("Max and Min Latitude and Longitude:"+ "\n")
+          result.append("Latitude: Max = " + str(maxlat) + " Min = " + str(minlat) + "\n")
+          result.append("Longitude: Max = " + str(maxlong) + " Min = " + str(minlong) + "\n\n")
+          result.append("Latitude and Longitude Steps:"+ "\n")
+          lat_step_str = str(abs(LatStep)) if LatStep is not None else "N/A"
+          long_step_str = str(abs(LongStep)) if LongStep is not None else "N/A"
+          result.append("Latitude = " + lat_step_str + " degree steps" + "\n")
+          result.append("Longitude = " + long_step_str + " degree steps" + "\n\n")
+      
       if asymptotic == "YES":
          result.append("Asymptotic Directions: " + str(asymptotic) + " \n")
          result.append("Asymptotic Levels: " + str(asymlevels) + " \n")
