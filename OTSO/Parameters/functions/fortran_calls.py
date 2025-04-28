@@ -45,8 +45,6 @@ EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys):
       FileName = NMname + ".csv"
       Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause,
                                    FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys)
-
-      print(Rigidities)
       
       Rigiditydataframe = pd.DataFrame({Station: Rigidities}, index=['Ru', 'Rc', 'Rl'])
       queue.put(Rigiditydataframe)
