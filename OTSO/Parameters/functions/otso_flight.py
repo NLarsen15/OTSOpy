@@ -54,7 +54,7 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
 
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    flight_list = [os.path.join(current_dir, f"Planet{i}.csv") for i in range(1, (corenum) + 1)]
+    flight_list = [os.path.join(current_dir, f"Flight{i}.csv") for i in range(1, (corenum) + 1)]
     
     print("OTSO Flight Computation Started")
     start = time.time()
@@ -112,10 +112,7 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
         b.close()
 
     for x in flight_list:
-        df = pd.read_csv(x, header=0)
-        for col in df.columns[:3]:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-        df = df.dropna(subset=df.columns[:3])
+        df = pd.read_csv(x)
         resultsfinal.append(df)
         os.remove(x)
 

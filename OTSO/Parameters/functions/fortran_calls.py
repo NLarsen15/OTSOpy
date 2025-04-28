@@ -45,6 +45,7 @@ EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys):
       FileName = NMname + ".csv"
       Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause,
                                    FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys)
+
       
       Rigiditydataframe = pd.DataFrame({Station: Rigidities}, index=['Ru', 'Rc', 'Rl'])
       queue.put(Rigiditydataframe)
@@ -195,7 +196,9 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
                       MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, 
                       CoordinateSystem, FlightFile, MHDfile, MHDCoordSys):
   with open(FlightFile, mode='a', newline='', encoding='utf-8') as file:
+    headers = ["Date","Latitude", "Longitude","Altitude", "Rl", "Rc", "Ru"]
     writer = csv.writer(file)
+    writer.writerow(headers)
 
     if model[1] == 99:
       MHDinit.MHDinitialise(MHDfile)
