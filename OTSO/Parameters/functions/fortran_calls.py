@@ -329,8 +329,8 @@ def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue):
 def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, 
                      CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys):
     
-  if Model[1] == 99:
-    MHDinit.MHDinitialise(MHDfile)
+    if model[1] == 99:
+      MHDinit.MHDinitialise(MHDfile)
     
     for x in Data:
       
@@ -343,12 +343,9 @@ def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, 
       name = f"{x[1]}_{x[2]}"
 
       OTSOLib.fieldtrace(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, Filename, g, h, MHDCoordSys)
-
       Trace = pd.read_csv(Filename)
       coordsystem2 = "GSM"
       columns = Trace.columns
-
-
 
       new_columns = [f"{col}_{CoordinateSystem} [Re]" if i < 3 else f"{col}_{coordsystem2} [nT]" for i, col in enumerate(columns)]
       if CoordinateSystem == "GDZ" or CoordinateSystem == "SPH":
