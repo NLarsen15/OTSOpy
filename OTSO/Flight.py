@@ -8,9 +8,23 @@ def flight(latitudes, longitudes, dates,altitudes,cutoff_comp="Vertical",minalti
     from .Parameters.functions import otso_flight
        
     arguments = locals()
+
+    default_values = {
+        "vx": -500, "vy": 0, "vz": 0, "by": 5.0, "bz": 5.0, "density": 1, "pdyn": 0, "Dst": 0,
+        "G1": 0.00, "G2": 0.00, "G3": 0.00, "W1": 0, "W2": 0, "W3": 0, "W4": 0, "W5": 0, "W6": 0, "kp": 0
+    }
+
     for arg in arguments:
          if arguments[arg] is None:
              arguments[arg] = []
+
+
+    if serverdata != "ON" and livedata != "ON":
+        for var_name, default_value in default_values.items():
+            if arguments[var_name] is None or not arguments[var_name]:  # If None or empty list
+                arguments[var_name] = [default_value] * len(latitudes)
+
+
     
     flight = otso_flight.OTSO_flight(latitudes, longitudes, dates, altitudes, cutoff_comp, minaltitude, maxdistance, maxtime,
              serverdata, livedata, arguments["vx"], arguments["vy"], arguments["vz"], arguments["by"], arguments["bz"], 
