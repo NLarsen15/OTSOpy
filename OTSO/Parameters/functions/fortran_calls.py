@@ -285,7 +285,6 @@ def fortrancallMagfield(Data, DateArray, model, IOPT, WindArray, CoordinateSyste
   if model[1] == 99:
     MHDinit.MHDinitialise(MHDfile)
 
-    
   for x in Data:
     Position = x
     
