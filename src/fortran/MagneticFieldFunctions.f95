@@ -214,6 +214,7 @@ end interface
     real(8), intent (in) :: x(3)
   
     call MHDField(x, MHDexternal)
+    
     functionMHD = MHDexternal
   
     PositionMAG = ((x(1)**2)+(x(2)**2)+(x(3)**2))*(1/2)
@@ -250,7 +251,7 @@ end interface
   call RECALC_08(year, day, hour, minute, secondINT, SW(1), SW(2), SW(3))
   
   IF (mode(1) == 0) THEN
-    InternalMagPointer => functionIGRF ! NO INTERNAL FIELD
+    InternalMagPointer => functionNoInt ! NO INTERNAL FIELD
   ELSE IF (mode(1) == 1) THEN
     InternalMagPointer => functionIGRF ! IGRF
   ELSE IF (mode(1) == 2) THEN

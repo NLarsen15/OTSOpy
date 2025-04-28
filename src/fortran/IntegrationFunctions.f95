@@ -15,25 +15,21 @@ end interface
 contains
 
   subroutine function4RK() ! 4th Order Runge-Kutta
-
     call RK4()
     return
   end subroutine function4RK
 
   subroutine functionBoris() ! Boris Method
-
     call Boris()
     return
   end subroutine functionBoris
 
   subroutine functionVay() ! Vay Method
-
     call Vay()
     return
   end subroutine functionVay
 
   subroutine functionHC() ! Higuera-Cary Method
-
     call HC()
     return
   end subroutine functionHC

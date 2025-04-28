@@ -45,6 +45,7 @@ subroutine CoordinateValue(CoordIN, CoordOUT, integers)
         integers(2) = 8
      END IF
 
+
 end subroutine CoordinateValue
 
 

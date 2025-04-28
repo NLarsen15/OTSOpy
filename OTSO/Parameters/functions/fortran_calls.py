@@ -13,6 +13,7 @@ import gc
 import sys
 import psutil
 import tracemalloc
+from . import MHDinit
 
 process = psutil.Process()
 
@@ -21,12 +22,14 @@ WindArray, Magnetopause, CoordinateSystem, MaxStepPercent,
 EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys):
     
     if model[1] == 99:
-       OTSOLib.mhdstartup(MHDfile)
+      MHDinit.MHDinitialise(MHDfile)
 
     for x in Data:
       
       newstart = time.time()
       Position = [x[3],x[1],x[2],x[4],x[5]]
+
+
       Station = x[0]
 
       #print(FileDescriptors)
@@ -43,6 +46,8 @@ EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys):
       Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause,
                                    FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys)
 
+      print(Rigidities)
+      
       Rigiditydataframe = pd.DataFrame({Station: Rigidities}, index=['Ru', 'Rc', 'Rl'])
       queue.put(Rigiditydataframe)
 
@@ -52,7 +57,7 @@ def fortrancallCone(Data, Core, RigidityArray, DateArray, model, IntModel, Parti
                      CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys):
     
     if model[1] == 99:
-       OTSOLib.mhdstartup(MHDfile)
+      MHDinit.MHDinitialise(MHDfile)
     
     for x in Data:
       
@@ -93,7 +98,7 @@ def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
     writer = csv.writer(file)
 
     if model[1] == 99:
-       OTSOLib.mhdstartup(MHDfile)
+      MHDinit.MHDinitialise(MHDfile)
 
     for x in Data:
         
@@ -163,7 +168,7 @@ def fortrancallTrajectory(Data, Core, Rigidity, DateArray, model, IntModel, Part
                           Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys):
   
   if model[1] == 99:
-       OTSOLib.mhdstartup(MHDfile)
+    MHDinit.MHDinitialise(MHDfile)
   
   for x in Data:
     
@@ -195,7 +200,7 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
     writer = csv.writer(file)
 
     if model[1] == 99:
-       OTSOLib.mhdstartup(MHDfile)
+      MHDinit.MHDinitialise(MHDfile)
 
 
     for x,y,z,I in zip(Data,DateArray,WindArray,IOPT):
@@ -274,23 +279,25 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
   return
 
 
-def fortrancallMagfield(Data, DateArray, Model, IOPT, WindArray, CoordinateSystem, queue,g,h,MHDfile, MHDCoordSys):
+def fortrancallMagfield(Data, DateArray, model, IOPT, WindArray, CoordinateSystem, queue,g,h,MHDfile, MHDCoordSys):
     
-    if Model[1] == 99:
-       OTSOLib.mhdstartup(MHDfile)
-    
-    for x in Data:
-      Position = x
-      
-      Bfield = OTSOLib.magstrength(Position, DateArray, Model, IOPT, WindArray, CoordinateSystem, g, h, MHDCoordSys)
-      combined_array = np.concatenate((Position, Bfield))
-      coord_suffix = f"_{CoordinateSystem}"  # Add the coordinate system suffix
-      columns = [f"X{coord_suffix} [Re]", f"Y{coord_suffix} [Re]", f"Z{coord_suffix} [Re]", f"GSM_Bx [nT]", f"GSM_By [nT]", f"GSM_Bz [nT]"]
-      df = pd.DataFrame(columns=columns)
-      df.loc[len(df)] = combined_array
-      queue.put(df)
+  if model[1] == 99:
+    MHDinit.MHDinitialise(MHDfile)
 
-    return
+    
+  for x in Data:
+    Position = x
+    
+    Bfield = OTSOLib.magstrength(Position, DateArray, model, IOPT, WindArray, CoordinateSystem,MHDCoordSys, g, h)
+    Bfield = Bfield*10**9
+    combined_array = np.concatenate((Position, Bfield))
+    coord_suffix = f"_{CoordinateSystem}"  # Add the coordinate system suffix
+    columns = [f"X{coord_suffix} [Re]", f"Y{coord_suffix} [Re]", f"Z{coord_suffix} [Re]", f"GSM_Bx [nT]", f"GSM_By [nT]", f"GSM_Bz [nT]"]
+    df = pd.DataFrame(columns=columns)
+    df.loc[len(df)] = combined_array
+    queue.put(df)
+
+  return
 
 def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue):
     for x,y in zip(Data,DateArray):
@@ -322,8 +329,8 @@ def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue):
 def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, 
                      CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys):
     
-    if model[1] == 99:
-       OTSOLib.mhdstartup(MHDfile)
+  if Model[1] == 99:
+    MHDinit.MHDinitialise(MHDfile)
     
     for x in Data:
       

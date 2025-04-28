@@ -1232,7 +1232,7 @@ C
       D = COS(lati)
       IF (D.LT.1.D-15)THEN
         lati = lati/rad
-        alti = (zz-1.D0)*SQRT(BQUAD)
+        alti = (abs(zz)-1.D0)*SQRT(BQUAD)
       ELSE
         alti = RHO/D - 1.D0
 C

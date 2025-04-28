@@ -37,6 +37,8 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     IF (mode(2) == 99) THEN
         CoordINMHD = MHDCoordSys
         CoordOUTMHD = "GSM"
+        first_region = .false.
+        first_region_check = .true.
     END IF
     
     R = real(StartRigidity, kind = selected_real_kind(15,307))
@@ -65,6 +67,9 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     Rigidity(1) = StartRigidity
     Rigidity(2) = EndRigidity
     Rigidity(3) = RigidityStep
+
+    RU = StartRigidity
+    RL = StartRigidity
 
     RigidityScan = 0.50
     RigidityStep = 0.50
@@ -112,6 +117,10 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     do while (loop <= EndLoop)
    
     100 do while (R > EndRigidity)
+
+    IF (mode(2) == 99) THEN
+        first_region_check = .true.
+    END IF
 
     PositionIN(4) = Zenith(loop)
     PositionIN(5) = Azimuth(loop)
@@ -229,8 +238,8 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
 
     IF (scan == 0) THEN
         scan = 1
-        StartRigidity = RU + 1.5*RigidityScan
-        EndRigidity = RL - 1.5*RigidityScan
+        StartRigidity = RU + 2*RigidityScan
+        EndRigidity = RL - 2*RigidityScan
         IF (EndRigidity < 0) THEN
             EndRigidity = 0
         END IF
@@ -312,6 +321,11 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     Rigidities(2) = Ref
     Rigidities(3) = RL
 
+    IF (mode(2) == 99) THEN
+        first_region = .false.
+        first_region_check = .true.
+    END IF
+
     !write(10,'(*(G0.6,:""))')"Ru:", RU, ",  Rc:", Ref, ",  Rl:", RL 
 
     Close(10, STATUS='KEEP') 
@@ -362,6 +376,8 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     IF (mode(2) == 99) THEN
         CoordINMHD = MHDCoordSys
         CoordOUTMHD = "GSM"
+        first_region = .false.
+        first_region_check = .true.
     END IF
     
     R = real(StartRigidity, kind = selected_real_kind(15,307))
@@ -400,6 +416,10 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     END IF
 
     do while (R > EndRigidity)
+
+    IF (mode(2) == 99) THEN
+        first_region_check = .true.
+    END IF
 
     R = real(R, kind = selected_real_kind(10,307))
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
@@ -546,6 +566,8 @@ real(8) :: gOTSO(105), hOTSO(105)
 IF (mode(2) == 99) THEN
     CoordINMHD = MHDCoordSys
     CoordOUTMHD = "GSM"
+    first_region = .false.
+    first_region_check = .true.
 END IF
 
 
@@ -714,6 +736,8 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     IF (mode(2) == 99) THEN
         CoordINMHD = MHDCoordSys
         CoordOUTMHD = "GSM"
+        first_region = .false.
+        first_region_check = .true.
     END IF
     
 
@@ -787,6 +811,10 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
 
     100 do while (R > EndRigidity)
+
+    IF (mode(2) == 99) THEN
+        first_region_check = .true.
+    END IF
 
 
     PositionIN(4) = Zenith(loop)
@@ -906,8 +934,8 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
     IF (scan == 0) THEN
         scan = 1
-        StartRigidity = RU + 1.5*RigidityScan
-        EndRigidity = RL - 1.5*RigidityScan
+        StartRigidity = RU + 2*RigidityScan
+        EndRigidity = RL - 2*RigidityScan
         IF (EndRigidity < 0) THEN
             EndRigidity = 0
         END IF
@@ -1044,6 +1072,8 @@ end if
 IF (mode(2) == 99) THEN
     CoordINMHD = MHDCoordSys
     CoordOUTMHD = "GSM"
+    first_region = .false.
+    first_region_check = .true.
 END IF
 
 IF (PositionIN(4) > 90.0) THEN
@@ -1219,6 +1249,8 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
     IF (mode(2) == 99) THEN
         CoordINMHD = MHDCoordSys
         CoordOUTMHD = "GSM"
+        first_region = .false.
+        first_region_check = .false.
     END IF
 
     if (mode(1) == 4) then
@@ -1316,6 +1348,7 @@ end if
 IF (mode(2) == 99) THEN
     CoordINMHD = MHDCoordSys
     CoordOUTMHD = "GSM"
+    first_region = .false.
 END IF
 
 call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode)
@@ -1385,16 +1418,118 @@ Close(10, STATUS='KEEP')
 end subroutine FieldTrace
 
 
-subroutine MHDstartup(Filename)
+subroutine MHDstartup(Filename,XU,YU,ZU,XUlen,YUlen,ZUlen)
 USE Interpolation
 implicit none
 
 character(len=200) :: Filename
 character(len=:), allocatable :: trimmed_filename
+integer(4) :: XUlen,YUlen,ZUlen
+real(8) :: XU(XUlen), YU(YUlen), ZU(ZUlen)
 
 trimmed_filename = TRIM(Filename)
 
-call InitializeMHD(trimmed_filename)
+call InitializeMHD(trimmed_filename,XU,YU,ZU,XUlen,YUlen,ZUlen)
 
 end subroutine MHDstartup
+
+subroutine MHDstartupSorted(XU, YU, ZU, MHDposition_in, MHDB_in, nx_split, ny_split, nz_split, &
+                            mix,max,miy,may,miz,maz, &
+                            region_order_in, start_x, end_x, start_y, end_y, start_z, end_z, &
+                            num_regions,XUlen, YUlen, ZUlen)
+
+  use Interpolation
+  implicit none
+
+  ! Inputs
+  integer(4) :: XUlen, YUlen, ZUlen, num_regions
+  real(8) :: XU(XUlen), YU(YUlen), ZU(ZUlen)
+  real(8) :: MHDposition_in(XUlen, YUlen, ZUlen, 3)
+  real(8) :: MHDB_in(XUlen, YUlen, ZUlen, 3)
+  integer(4) :: region_order_in(num_regions)
+  integer(4) :: start_x(num_regions), end_x(num_regions)
+  integer(4) :: start_y(num_regions), end_y(num_regions)
+  integer(4) :: start_z(num_regions), end_z(num_regions)
+  integer :: nx_split,ny_split,nz_split,i,j,dx,dy,dz
+  real :: mix,max,miy,may,miz,maz
+
+  ! Save grid sizes
+  n_x = XUlen
+  n_y = YUlen
+  n_z = ZUlen
+  regions = num_regions
+
+  MinX = mix
+  MaxX = max
+  MinY = miy
+  MaxY = may
+  MinZ = miz
+  MaxZ = maz
+
+  search_range = 2
+  num_combinations = (2 * search_range + 1)**3
+
+allocate(dx_list(num_combinations))
+allocate(dy_list(num_combinations))
+allocate(dz_list(num_combinations))
+allocate(dist2(num_combinations))
+allocate(order(num_combinations))
+
+! Fill the arrays
+idx = 1
+do dx = -search_range, search_range
+    do dy = -search_range, search_range
+        do dz = -search_range, search_range
+            dx_list(idx) = dx
+            dy_list(idx) = dy
+            dz_list(idx) = dz
+            dist2(idx)    = dx*dx + dy*dy + dz*dz
+            idx = idx + 1
+        end do
+    end do
+end do
+
+! Initialize ordering
+order = [(i, i = 1, num_combinations)]
+
+! Sort order array by increasing distance
+do i = 1, num_combinations - 1
+    do j = i + 1, num_combinations
+        if (dist2(order(j)) < dist2(order(i))) then
+            temp = order(i)
+            order(i) = order(j)
+            order(j) = temp
+        end if
+    end do
+end do
+
+  ! Allocate and copy fields
+  allocate(MHDposition(n_x, n_y, n_z, 3))
+  allocate(MHDB(n_x, n_y, n_z, 3))
+  MHDposition = MHDposition_in
+  MHDB = MHDB_in
+
+  ! Store region bounds
+  allocate(start_idx_x_region(regions)); start_idx_x_region = start_x
+  allocate(end_idx_x_region(regions));   end_idx_x_region   = end_x
+  allocate(start_idx_y_region(regions)); start_idx_y_region = start_y
+  allocate(end_idx_y_region(regions));   end_idx_y_region   = end_y
+  allocate(start_idx_z_region(regions)); start_idx_z_region = start_z
+  allocate(end_idx_z_region(regions));   end_idx_z_region   = end_z
+
+  ! Store region processing order
+  allocate(region_order(regions)); region_order = region_order_in
+
+  ! You could optionally compute resolution here too:
+  x_res = abs(XU(2) - XU(1))
+  y_res = abs(YU(2) - YU(1))
+  z_res = abs(ZU(2) - ZU(1))
+
+  n_x_split = nx_split
+  n_y_split = ny_split
+  n_z_split = nz_split
+
+  has_last_region = .false.
+end subroutine MHDstartupSorted
+
 

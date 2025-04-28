@@ -30,6 +30,10 @@ real(8) :: v0MAG, v1MAG, v2MAG, v3MAG, Verr, LOWVerr, Max
 Verr = 0.00001
 LOWVerr = 0.0000001
 
+if (h == 0) then
+    h = 1E-6
+end if
+
 x0(1) = Position(1) !Xx
 x0(2) = Position(2) !Xy
 x0(3) = Position(3) !Xz
@@ -294,6 +298,10 @@ real(8) :: Xnew(3), Vnew(3), XnewGDZ(3), vabs1, vabs2, Max, LOWVerr, Verr, h1
    
 Verr = 0.00001
 LOWVerr = 0.0000001
+
+if (h == 0) then
+    h = 1E-6
+end if
     
 x0(1) = Position(1) !Xx
 x0(2) = Position(2) !Xy
@@ -442,6 +450,10 @@ real(8) :: Fcalc1, Fcalc2(3), Fcalc3(3), Fcalc4(3), Fcalc5(3)
 Verr = 0.00001
 LOWVerr = 0.0000001
     
+if (h == 0) then
+    h = 1E-6
+end if
+
 x0(1) = Position(1) !Xx
 x0(2) = Position(2) !Xy
 x0(3) = Position(3) !Xz
@@ -627,6 +639,10 @@ real(8) :: Fcalc1, Fcalc2(3), Fcalc3(3), Fcalc4(3), Fcalc5(3)
     
 Verr = 0.00001
 LOWVerr = 0.0000001
+
+if (h == 0) then
+    h = 1E-6
+end if
     
 x0(1) = Position(1) !Xx
 x0(2) = Position(2) !Xy
@@ -651,7 +667,7 @@ Vabs1 = (v0(1)*v0(1) + v0(2)*v0(2) + v0(3)*v0(3))**(0.5)
 IF (FinalStep >= 1) THEN
     h = Lasth
 END IF
-    
+
 10 h1 = h*0.5
 
 !Half update position x(n+1/2)
@@ -837,13 +853,17 @@ end subroutine TimeStep
 subroutine FirstTimeStep()
 USE particle
 implicit none
-real(8) :: Bfield(3)
+real(8) :: Bfield(3), Bmag
     
 call MagneticField(Position, Bfield)
 call TimeStep(Bfield)
 
-Firsth = h
+Bmag = ((Bfield(1)**2.0 + Bfield(2)**2.0 + Bfield(3)**2.0))**(0.5)
+if (Bmag == 0) then
+h = 10**(-4)
+end if
 
+Firsth = h
 end subroutine FirstTimeStep
 
 ! ************************************************************************************************************************************
@@ -860,10 +880,16 @@ end subroutine FirstTimeStep
 subroutine NewMax(Max)
 USE Particle
 implicit none
-real(8) :: Max, Bfield(3)
+real(8) :: Max, Bfield(3), Bmag
 
 call MagneticField(Position, Bfield)
 call TimeStepMax(Bfield,Max)
+
+Bmag = ((Bfield(1)**2.0 + Bfield(2)**2.0 + Bfield(3)**2.0))**(0.5)
+if (Bmag == 0) then
+Max = 10**(-4)
+end if
+
 
 end subroutine NewMax
 
