@@ -23,7 +23,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(17), Re, Lat, Long, GyroPercent, EndLoop
+    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, EndLoop
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
@@ -359,7 +359,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(17), Re, Lat, Long, GyroPercent, Rigidities(3)
+    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, Rigidities(3)
     real(8) :: Geofile(3)
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
     integer(4) :: I, Limit, bool, Pause, stepNum
@@ -399,11 +399,6 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     end if
 
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
-
-    IF (PositionIN(4) > 90.0) THEN
-        print *, "ERROR: Please enter a zenith angle between 0 and 90 degrees"
-        stop
-    END IF
     
     IF (PositionIN(5) < 0) THEN
         print *, "ERROR: Please enter an azimuth angle between 0 and 360 degrees"
@@ -552,7 +547,7 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(17), Re, GyroPercent
+real(8) :: Wind(19), Re, GyroPercent
 real(8) :: Xnew(3), XnewConverted(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
@@ -582,11 +577,6 @@ if (mode(1) == 4) then
 Ginput = gOTSO
 Hinput = hOTSO
 end if
-
-IF (PositionIN(4) > 90.0) THEN
-    print *, "ERROR: Please enter a zenith angle between 0 and 90 degrees"
-    stop
-END IF
 
 IF (PositionIN(5) < 0) THEN
     print *, "ERROR: Please enter an azimuth angle between 0 and 360 degrees"
@@ -722,7 +712,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(17), Re, Lat, Long, GyroPercent
+    real(8) :: Wind(19), Re, Lat, Long, GyroPercent
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber,EndLoop
@@ -1049,7 +1039,7 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(17), Re, Lat, Long, GyroPercent
+real(8) :: Wind(19), Re, Lat, Long, GyroPercent
 real(8) :: Xnew(3), XnewConverted(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
@@ -1074,11 +1064,6 @@ IF (mode(2) == 99) THEN
     CoordOUTMHD = "GSM"
     first_region = .false.
     first_region_check = .true.
-END IF
-
-IF (PositionIN(4) > 90.0) THEN
-    print *, "ERROR: Please enter a zenith angle between 0 and 90 degrees"
-    stop
 END IF
 
 IF (PositionIN(5) < 0) THEN
@@ -1238,7 +1223,7 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
     USE Interpolation
     implicit none
     
-    real(8) :: Pin(3), Pout(3), Wind(17), Date(6)
+    real(8) :: Pin(3), Pout(3), Wind(19), Date(6)
     character(len = 3) :: CoordIN, MHDCoordSys
     integer(4) :: I
     integer(8) :: mode(2)
@@ -1325,7 +1310,7 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(17), Re, GyroPercent, Pin(3), Pout(3)
+real(8) :: Wind(19), Re, GyroPercent, Pin(3), Pout(3)
 real(8) :: Xnew(3), XnewConverted(3), Bfield(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause

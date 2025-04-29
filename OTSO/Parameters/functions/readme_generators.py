@@ -27,9 +27,9 @@ def READMECone(UsedStationstemp, RigidityArray, EventDate, model, IntModel, Atom
 
     ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
+        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
     ]
-    External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+    External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
     if model[1] == 99:
          External = "MHD file"
 
@@ -125,9 +125,9 @@ def READMECutoff(UsedStationstemp, RigidityArray, EventDate, model, IntModel, At
 
     ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
+        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
     ]
-    External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+    External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
     if model[1] == 99:
          External = "MHD file"
 
@@ -222,9 +222,9 @@ def READMEFlight(Data, Rigidity, model, IntModel, AntiCheck, IOPT, WindArray, Ma
   
       ExternalModels = [
           "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
+          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
       ]
-      External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+      External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
       if model[1] == 99:
          External = "MHD file"
   
@@ -342,9 +342,9 @@ def READMETrajectory(UsedStationstemp, Rigidity, EventDate, model, IntModel, Ato
 
     ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
+        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
     ]
-    External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+    External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
     if model[1] == 99:
          External = "MHD file"
 
@@ -436,9 +436,9 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
   
       ExternalModels = [
           "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
+          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
       ]
-      External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+      External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
       if model[1] == 99:
          External = "MHD file"
       
@@ -541,9 +541,9 @@ def READMEMagfield(EventDate, model, IOPT, WindArray, CoordinateSystem, Printtim
 
     ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
+        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
     ]
-    External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+    External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
     if model[1] == 99:
          External = "MHD file"
 
@@ -612,9 +612,9 @@ def READMETrace(Data, EventDate, model, IntModel, AntiCheck, IOPT, WindArray, Ma
   
       ExternalModels = [
           "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04"
+          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
       ]
-      External = ExternalModels[model[1]] if 0 <= model[1] <= 7 else "Unknown External Model"
+      External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
       if model[1] == 99:
          External = "MHD file"
   

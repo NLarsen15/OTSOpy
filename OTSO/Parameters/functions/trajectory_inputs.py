@@ -109,15 +109,17 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
          External = 6
     elif externalmag == "TSY04":
          External = 7
+    elif externalmag == "TSY89_BOBERG":
+         External = 8
     elif externalmag == "MHD":
          External = 99
          if not os.path.exists(MHDfile):
             print(f"The file '{MHDfile}' does not exist.")
             exit()
     else:
-         print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
+         print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY89_BOBERG"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
          exit()
-
+         
     if coordsystem not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
          print("Please select a valid coordsystem: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
          exit()
@@ -139,7 +141,7 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
               print("Server data only valid for 1963 to present, please enter a valid date.")
          ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S = Server.GetServerData(EventDate,External)
          IOPTinput = misc.IOPTprocess(KpS)
-         WindCreate = solar_wind.Solar_Wind(VS, vy, vz, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S)
+         WindCreate = solar_wind.Solar_Wind(VS, vy, vz, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS)
          WindArray = WindCreate.GetWind()
          
     if LiveData == 1:
@@ -147,13 +149,13 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
          DstLive, VxLive, DensityLive, ByLive, BzLive, IOPTLive, G1Live, G2Live, G3Live, KpLive = Request.Get_Data(EventDate)
          PdynLive = misc.Pdyn_comp(DensityLive,VxLive)
          IOPTinput = IOPTLive
-         WindCreate = solar_wind.Solar_Wind(VxLive, vy, vz, ByLive, BzLive, DensityLive, PdynLive, DstLive, G1Live, G2Live, G3Live, W1, W2, W3, W4, W5, W6)
+         WindCreate = solar_wind.Solar_Wind(VxLive, vy, vz, ByLive, BzLive, DensityLive, PdynLive, DstLive, G1Live, G2Live, G3Live, W1, W2, W3, W4, W5, W6, KpLive)
          WindArray = WindCreate.GetWind()
 
     if ServerData == 0 and LiveData == 0:
           if vx > 0:
                vx = -1*vx
-          WindCreate = solar_wind.Solar_Wind(vx, vy, vz, by, bz, density, pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6)
+          WindCreate = solar_wind.Solar_Wind(vx, vy, vz, by, bz, density, pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, kp)
           WindArray = WindCreate.GetWind()
 
     Rigidity = rigidity

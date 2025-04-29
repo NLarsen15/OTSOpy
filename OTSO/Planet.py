@@ -34,7 +34,7 @@ def planet(startaltitude=20,cutoff_comp="Vertical",minaltitude=20,maxdistance=10
     for arg, value in arguments.items():
        if arg not in excluded_keys and value is None:
           # Defaulting None to [] might still be needed for some args?
-          arguments[arg] = [] 
+          arguments[arg] = []
 
     # Pass the flag indicating user-set grid params
     planet_result = otso_planet.OTSO_planet(

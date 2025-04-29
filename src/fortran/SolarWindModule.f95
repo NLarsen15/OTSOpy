@@ -4,7 +4,7 @@
 !
 !********************************************************************************************************************************
 module SolarWind
-real(8) :: SW(3), IMF(2), Dst, PDYN, clock, B, Bs, PI, hb, G1, G2
+real(8) :: SW(3), IMF(2), Dst, DSTBob, PDYN, clock, B, Bs, PI, hb, G1, G2, KpIndex
 integer(4) :: IOPT
 real(8), Dimension(10) :: parmod
 SAVE
@@ -38,9 +38,12 @@ contains
 !
 !********************************************************************************************************************************
 subroutine initializeWind(X,D,model)
-real(8) :: X(17), Vmax
+real(8) :: X(19), Vmax
 integer(4) :: D
 integer(8) :: model(2)
+
+KpIndex = X(18)
+DSTBob = X(19)
 
 PI = 4.D0*DATAN(1.D0)
 

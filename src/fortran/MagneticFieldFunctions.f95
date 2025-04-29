@@ -105,7 +105,7 @@ end interface
   end function functionCustomNonStandard
 
   function functionNoEx(x) !No external field
-    real(8) :: functionNoEx(3), TSYGSM(3)
+    real(8) :: functionNoEx(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
   
     TSYGSM(1) = 0
@@ -118,37 +118,69 @@ end interface
   end function functionNoEx
 
  function function87S(x) ! Tsyganenko 1987 short
-   real(8) :: function87S(3), TSYGSM(3)
+   real(8) :: function87S(3), TSYGSM(3), TSYGSM1(3)
    real(8), intent (in) :: x(3)
  
-   call TSY87S(IOPT, x(1), x(2), x(3), TSYGSM(1), TSYGSM(2), TSYGSM(3))
+   call TSY87S(IOPT, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+   if (model(1) == 4) THEN
+   call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+   else
+   TSYGSM=TSYGSM1
+   end if
    function87S = TSYGSM
  
    return
  end function function87S
  
   function function87L(x) ! Tsyganenko 1987 long
-    real(8) :: function87L(3), TSYGSM(3)
+    real(8) :: function87L(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
   
-    call TSY87L(IOPT, x(1), x(2), x(3), TSYGSM(1), TSYGSM(2), TSYGSM(3))
+    call TSY87L(IOPT, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
     function87L = TSYGSM
   
     return
   end function function87L
 
   function function89(x) ! Tsyganenko 1989
-    real(8) :: function89(3), TSYGSM(3)
+    real(8) :: function89(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
   
-    call T89D_DP(IOPT, parmod, PSI, x(1), x(2), x(3), TSYGSM(1), TSYGSM(2), TSYGSM(3))
+    call T89D_DP(IOPT, parmod, PSI, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
     function89 = TSYGSM
   
     return
   end function function89
 
+  function function89Boberg(x) ! Tsyganenko 1989 Boberg Extension
+    real(8) :: function89Boberg(3), TSYGSM(3), TSYGSM1(3)
+    real(8), intent (in) :: x(3)
+  
+    call T89DBoberg(IOPT, parmod, PSI, DSTBob, KpIndex, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
+
+    function89Boberg = TSYGSM
+  
+    return
+  end function function89Boberg
+
   function function96(x) ! Tsyganenko 1996
-    real(8) :: function96(3), TSYGSM(3)
+    real(8) :: function96(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
     real(8), dimension(10) :: parmod2
     real(8) :: GSMx(3), PSItemp, TSYfield(3)
@@ -160,16 +192,21 @@ end interface
     PSItemp = real(PSI,8)
   
     call T96_01(IOPT, parmod2, PSItemp, GSMx(1), GSMx(2), GSMx(3), TSYfield(1), TSYfield(2), TSYfield(3))
-    TSYGSM(1) = TSYfield(1)
-    TSYGSM(2) = TSYfield(2)
-    TSYGSM(3) = TSYfield(3)
+    TSYGSM1(1) = TSYfield(1)
+    TSYGSM1(2) = TSYfield(2)
+    TSYGSM1(3) = TSYfield(3)
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
     function96 = TSYGSM
   
     return
   end function function96
 
   function function01(x) ! Tsyganenko 2001
-    real(8) :: function01(3), TSYGSM(3)
+    real(8) :: function01(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
     real, dimension(10) :: parmod2
     real :: GSMx(3), PSItemp, TSYfield(3)
@@ -181,29 +218,44 @@ end interface
     PSItemp = real(PSI,8)
 
     call T01_01(IOPT, parmod2, GSMx(1), GSMx(2), GSMx(3), TSYfield(1), TSYfield(2), TSYfield(3))
-    TSYGSM(1) = TSYfield(1)
-    TSYGSM(2) = TSYfield(2)
-    TSYGSM(3) = TSYfield(3)
+    TSYGSM1(1) = TSYfield(1)
+    TSYGSM1(2) = TSYfield(2)
+    TSYGSM1(3) = TSYfield(3)
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
     function01 = TSYGSM
     
     return
   end function function01
 
   function function01S(x) ! Tsyganenko 2001 storm-time variation
-    real(8) :: function01S(3), TSYGSM(3)
+    real(8) :: function01S(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
   
-    call T01_S(parmod, x(1), x(2), x(3), TSYGSM(1), TSYGSM(2), TSYGSM(3))
+    call T01_S(parmod, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
     function01S = TSYGSM
   
     return
   end function function01S
 
   function function04(x) ! Tsyganenko 2004 
-    real(8) :: function04(3), TSYGSM(3)
+    real(8) :: function04(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
   
-    call T04_S(parmod, x(1), x(2), x(3), TSYGSM(1), TSYGSM(2), TSYGSM(3))
+    call T04_S(parmod, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
     function04 = TSYGSM
   
     return
@@ -280,6 +332,8 @@ end interface
     ExternalMagPointer => function01S  ! TSYGANENKO 01 STORM
   ELSE IF (mode(2) == 7) THEN
     ExternalMagPointer => function04  ! TSYGANENKO 04
+  ELSE IF (mode(2) == 8) THEN
+    ExternalMagPointer => function89Boberg ! TSYGANENKO 89 BOBERG EXTENSION
   ELSE IF (mode(2) == 99) THEN
     ExternalMagPointer => functionMHD  ! MHD
   ELSE

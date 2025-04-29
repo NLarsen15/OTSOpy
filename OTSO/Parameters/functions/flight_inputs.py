@@ -132,7 +132,8 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
     else:
          print("Please enter a valid internalmag model: ""NONE"",""IGRF"",""Dipole"", or ""Custom Gauss""")
          exit()
-      
+
+         
     if externalmag == "NONE":
          External = 0
     elif externalmag == "TSY87short":
@@ -149,13 +150,15 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
          External = 6
     elif externalmag == "TSY04":
          External = 7
+    elif externalmag == "TSY89_BOBERG":
+         External = 8
     elif externalmag == "MHD":
          External = 99
          if not os.path.exists(MHDfile):
             print(f"The file '{MHDfile}' does not exist.")
             exit()
     else:
-         print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
+         print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY89_BOBERG"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
          exit()
 
     if coordsystem not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
@@ -195,7 +198,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
           IOPTList.append(IOPTinput)
           vytemp = 0
           vztemp = 0
-          WindCreate = solar_wind.Solar_Wind(VS, vytemp, vztemp, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S)
+          WindCreate = solar_wind.Solar_Wind(VS, vytemp, vztemp, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS)
           WindArray = WindCreate.GetWind()
           WindArrayList.append(WindArray)
           
@@ -208,14 +211,14 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
                IOPTList.append(IOPTinput)
                vytemp = 0
                vztemp = 0
-               WindCreate = solar_wind.Solar_Wind(VxLive, vytemp, vztemp, ByLive, BzLive, DensityLive, PdynLive, DstLive, G1Live, G2Live, G3Live, W1, W2, W3, W4, W5, W6)
+               WindCreate = solar_wind.Solar_Wind(VxLive, vytemp, vztemp, ByLive, BzLive, DensityLive, PdynLive, DstLive, G1Live, G2Live, G3Live, W1, W2, W3, W4, W5, W6, KpLive)
                WindArray = WindCreate.GetWind()
                WindArrayList.append(WindArray)
 
        if ServerData == 0 and LiveData == 0:
           if vx[i] > 0:
                vx[i] = -1*vx[i]
-          WindCreate = solar_wind.Solar_Wind(vx[i], vy[i], vz[i], by[i], bz[i], density[i], pdyn[i], Dst[i], G1[i], G2[i], G3[i], W1[i], W2[i], W3[i], W4[i], W5[i], W6[i])
+          WindCreate = solar_wind.Solar_Wind(vx[i], vy[i], vz[i], by[i], bz[i], density[i], pdyn[i], Dst[i], G1[i], G2[i], G3[i], W1[i], W2[i], W3[i], W4[i], W5[i], W6[i], kp[i])
           WindArray = WindCreate.GetWind()
           KpList.append(kp[i])
           IOPTinput = misc.IOPTprocess(kp[i])
