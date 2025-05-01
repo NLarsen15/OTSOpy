@@ -1362,9 +1362,6 @@ if (model(1) == 4) then
     end if
 end if
 
-write(10,'(*(G0.6,:,","))') XnewConverted, Bfield
-
-
 
 do while (Result == 0) 
 call RK4_FieldTrace(Bfield)
