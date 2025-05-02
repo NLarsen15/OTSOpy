@@ -34,11 +34,6 @@ This allows OTSOpy to remove unnecessary files and helps streamline OTSO to spec
 
 # Functions
 
-<p align="center">
-  <img src="src/Images/Trajectories.gif" alt="Trajectories" width="400" style="border-radius: 8px;" />
-</p>
-
-
 ## Cutoff
 Computes the geomagnetic cut-off rigidities for given locations around the Earth under user-inputted geomagnetic conditions.
 
@@ -48,6 +43,10 @@ Asymptotic latitude and longitude can be given in geocentric (GEO) or geocentric
 
 ## Trajectory
 Computes and outputs the trajectory of a charged particle with a specified rigidity from a given start location on Earth. Positional information can be in any of the available coordinate systems.
+
+<p align="center">
+  <img src="src/Images/Trajectories.gif" alt="Trajectories" width="400" style="border-radius: 8px;" />
+</p>
 
 ## Planet
 Performs the cutoff function over a user-defined location grid, allowing for cutoffs for the entire globe to be computed instead of individual locations. There is the option to return the asymptotic viewing directions at each computed location by utilising a user-inputted list of rigidity levels.
@@ -111,7 +110,7 @@ if __name__ == '__main__':
 ```
 
 ### Output
-Showing only the cone[0] output containing the asymptotic viewing directions of the input stations. Result layout is: filter;latitude,longitude.
+Showing only the cone[0] output containing the asymptotic viewing directions of the input stations. Result layout is: filter;latitude;longitude.
 If the filter value is 1, then the particle of that rigidity has an allowed trajectory. If the filter value is NOT 1, then the particle of that rigidity has a forbidden trajectory.
 ```
       R [GV]                ATHN              CALG               OULU                ROME
