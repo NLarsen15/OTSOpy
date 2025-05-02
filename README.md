@@ -5,7 +5,7 @@
 # OTSOpy
 PyPi Version of the OTSO tool for trajectory computations of charged particles in the Earth's magnetosphere
 
-__Disclaimer!__ OTSOpy is currently only available for Python 3.12. This is due to the compiled Fortran libraries being Python version-specific. It is recommended that you set up a new Python environment using Python 3.12. Users may attempt to clone the repository and compile the Fortran code themselves with f2py, following instructions on the original [OTSO](https://github.com/NLarsen15/OTSO) repository.
+__Disclaimer!__ OTSOpy is currently only available for Python 3.12. This is due to the compiled Fortran libraries being Python version-specific. It is recommended that you set up a new Python environment using Python 3.12. Users may attempt to clone the repository and compile the Fortran code themselves with f2py, following instructions on the original [OTSO](https://github.com/NLarsen15/OTSO) repository. I will attempt to keep OTSOpy compatible with as many Python versions as possible. However, I hope that the open-source nature of the OTSO tool means that the compiled Fortran libraries users make will be shared and merged with this release, relieving me of some of the pressure.
 
 # Installation
 
@@ -33,6 +33,7 @@ Before the first use of OTSOpy, users are required to run:
 This allows OTSOpy to remove unnecessary files and helps streamline OTSO to specific OS specifications. This setup command is only required once.
 
 # Functions
+
 ## Cutoff
 Computes the geomagnetic cut-off rigidities for given locations around the Earth under user-inputted geomagnetic conditions.
 
@@ -42,6 +43,10 @@ Asymptotic latitude and longitude can be given in geocentric (GEO) or geocentric
 
 ## Trajectory
 Computes and outputs the trajectory of a charged particle with a specified rigidity from a given start location on Earth. Positional information can be in any of the available coordinate systems.
+
+<p align="center">
+  <img src="src/Images/Trajectories.gif" alt="Trajectories" width="400" style="border-radius: 8px;" />
+</p>
 
 ## Planet
 Performs the cutoff function over a user-defined location grid, allowing for cutoffs for the entire globe to be computed instead of individual locations. There is the option to return the asymptotic viewing directions at each computed location by utilising a user-inputted list of rigidity levels.
@@ -105,7 +110,7 @@ if __name__ == '__main__':
 ```
 
 ### Output
-Showing only the cone[0] output containing the asymptotic viewing directions of the input stations. Result layout is: filter;latitude,longitude.
+Showing only the cone[0] output containing the asymptotic viewing directions of the input stations. Result layout is: filter;latitude;longitude.
 If the filter value is 1, then the particle of that rigidity has an allowed trajectory. If the filter value is NOT 1, then the particle of that rigidity has a forbidden trajectory.
 ```
       R [GV]                ATHN              CALG               OULU                ROME
