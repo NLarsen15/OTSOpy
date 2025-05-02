@@ -5,7 +5,7 @@ import platform
 def setup():
     print("Running setup tasks...")
     DeleteLibs()
-    DarwinLib()
+    #DarwinLib()
     Generatefile()
     print("Setup complete")
 
@@ -13,7 +13,7 @@ def setup():
 
 def DarwinLib():
     """Detect if user is on macOS and automatically add Rpath to .so and .pyd files in OTSO package"""
-    if platform.system() == "Darwin":  # Check if running on macOS
+    if platform.system() == "darwin":  # Check if running on macOS
         so_files = []
         package_path = os.path.join('Parameters', 'functions')
 
@@ -36,7 +36,7 @@ def DeleteLibs():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     package_path = os.path.join(script_dir, 'Parameters', 'functions')
     system_type = platform.system().lower()  # Get OS type (windows, linux, darwin for macOS)
-    python_version = f"cp{sys.version_info.major}{sys.version_info.minor}"  # Extract Python version (e.g., cp310 for Python 3.10)
+    python_version = f"{sys.version_info.major}{sys.version_info.minor}"  # Extract Python version (e.g., cp310 for Python 3.10)
 
     if system_type == "windows":
         system_type = "win"  # Normalize to "win" for Windows systems
@@ -48,7 +48,7 @@ def DeleteLibs():
         if os.path.isfile(file_path):
             if filename.endswith(('.so', '.pyd')):
                 # Check if file matches system type and Python version
-                if system_type not in filename and python_version not in filename:
+                if system_type not in filename or python_version not in filename:
                     #print(f"Would delete: {file_path}")
                     os.remove(file_path)
 

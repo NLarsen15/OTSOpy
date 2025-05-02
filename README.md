@@ -199,7 +199,7 @@ if __name__ == '__main__':
 
     latitude_list = [10,15,20,25,30] # [Latitudes]
     longitude_list = [10,15,20,25,30] # [Longitudes]
-    altitude_list = [30,40,50,60,80] # [Altitudes]
+    altitude_list = [30,40,50,60,80] # [Altitudes] in km
     date_list = [datetime.datetime(2000,10,12,8),datetime.datetime(2000,10,12,9),datetime.datetime(2000,10,12,10),
                  datetime.datetime(2000,10,12,11),datetime.datetime(2000,10,12,12)] # [dates]
 
