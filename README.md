@@ -5,7 +5,7 @@
 # OTSOpy
 PyPi Version of the OTSO tool for trajectory computations of charged particles in the Earth's magnetosphere
 
-__Disclaimer!__ OTSOpy is currently only available for Python 3.12. This is due to the compiled Fortran libraries being Python version-specific. It is recommended that you set up a new Python environment using Python 3.12. Users may attempt to clone the repository and compile the Fortran code themselves with f2py, following instructions on the original [OTSO](https://github.com/NLarsen15/OTSO) repository.
+__Disclaimer!__ OTSOpy is currently only available for Python 3.12. This is due to the compiled Fortran libraries being Python version-specific. It is recommended that you set up a new Python environment using Python 3.12. Users may attempt to clone the repository and compile the Fortran code themselves with f2py, following instructions on the original [OTSO](https://github.com/NLarsen15/OTSO) repository. I will attempt to keep OTSOpy compatible with as many Python versions as possible. However, I hope that the open-source nature of the OTSO tool means that the compiled Fortran libraries users make will be shared and merged with this release, relieving me of some of the pressure.
 
 # Installation
 
