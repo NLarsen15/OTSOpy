@@ -33,6 +33,12 @@ Before the first use of OTSOpy, users are required to run:
 This allows OTSOpy to remove unnecessary files and helps streamline OTSO to specific OS specifications. This setup command is only required once.
 
 # Functions
+
+<p align="center">
+  <img src="src/Images/Trajectories.gif" alt="Trajectories" width="400" style="border-radius: 8px;" />
+</p>
+
+
 ## Cutoff
 Computes the geomagnetic cut-off rigidities for given locations around the Earth under user-inputted geomagnetic conditions.
 
