@@ -3,7 +3,9 @@
 </p>
 
 # OTSOpy
-PyPi Version of the OTSO tool for trajectory computations of charged particles in the Earth's magnetosphere
+Python package version of the OTSO tool used for trajectory computations of charged particles in the Earth's magnetosphere.
+
+OTSO is designed to be open-source; all suggestions for improvement are welcome, and please report any bugs you find. I welcome any help provided by the community in the development of OTSO.
 
 __Disclaimer!__ OTSOpy is currently only available for Python 3.12. This is due to the compiled Fortran libraries being Python version-specific. It is recommended that you set up a new Python environment using Python 3.12. Users may attempt to clone the repository and compile the Fortran code themselves with f2py, following instructions on the original [OTSO](https://github.com/NLarsen15/OTSO) repository. I will attempt to keep OTSOpy compatible with as many Python versions as possible. However, I hope that the open-source nature of the OTSO tool means that the compiled Fortran libraries users make will be shared and merged with this release, relieving me of some of the pressure.
 
@@ -339,6 +341,7 @@ magfield[0] output showing the magnetic field vector at the input location in th
 
 # Acknowledgements
 The fantastic IRBEM library has been used in the development of OTSO, which proved an invaluable asset and greatly sped up development. The latest release of the IRBEM library can be found at [https://doi.org/10.5281/zenodo.6867552](https://doi.org/10.5281/zenodo.6867552.). Thank you to N. Tsyganenko for the development of the external magnetic field models and their code, which are used within OTSO.
+
 A wider thanks goes to the space physics community who, through the use of the original [OTSO](https://github.com/NLarsen15/OTSO), provided invaluable feedback, advice on improvements, and bug reporting. All discussions and advice have aided in the continual development and improvement of OTSO, allowing it to fulfil its aim of being a community-driven open-source tool. The lessons learned from the initial OTSO versions have been incorporated into OTSOpy. Dr. Chris Davis was also instrumental in the development of OTSOpy with his suggestion of incorporating OTSO into the [AniMARIE](https://github.com/ssc-maire/AniMAIRE-public) tool, initiating the package development and providing help by expanding functionality and bug fixing.
 OTSO was developed at the University of Oulu as part of the Academy of Finland QUASARE project. I would like to thank my colleagues at the University and the Academy of Finland for supporting the work.
 
