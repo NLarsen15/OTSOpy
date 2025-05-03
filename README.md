@@ -11,7 +11,7 @@ __Disclaimer!__ OTSOpy is currently only available for Python 3.12. This is due 
 
 Installation of OTSOpy is designed to be as simple as possible and can be done utilising pip. Users have two options when downloading OTSOpy.
 
-## Option 1: PyPi
+## Option 1: PyPi (To be implimented soon)
 Users may install OTSO directly from PyPi using:
 
 `pip install OTSO` 
