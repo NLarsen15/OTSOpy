@@ -6,7 +6,7 @@ from setuptools.command.install import install
 
 setup(
     name='OTSO',
-    version='0.1',
+    version='0.0.1',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
