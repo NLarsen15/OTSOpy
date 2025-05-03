@@ -41,15 +41,23 @@ Computes the geomagnetic cut-off rigidities for given locations around the Earth
 Computes the asymptotic viewing directions for given locations around the Earth. Asymptotic latitudes and longitudes over a range of rigidity values are computed.
 Asymptotic latitude and longitude can be given in geocentric (GEO) or geocentric solar ecliptic (GSE) coordinate systems.
 
+<p align="center">
+  <img src="src/images/coneplot.png" alt="Cones" width="600" style="border-radius: 8px;" />
+</p>
+
 ## Trajectory
 Computes and outputs the trajectory of a charged particle with a specified rigidity from a given start location on Earth. Positional information can be in any of the available coordinate systems.
 
 <p align="center">
-  <img src="src/Images/Trajectories.gif" alt="Trajectories" width="400" style="border-radius: 8px;" />
+  <img src="src/Images/Trajectories.gif" alt="Trajectories" width="600" style="border-radius: 8px;" />
 </p>
 
 ## Planet
 Performs the cutoff function over a user-defined location grid, allowing for cutoffs for the entire globe to be computed instead of individual locations. There is the option to return the asymptotic viewing directions at each computed location by utilising a user-inputted list of rigidity levels.
+
+<p align="center">
+  <img src="src/images/planetplot.png" alt="Planet" width="600" style="border-radius: 8px;" />
+</p>
 
 ## Flight
 Computes the cut-off rigidities along a user-defined path. The function is named Flight as it is primarily been developed for use in aviation tools, but any path can be entered. For example, the function can be applied to geomagnetic latitude surveys using positional data from a ship voyage, or it can be used to compute anisotropy and cut-off values for low-Earth orbit spacecraft. This function allows for changing altitude, location, and date values. 
