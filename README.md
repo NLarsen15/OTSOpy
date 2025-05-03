@@ -77,6 +77,12 @@ Computes the cut-off rigidities along a user-defined path. The function is named
 ## Trace
 Traces the magnetic field lines around the globe or for a given location based on the geomagnetic configuration detailed by the user. It is useful for modelling the magnetosphere structure under disturbed conditions and for finding open magnetic field lines.
 
+<p align="center">
+  <img src="src/images/traceplot.png" alt="Trace" width="600" style="border-radius: 8px;" />
+  <br>
+  <em>Figure 5: Computation of magnetic field line configuration in the X-Z plane on January 1st 2000 12:00:00. IGRF and TSY01 models used, and input variables were obtained using the server data option within OTSO. </em>
+</p>
+
 ## Coordtrans
 Converts input positional information from one coordinate system to another, utilising the [IRBEM](https://github.com/PRBEM/IRBEM) library of coordinate transforms.
 
