@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/Images/OTSO_logo.png" alt="Logo" width="150" style="border-radius: 8px;" />
+  <img src="src/images/OTSO_logo.png" alt="Logo" width="150" style="border-radius: 8px;" />
 </p>
 
 # OTSOpy
