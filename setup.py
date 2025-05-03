@@ -27,7 +27,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='==3.12',
+    python_requires='>=3.12, <3.13',
     install_requires=[
         'psutil==7.0.0',     # Common dependency
     ],
