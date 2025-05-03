@@ -37,12 +37,20 @@ This allows OTSOpy to remove unnecessary files and helps streamline OTSO to spec
 ## Cutoff
 Computes the geomagnetic cut-off rigidities for given locations around the Earth under user-inputted geomagnetic conditions.
 
+<p align="center">
+  <img src="src/images/cutoffplot.png" alt="Cutoff" width="600" style="border-radius: 8px;" />
+  <br>
+  <em>Figure 1: Computation of the Oulu neutron monitor effective cut-off rigidity using the IGRF 2000 epoch and TSY89 model with kp index = 0. Penumbra is shown by the forbidden and allowed trajectories being black and white, respectively. The upper and lower cut-off values (Ru and Rl) are denoted in the legend, from which the effective cut-off (Rc) is computed. </em>
+</p>
+
 ## Cone
 Computes the asymptotic viewing directions for given locations around the Earth. Asymptotic latitudes and longitudes over a range of rigidity values are computed.
 Asymptotic latitude and longitude can be given in geocentric (GEO) or geocentric solar ecliptic (GSE) coordinate systems.
 
 <p align="center">
   <img src="src/images/coneplot.png" alt="Cones" width="600" style="border-radius: 8px;" />
+  <br>
+  <em>Figure 2: Asymptotic cones for the Oulu, Nain, South Pole, Thule, and Inuvik neutron monitors for the IGRF 2010 epoch and TSY89 model, with kp = 0. Latitudes and longitudes are in the geocentric coordinate system. </em>
 </p>
 
 ## Trajectory
@@ -50,6 +58,8 @@ Computes and outputs the trajectory of a charged particle with a specified rigid
 
 <p align="center">
   <img src="src/Images/Trajectories.gif" alt="Trajectories" width="600" style="border-radius: 8px;" />
+  <br>
+  <em>Figure 3: Computed trajectories of three cosmic rays of various rigidity values being backtraced from the Oulu neutron monitor for the IGRF 2000 and TSY89 model, with kp = 0. The 1GV particle is allowed (able to escape the magnetosphere); the 0.4GV particle is forbidden (it is trapped in the magnetosphere); and the 0.1GV is also forbidden (it returns to Earth). </em>
 </p>
 
 ## Planet
@@ -57,6 +67,8 @@ Performs the cutoff function over a user-defined location grid, allowing for cut
 
 <p align="center">
   <img src="src/images/planetplot.png" alt="Planet" width="600" style="border-radius: 8px;" />
+  <br>
+  <em>Figure 4: Computed vertical effective cut-off rigidities across a 5°x5° grid of the Earth. These computations were done using the IGRF 2000 epoch and TSY89 model, with kp = 0. </em>
 </p>
 
 ## Flight
@@ -69,7 +81,7 @@ Traces the magnetic field lines around the globe or for a given location based o
 Converts input positional information from one coordinate system to another, utilising the [IRBEM](https://github.com/PRBEM/IRBEM) library of coordinate transforms.
 
 ## Magfield
-Computes the total magnetic field strength at a given location depending on the user input geomagnetic conditions. Outputs will be in the geocentric solar magnetospheric (GSM) coordinate system.
+Computes the total magnetic field strength at a given location depending on the user's input geomagnetic conditions. Outputs will be in the geocentric solar magnetospheric (GSM) coordinate system.
 
 # Examples
 
