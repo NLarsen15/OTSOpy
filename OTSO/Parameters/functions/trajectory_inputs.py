@@ -37,13 +37,13 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
 
 
     if intmodel == "4RK":
-         IntModel = 0
-    elif intmodel == "Boris":
          IntModel = 1
-    elif intmodel == "Vay":
+    elif intmodel == "Boris":
          IntModel = 2
-    elif intmodel == "HC":
+    elif intmodel == "Vay":
          IntModel = 3
+    elif intmodel == "HC":
+         IntModel = 4
     else:
          print("Please enter a valid intmodel model: ""4RK"", ""Boris"", ""Vay"", ""HC"" ")
          exit()
