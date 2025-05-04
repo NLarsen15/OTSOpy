@@ -47,7 +47,7 @@ Computes the geomagnetic cut-off rigidities for given locations around the Earth
 
 ## Cone
 Computes the asymptotic viewing directions for given locations around the Earth. Asymptotic latitudes and longitudes over a range of rigidity values are computed.
-Asymptotic latitude and longitude can be given in geocentric (GEO) or geocentric solar ecliptic (GSE) coordinate systems.
+Asymptotic latitude and longitude can be given in any available coordinate system.
 
 <p align="center">
   <img src="src/images/coneplot.png" alt="Cones" width="600" style="border-radius: 8px;" />
