@@ -2,16 +2,19 @@ import sys, os
 import subprocess
 from setuptools import setup, find_packages
 from setuptools.command.install import install
+from pathlib import Path
 
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.0.1',
+    version='1.0.2',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
-    #long_description=open('README.md').read(),
-    #long_description_content_type='text/markdown',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     url='https://github.com/NLarsen15/OTSOpy',
     packages=find_packages(),
     #ext_modules=ext_modules,
