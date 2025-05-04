@@ -6,13 +6,13 @@ from setuptools.command.install import install
 
 setup(
     name='OTSO',
-    version='1.0.0',
+    version='1.0.1',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
     #long_description=open('README.md').read(),
     #long_description_content_type='text/markdown',
-    #url='https://github.com/yourusername/your-repo',
+    url='https://github.com/NLarsen15/OTSOpy',
     packages=find_packages(),
     #ext_modules=ext_modules,
     include_package_data=True,
