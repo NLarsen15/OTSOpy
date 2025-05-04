@@ -2773,9 +2773,8 @@ c
       IMPLICIT NONE
 
       INTEGER*4 nmax,i,ntime, sysaxesIN, sysaxesOUT
-      INTEGER*4 ::NTIME_MAX = 100000
-      INTEGER*4 iyear(ntime_max),idoy(ntime_max),y,d
-      REAL*8 secs(ntime_max),xINV(3,ntime_max),xOUTV(3,ntime_max)
+      INTEGER*4 iyear(100000),idoy(100000),y,d
+      REAL*8 secs(100000),xINV(3,100000),xOUTV(3,100000)
       REAL*8 :: baddata
       ! local vars
       REAL*8 xIN(3),xOUT(3),s
