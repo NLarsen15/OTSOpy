@@ -20,7 +20,7 @@ def READMECone(UsedStationstemp, RigidityArray, EventDate, model, IntModel, Atom
     particle = "anti-particle" if AntiCheck == 1 else "Normal Particle"
     
     IntegrationMethods = ["4th Order Runge-Kutta Method", "Boris Method", "Vay Method", "Higuera-Cary Method"]
-    IntegrationMethod = IntegrationMethods[IntModel] if 0 <= IntModel <= 4 else "Unknown Integration Method"
+    IntegrationMethod = IntegrationMethods[IntModel-1] if 0 <= IntModel <= 4 else "Unknown Integration Method"
 
     InternalModels = ["None", "IGRF", "Dipole", "Custom Gaussian Coefficients", "Custom Gaussian Coefficients"]
     Internal = InternalModels[model[0]] if 0 <= model[0] <= 4 else "Unknown Internal Model"
@@ -118,7 +118,7 @@ def READMECutoff(UsedStationstemp, RigidityArray, EventDate, model, IntModel, At
     RigidityScan = "Rigidity Scan Used" if Rscan != 0 else "No Rigidity Scan"
     
     IntegrationMethods = ["4th Order Runge-Kutta Method", "Boris Method", "Vay Method", "Higuera-Cary Method"]
-    IntegrationMethod = IntegrationMethods[IntModel] if 0 <= IntModel <= 4 else "Unknown Integration Method"
+    IntegrationMethod = IntegrationMethods[IntModel-1] if 0 <= IntModel <= 4 else "Unknown Integration Method"
 
     InternalModels = ["None", "IGRF", "Dipole", "Custom Gaussian Coefficients", "Custom Gaussian Coefficients"]
     Internal = InternalModels[model[0]] if 0 <= model[0] <= 4 else "Unknown Internal Model"
@@ -215,7 +215,7 @@ def READMEFlight(Data, Rigidity, model, IntModel, AntiCheck, IOPT, WindArray, Ma
       RigidityScan = "Rigidity Scan Used" if Rscan != 0 else "No Rigidity Scan"
       
       IntegrationMethods = ["4th Order Runge-Kutta Method", "Boris Method", "Vay Method", "Higuera-Cary Method"]
-      IntegrationMethod = IntegrationMethods[IntModel] if 0 <= IntModel <= 4 else "Unknown Integration Method"
+      IntegrationMethod = IntegrationMethods[IntModel-1] if 0 <= IntModel <= 4 else "Unknown Integration Method"
   
       InternalModels = ["None", "IGRF", "Dipole", "Custom Gaussian Coefficients", "Custom Gaussian Coefficients"]
       Internal = InternalModels[model[0]] if 0 <= model[0] <= 4 else "Unknown Internal Model"
@@ -335,7 +335,7 @@ def READMETrajectory(UsedStationstemp, Rigidity, EventDate, model, IntModel, Ato
     particle = "anti-particle" if AntiCheck == 1 else "Normal Particle"
     
     IntegrationMethods = ["4th Order Runge-Kutta Method", "Boris Method", "Vay Method", "Higuera-Cary Method"]
-    IntegrationMethod = IntegrationMethods[IntModel] if 0 <= IntModel <= 4 else "Unknown Integration Method"
+    IntegrationMethod = IntegrationMethods[IntModel-1] if 0 <= IntModel <= 4 else "Unknown Integration Method"
 
     InternalModels = ["None", "IGRF", "Dipole", "Custom Gaussian Coefficients", "Custom Gaussian Coefficients"]
     Internal = InternalModels[model[0]] if 0 <= model[0] <= 4 else "Unknown Internal Model"
@@ -429,7 +429,7 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
       RigidityScan = "Rigidity Scan Used" if Rscan != 0 else "No Rigidity Scan"
       
       IntegrationMethods = ["4th Order Runge-Kutta Method", "Boris Method", "Vay Method", "Higuera-Cary Method"]
-      IntegrationMethod = IntegrationMethods[IntModel] if 0 <= IntModel <= 4 else "Unknown Integration Method"
+      IntegrationMethod = IntegrationMethods[IntModel-1] if 0 <= IntModel <= 4 else "Unknown Integration Method"
   
       InternalModels = ["None", "IGRF", "Dipole", "Custom Gaussian Coefficients", "Custom Gaussian Coefficients"]
       Internal = InternalModels[model[0]] if 0 <= model[0] <= 4 else "Unknown Internal Model"
