@@ -25,13 +25,6 @@ Users may clone the repository and run the setup.py file within the main OTSOpy 
 
 This will install OTSO into your current Python environment.
 
-## First Use
-Before the first use of OTSOpy, users are required to run:
-
-`OTSO.setup`
-
-This allows OTSOpy to remove unnecessary files and helps streamline OTSO to specific OS specifications. This setup command is only required once.
-
 # Functions
 
 ## Cutoff
