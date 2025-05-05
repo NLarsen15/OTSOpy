@@ -1,4 +1,4 @@
-![Logo](src/images/OTSO_logo.png)
+![Logo](https://raw.githubusercontent.com/NLarsen15/OTSOpy/main/src/images/OTSO_logo.png)
 
 # OTSOpy
 Python package version of the OTSO tool used for trajectory computations of charged particles in the Earth's magnetosphere.
@@ -30,21 +30,21 @@ This will install OTSO into your current Python environment.
 ## Cutoff
 Computes the geomagnetic cut-off rigidities for given locations around the Earth under user-inputted geomagnetic conditions.
 
-![Cutoff](src/images/cutoffplot.png)
+![Cutoff](https://raw.githubusercontent.com/NLarsen15/OTSOpy/main/src/images/cutoffplot.png)
 *Figure 1: Computation of the Oulu neutron monitor effective cut-off rigidity using the IGRF 2000 epoch and TSY89 model with kp index = 0. Penumbra is shown by the forbidden and allowed trajectories being black and white, respectively. The upper and lower cut-off values (Ru and Rl) are denoted in the legend, from which the effective cut-off (Rc) is computed.*
 
 ## Cone
 Computes the asymptotic viewing directions for given locations around the Earth. Asymptotic latitudes and longitudes over a range of rigidity values are computed.
 Asymptotic latitude and longitude can be given in any available coordinate system.
 
-![Cones](src/images/coneplot.png)
+![Cones](https://raw.githubusercontent.com/NLarsen15/OTSOpy/main/src/images/coneplot.png)
 
 *Figure 2: Asymptotic cones for the Oulu, Nain, South Pole, Thule, and Inuvik neutron monitors for the IGRF 2010 epoch and TSY89 model, with kp = 0. Latitudes and longitudes are in the geocentric coordinate system.*
 
 ## Trajectory
 Computes and outputs the trajectory of a charged particle with a specified rigidity from a given start location on Earth. Positional information can be in any of the available coordinate systems.
 
-![Trajectory](src/images/Trajectory_Plot.png)
+![Trajectory](https://raw.githubusercontent.com/NLarsen15/OTSOpy/main/src/images/Trajectory_Plot.png)
 
 *Figure 3: Computed trajectories of three cosmic rays of various rigidity values being backtraced from the Oulu neutron monitor for the IGRF 2000 and TSY89 model, with kp = 0. The 1GV particle is allowed (able to escape the magnetosphere); the 0.4GV particle is forbidden (it is trapped in the magnetosphere); and the 0.1GV is also forbidden (it returns to Earth).*
 
@@ -52,7 +52,7 @@ Computes and outputs the trajectory of a charged particle with a specified rigid
 Performs the cutoff function over a user-defined location grid, allowing for cutoffs for the entire globe to be computed instead of individual locations. There is the option to return the asymptotic viewing directions at each computed location by utilising a user-inputted list of rigidity levels.
 
 
-![Planet](src/images/planetplot.png)
+![Planet](https://raw.githubusercontent.com/NLarsen15/OTSOpy/main/src/images/planetplot.png)
 *Figure 4: Computed vertical effective cut-off rigidities across a 5°x5° grid of the Earth. These computations were done using the IGRF 2000 epoch and TSY89 model, with kp = 0.*
 
 ## Flight
@@ -61,7 +61,7 @@ Computes the cut-off rigidities along a user-defined path. The function is named
 ## Trace
 Traces the magnetic field lines around the globe or for a given location based on the geomagnetic configuration detailed by the user. It is useful for modelling the magnetosphere structure under disturbed conditions and for finding open magnetic field lines.
 
-![Trace](src/images/traceplot.png)
+![Trace](https://raw.githubusercontent.com/NLarsen15/OTSOpy/main/src/images/traceplot.png)
 *Figure 5: Computation of magnetic field line configuration in the X-Z plane on January 1st 2000 12:00:00. IGRF and TSY01 models used, and input variables were obtained using the server data option within OTSO.*
 
 ## Coordtrans
