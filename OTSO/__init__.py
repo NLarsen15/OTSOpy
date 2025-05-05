@@ -3,15 +3,12 @@ import sys
 
 
 def _ensure_setup_complete():
+    from .Callibrate import setup as setup_func
     package_dir = os.path.dirname(os.path.abspath(__file__))
     setup_marker = os.path.join(package_dir, 'setup_complete.txt')
     if not os.path.exists(setup_marker):
-        sys.exit(
-            "\n"
-            "[OTSO Error] Setup has not been completed.\n"
-            "Please run:\n\n"
-            "    OTSO.setup\n"
-        )
+        setup_func()
+    return
 
 def cutoff(*args, **kwargs):
     _ensure_setup_complete()
@@ -52,7 +49,3 @@ def trace(*args, **kwargs):
     _ensure_setup_complete()
     from .Trace import trace as trace_func
     return trace_func(*args, **kwargs)
-
-def setup(*args, **kwargs):
-    from .OTSO import setup as setup_func
-    return setup_func(*args, **kwargs)

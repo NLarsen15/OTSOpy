@@ -3,13 +3,11 @@ import subprocess
 import platform
 
 def setup():
-    print("Running setup tasks...")
+    #print("Running setup tasks...")
     DeleteLibs()
     #DarwinLib()
     Generatefile()
-    print("Setup complete")
-
-
+    #print("Setup complete")
 
 def DarwinLib():
     """Detect if user is on macOS and automatically add Rpath to .so and .pyd files in OTSO package"""
