@@ -108,7 +108,7 @@ def DownloadServerFile(OMNIYEAR):
             OmniPull.Combine(f'{OMNIYEAR}_TSY_Data.csv', f'omni_{OMNIYEAR}_low_res.csv',OMNIYEAR)
             OmniPull.Omnidelete(OMNIYEAR)
             print(f'Finished downloading data for {OMNIYEAR}.')
-        elif platform.system() == "Linux":
+        elif platform.system() == "Linux"  or "Darwin":
             OTSOLib.gettsy04datalinux(OMNIYEAR, DIRECTORY, length)
             OmniPull.OMNI_to_csv(OMNIYEAR)
             OmniPull.TSY01(f'{OMNIYEAR}_TSY_Data.csv')
