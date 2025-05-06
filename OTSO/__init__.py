@@ -51,5 +51,5 @@ def trace(*args, **kwargs):
     return trace_func(*args, **kwargs)
 
 def clean(*args, **kwargs):
-    from .OTSO import setup as setup_func
-    return setup_func(*args, **kwargs)
+    from .OTSO import clean as clean_func
+    return clean_func(*args, **kwargs)
