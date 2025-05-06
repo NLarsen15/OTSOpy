@@ -13,7 +13,8 @@ def DarwinLib():
     """Detect if user is on macOS and automatically add Rpath to .so and .pyd files in OTSO package"""
     if platform.system() == "darwin":  # Check if running on macOS
         so_files = []
-        package_path = os.path.join('Parameters', 'functions')
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        package_path = os.path.join(script_dir, 'Parameters', 'functions')
 
         # Walk through the package directory to find shared object files
         for root, _, files in os.walk(package_path):
