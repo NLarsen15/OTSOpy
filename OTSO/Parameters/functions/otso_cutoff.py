@@ -107,7 +107,7 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
     merged_df = pd.concat(results, axis=1)
     merged_df = merged_df.sort_index(axis=1)
 
-    print("\nOTSO Cone Computation Complete")
+    print("\nOTSO Cutoff Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
     print("Whole Program Took: " + str(Printtime) + " seconds")
