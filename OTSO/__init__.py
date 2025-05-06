@@ -49,3 +49,7 @@ def trace(*args, **kwargs):
     _ensure_setup_complete()
     from .Trace import trace as trace_func
     return trace_func(*args, **kwargs)
+
+def clean(*args, **kwargs):
+    from .OTSO import setup as setup_func
+    return setup_func(*args, **kwargs)
