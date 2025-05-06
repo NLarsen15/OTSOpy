@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.0.5',
+    version='1.0.6',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
@@ -19,6 +19,11 @@ setup(
     packages=find_packages(),
     #ext_modules=ext_modules,
     include_package_data=True,
+    entry_points={
+            'console_scripts': [
+                'OTSO.clean=OTSO:clean',
+            ],
+    },
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
