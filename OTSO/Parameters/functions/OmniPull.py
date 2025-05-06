@@ -29,6 +29,9 @@ def download_omni_data(year):
 
     ftps.quit()
 
+    parse_and_convert_to_csv_high_res(save_path, f'omni_{year}_high_res.csv')
+
+
 def download_omni_low_res_data(year):
     ftps = FTP_TLS('spdf.gsfc.nasa.gov')
     ftps.login()
@@ -73,17 +76,57 @@ def download_omni_low_res_data(year):
 
 
 
-def convert_to_datetime(year, decimal_day, hour):
+def convert_to_datetime(year, decimal_day, hour, minute):
     """ Convert year, decimal day, and hour into a datetime string. """
     year = int(year)
     day_of_year = int(float(decimal_day))
     hour = int(hour)
+    minute = int(minute)
 
 
     initial_date = datetime(year, 1, 1) + timedelta(days=day_of_year - 1)
-    datetime_obj = initial_date + timedelta(hours=hour)
+    datetime_obj = initial_date + timedelta(hours=hour,minutes=minute)
 
     return datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
+
+def parse_and_convert_to_csv_high_res(input_file, output_file):
+    """ Parse high-res OMNI data file and convert to CSV with specific columns. """
+    with open(input_file, 'r') as datfile:
+        lines = datfile.readlines()
+
+    FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", "9999.9", "999.9", "99999.0", "-1.00e+05", "999999", "999.99"}
+
+
+    rows = [line.split() for line in lines]
+
+    output_headers = ["Date", "By", "Bz", "V", "Density", "Pdyn"]
+
+    # Get the directory of the current script
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    output_path = os.path.join(script_dir, output_file)
+
+    with open(output_path, mode='w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow(output_headers)
+
+        for row in rows:
+            try:
+                datetime_str = convert_to_datetime(row[0], row[1], row[2],row[3])  # Year, DOY, Hour, Minute
+                By_value = row[17]
+                Bz_value = row[18]
+                V_value = row[21]
+                Density_value = row[25]
+                Pdyn_value = row[27]
+
+                values_to_check = {By_value, Bz_value, V_value, Density_value, Pdyn_value}
+
+                # Skip the row if any value is a filler
+                if any(val in FILLER_VALUES for val in values_to_check):
+                    continue
+
+                csv_writer.writerow([datetime_str, By_value, Bz_value, V_value, Density_value, Pdyn_value])
+            except (IndexError, ValueError):
+                continue
 
 def parse_and_convert_to_csv_low_res(input_file, output_file):
     """ Parse the data file and convert it to a CSV with only specific columns. """
@@ -104,7 +147,7 @@ def parse_and_convert_to_csv_low_res(input_file, output_file):
 
         for row in rows:
             try:
-                datetime_str = convert_to_datetime(row[0], row[1], row[2])
+                datetime_str = convert_to_datetime(row[0], row[1], row[2],0)
                 kp_value = process_kp_value(row[38])
                 dst_value = row[40]
                 By_value = row[15]
@@ -137,7 +180,7 @@ def parse_and_convert_to_csv(input_file, output_file):
 
         for row in rows:
             try:
-                datetime_str = convert_to_datetime(row[0], row[1], row[2])
+                datetime_str = convert_to_datetime(row[0], row[1], row[2],0)
                 kp_value = process_kp_value(row[38])
                 dst_value = row[40]
                 By_value = row[15]
@@ -194,7 +237,7 @@ def OMNI_to_csv(year):
     ]
 
     file = os.path.join(os.path.dirname(__file__), f'{year}_OMNI_5m_with_TS05_variables.dat')
-    data = pd.read_fwf(file, header=None)
+    data = pd.read_csv(file, sep=r'\s+', header=None)
 
     IYEAR = data[0]
     IDAY = data[1]
@@ -333,57 +376,80 @@ def CombineLowRes(input_file, year):
     destination_file = os.path.join(destination_folder, os.path.basename(source_file))
     shutil.move(source_file, destination_file)
     
+import os
+import pandas as pd
+import shutil
 
-def Combine(TSYfile, Dstfile, year):
-    dst_value = None
-    kp_value = None
+def Combine(TSYfile, high_res_file, low_res_file, year):
+    base_dir = os.path.dirname(__file__)
+    TSYfile = os.path.join(base_dir, TSYfile)
+    high_res_file = os.path.join(base_dir, high_res_file)
+    low_res_file = os.path.join(base_dir, low_res_file)
+    futurefile = os.path.join(base_dir, f'omni_{year+1}_low_res.csv')
 
-    Dstfile = os.path.join(os.path.dirname(__file__),Dstfile)
-    TSYfile = os.path.join(os.path.dirname(__file__),TSYfile)
+    # Load all data
+    partial_df = pd.read_csv(TSYfile, parse_dates=['Date']).set_index('Date')
+    high_res_df = pd.read_csv(high_res_file, parse_dates=['Date']).set_index('Date')
+    low_res_df = pd.read_csv(low_res_file, parse_dates=['Date']).set_index('Date')
+    low_res_5min = low_res_df.resample('5min').ffill()
+
     
-    five_min_df = pd.read_csv(TSYfile, parse_dates=['Date'])
-    hourly_df = pd.read_csv(Dstfile, parse_dates=['Date'])
+    if 'Dst' in low_res_df.columns:
+        low_res_5min['Dst'] = (low_res_df['Dst'].resample('5min').interpolate(method='linear').round().astype(int)
+        )
 
-    desired_order = ['Date', 'By', 'Bz', 'V', 'Density', 'Pdyn', 'Dst', 'Kp', 
-                     'G1', 'G2', 'G3', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6']
-    
-    futurefile = os.path.join(os.path.dirname(__file__), f'omni_{year+1}_low_res.csv')
-    if os.path.exists(futurefile):
-        df = pd.read_csv(futurefile)
-        dst_value = df.loc[0, 'Dst'] if 'Dst' in df.columns else None
-        kp_value = df.loc[0, 'Kp'] if 'Kp' in df.columns else None
+    # Define full 5-minute time range for the year
+    start_time = partial_df.index.min()
+    end_time = partial_df.index.max()
+    full_index = pd.date_range(start=start_time, end=end_time, freq='5min')
 
-    hourly_df.set_index('Date', inplace=True)
-    five_min_df.set_index('Date', inplace=True)
-    hourly_resampled = hourly_df.resample('5min').ffill()
-    combined_df = five_min_df.combine_first(hourly_resampled).reset_index()
-    combined_df = combined_df.drop_duplicates(subset=["Date"])
+    # Reindex and combine with priority: partial > high_res > low_res
+    combined_df = pd.DataFrame(index=full_index)
+    combined_df = combined_df.combine_first(partial_df)
+    combined_df = combined_df.combine_first(high_res_df)
+    combined_df = combined_df.combine_first(low_res_5min)
 
+    # Reset index and fix column order
+    combined_df = combined_df.reset_index().rename(columns={'index': 'Date'})
+
+    # Ensure V is positive
     if 'V' in combined_df.columns:
         combined_df['V'] = combined_df['V'].abs()
 
+    # Fill final Dec 31 values from following year if available
+    if os.path.exists(futurefile):
+        future_df = pd.read_csv(futurefile)
+        dst_value = future_df.loc[0, 'Dst'] if 'Dst' in future_df.columns else None
+        kp_value = future_df.loc[0, 'Kp'] if 'Kp' in future_df.columns else None
+        if dst_value is not None and kp_value is not None:
+            mask = (combined_df['Date'].dt.year == year) & \
+                   (combined_df['Date'].dt.month == 12) & \
+                   (combined_df['Date'].dt.day == 31) & \
+                   (combined_df['Date'].dt.hour == 23) & \
+                   (combined_df['Date'].dt.minute >= 5)
+            combined_df.loc[mask, 'Dst'] = dst_value
+            combined_df.loc[mask, 'Kp'] = kp_value
 
-    if dst_value is not None and kp_value is not None:
-        mask = (combined_df['Date'].dt.year == year) & \
-               (combined_df['Date'].dt.month == 12) & \
-               (combined_df['Date'].dt.day == 31) & \
-               (combined_df['Date'].dt.hour == 23) & \
-               (combined_df['Date'].dt.minute >= 5)
-        combined_df.loc[mask, 'Dst'] = dst_value
-        combined_df.loc[mask, 'Kp'] = kp_value
-
+    # Ensure column completeness and order
+    desired_order = ['Date', 'By', 'Bz', 'V', 'Density', 'Pdyn', 'Dst', 'Kp',
+                     'G1', 'G2', 'G3', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6']
     for col in desired_order:
         if col not in combined_df.columns:
             combined_df[col] = pd.NA
-
     combined_df = combined_df[desired_order]
+    combined_df = combined_df.drop_duplicates(subset='Date', keep='first')
 
-    combined_df.to_csv(f'{year}_TSY_Inputs.csv', index=False)
-    source_file = f'{year}_TSY_Inputs.csv'
-    destination_folder = os.path.join(os.path.dirname(__file__), "ServerData")
+    # Write output CSV
+    output_file = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
+    combined_df.to_csv(output_file, index=False)
+
+    # Move to ServerData folder
+    destination_folder = os.path.join(base_dir, "ServerData")
     os.makedirs(destination_folder, exist_ok=True)
-    destination_file = os.path.join(destination_folder, os.path.basename(source_file))
-    shutil.move(source_file, destination_file)
+    shutil.move(output_file, os.path.join(destination_folder, os.path.basename(output_file)))
+
+
+
 
 def Omnidelete(OMNIYEAR):
 
@@ -399,9 +465,10 @@ def Omnidelete(OMNIYEAR):
     file8 = f'{OMNIYEAR}_OMNI_5m_with_TS05_variables.dat'
     file9 = f'omni_{OMNIYEAR+1}_low_res.csv'
     file10 = f'omni2_{OMNIYEAR+1}.dat'
+    file11 = f'omni_{OMNIYEAR}_high_res.csv'
     
     if OMNIYEAR < datetime.now().year:
-        filelist = [file1,file2,file3,file4,file5,file6,file7,file8,file9,file10]
+        filelist = [file1,file2,file3,file4,file5,file6,file7,file8,file9,file10,file11]
     else:
         filelist = [file1,file2,file3,file4,file5,file6,file7,file8]
 
