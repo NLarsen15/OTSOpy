@@ -196,7 +196,13 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
                       MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, 
                       CoordinateSystem, FlightFile, MHDfile, MHDCoordSys):
   with open(FlightFile, mode='a', newline='', encoding='utf-8') as file:
-    headers = ["Date","Latitude", "Longitude","Altitude", "Ru", "Rc", "Rl"]
+    if asymptotic == "YES":
+        asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
+        defualt_headers = ["Date","Latitude","Longitude","Altitude","Rc GV","Rc Asym"]
+        headers = defualt_headers + asymlevels_with_units
+    else:
+        headers = ["Date","Latitude", "Longitude","Altitude", "Ru", "Rc", "Rl"]
+
     writer = csv.writer(file)
     writer.writerow(headers)
 
@@ -237,7 +243,7 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
             for i in Energy_List:
               R = (i**2 + 2*i*E_0)**(0.5)
               P_List.append(R)
-            P_List.insert(0, Rigidities[1])
+            P_List.insert(0, round(Rigidities[1], 5))
           else:
             if unit == "GV": 
               P_List = Energy_List.copy()
@@ -264,10 +270,10 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
           formatted_list = [f"{bool};{lat};{long}" for bool, lat, long in lat_long_pairs]
   
           formatted_list.insert(0, datetimeobj)
-          formatted_list.insert(1, Position[1])
-          formatted_list.insert(2, Position[2])
-          formatted_list.insert(3, Position[0])
-          formatted_list.insert(4, Rigidities[1])
+          formatted_list.insert(1, round(float(Position[1]),5))
+          formatted_list.insert(2, round(float(Position[2]),5))
+          formatted_list.insert(3, round(float(Position[0]),5))
+          formatted_list.insert(4, round(Rigidities[1],5))
           writer.writerow(formatted_list)
           queue.put(1)
   
