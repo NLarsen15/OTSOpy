@@ -196,7 +196,7 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
                       MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, 
                       CoordinateSystem, FlightFile, MHDfile, MHDCoordSys):
   with open(FlightFile, mode='a', newline='', encoding='utf-8') as file:
-    headers = ["Date","Latitude", "Longitude","Altitude", "Rl", "Rc", "Ru"]
+    headers = ["Date","Latitude", "Longitude","Altitude", "Ru", "Rc", "Rl"]
     writer = csv.writer(file)
     writer.writerow(headers)
 
@@ -272,7 +272,7 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
           queue.put(1)
   
         else:
-           headers = ["Date","Latitude", "Longitude","Altitude", "Rl", "Rc", "Ru"]
+           headers = ["Date","Latitude", "Longitude","Altitude", "Ru", "Rc", "Rl"]
            data = [datetimeobj,x[1],x[2],x[3],Rigidities[0],Rigidities[1], Rigidities[2]]
            writer.writerow(data)
            queue.put(1)
