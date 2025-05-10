@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.0.12',
+    version='1.0.13',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
@@ -22,6 +22,9 @@ setup(
     entry_points={
             'console_scripts': [
                 'OTSO.clean=OTSO:clean',
+                'OTSO.addstation=OTSO:addstation',
+                'OTSO.removestation=OTSO:removestation',
+                'OTSO.liststations=OTSO:liststations',
             ],
     },
     classifiers=[
