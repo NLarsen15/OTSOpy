@@ -53,3 +53,19 @@ def trace(*args, **kwargs):
 def clean(*args, **kwargs):
     from .OTSO import clean as clean_func
     return clean_func(*args, **kwargs)
+
+def addstation(*args, **kwargs):
+    from .OTSO import AddStation as addstation_func
+    Name, Latitude, Longitude = sys.argv[1], float(sys.argv[2]), float(sys.argv[3])
+    addstation_func(Name, Latitude, Longitude)
+    return
+
+def removestation(*args, **kwargs):
+    from .OTSO import RemoveStation as removestation_func
+    Name = sys.argv[1]
+    removestation_func(Name)
+    return
+
+def liststations(*args, **kwargs):
+    from .OTSO import ListStations as liststations_func
+    return liststations_func(*args, **kwargs)
