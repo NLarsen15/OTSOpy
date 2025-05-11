@@ -3,11 +3,17 @@ def planet(startaltitude=20,cutoff_comp="Vertical",minaltitude=20,maxdistance=10
            G1=0,G2=0,G3=0,W1=0,W2=0,W3=0,W4=0,W5=0,W6=0,kp=0,anti="YES",year=2024,
            month=1,day=1,hour=12,minute=0,second=0,internalmag="IGRF",externalmag="TSY89",
            intmodel="Boris",startrigidity=20,endrigidity=0,rigiditystep=0.01,rigidityscan="ON",
-           gyropercent=15,magnetopause="Kobel",corenum=1, azimuth=0, zenith=0, asymptotic="NO",
+           gyropercent=15,magnetopause="Kobel",corenum=None, azimuth=0, zenith=0, asymptotic="NO",
            asymlevels = [0.1,0.3,0.5,1,2,3,4,5,6,7,8,9,10,15,20,30,50,70,100,300,500,700,1000],unit="GeV",
            latstep=-5,longstep=5, maxlat=90,minlat=-90,maxlong=360,minlong=0,g=None,h=None,MHDfile=None,MHDcoordsys=None,
            array_of_lats_and_longs=None):
     from .Parameters.functions import otso_planet
+    import psutil
+
+    if corenum is None:
+       corenum = psutil.cpu_count(logical=False) - 2
+       if corenum <= 0:
+          corenum = 1
     
     # Capture all local variables, including defaults and user-provided kwargs
     arguments = locals()

@@ -2,10 +2,16 @@ def flight(latitudes, longitudes, dates,altitudes,cutoff_comp="Vertical",minalti
            serverdata="OFF",livedata="OFF",vx=None,vy=None,vz=None,by=None,bz=None,density=None,pdyn=None,Dst=None,
            G1=None,G2=None,G3=None,W1=None,W2=None,W3=None,W4=None,W5=None,W6=None,kp=None,Anum=1,anti="YES",internalmag="IGRF",externalmag="TSY89",
            intmodel="Boris",startrigidity=20,endrigidity=0,rigiditystep=0.01,rigidityscan="ON",
-           coordsystem="GEO",gyropercent=15,magnetopause="Kobel",corenum=1,azimuth=0,zenith=0,g=None,h=None,
+           coordsystem="GEO",gyropercent=15,magnetopause="Kobel",corenum=None,azimuth=0,zenith=0,g=None,h=None,
            asymptotic="NO",asymlevels=[0.1,0.3,0.5,1,2,3,4,5,6,7,8,9,10,15,20,30,50,70,100,300,500,700,1000],
            unit="GeV",MHDfile=None,MHDcoordsys=None):
     from .Parameters.functions import otso_flight
+    import psutil
+
+    if corenum is None:
+       corenum = psutil.cpu_count(logical=False) - 2
+       if corenum <= 0:
+          corenum = 1
        
     arguments = locals()
 

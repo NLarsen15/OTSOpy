@@ -3,6 +3,12 @@ def magfield(Locations,serverdata="OFF",livedata="OFF",vx=-500,vy=0,vz=0,by=5,bz
            month=1,day=1,hour=12,minute=0,second=0,internalmag="IGRF",externalmag="TSY89",
            coordsystem="GEO", g=None,h=None,corenum=1,MHDfile=None,MHDcoordsys=None):
     from .Parameters.functions import otso_magfield
+    import psutil
+
+    if corenum is None:
+       corenum = psutil.cpu_count(logical=False) - 2
+       if corenum <= 0:
+          corenum = 1
     
     arguments = locals()
     for arg in arguments:

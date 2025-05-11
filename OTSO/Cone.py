@@ -3,8 +3,14 @@ def cone(Stations, customlocations=[], startaltitude=20,minaltitude=20,zenith=0,
            G1=0,G2=0,G3=0,W1=0,W2=0,W3=0,W4=0,W5=0,W6=0,kp=0,Anum=1,anti="YES",year=2024,
            month=1,day=1,hour=12,minute=0,second=0,internalmag="IGRF",externalmag="TSY89",
            intmodel="Boris",startrigidity=20,endrigidity=0,rigiditystep=0.01,
-           coordsystem="GEO",gyropercent=15,magnetopause="Kobel",corenum=1,g=None,h=None,MHDfile=None,MHDcoordsys=None):
+           coordsystem="GEO",gyropercent=15,magnetopause="Kobel",corenum=None,g=None,h=None,MHDfile=None,MHDcoordsys=None):
     from .Parameters.functions import otso_cone
+    import psutil
+
+    if corenum is None:
+       corenum = psutil.cpu_count(logical=False) - 2
+       if corenum <= 0:
+          corenum = 1
     
     arguments = locals()
     for arg in arguments:
