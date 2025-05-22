@@ -12,14 +12,14 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys):
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,spheresize):
 
     CutoffInputArray = cutoff_inputs.CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys)
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,spheresize)
 
     RigidityArray = CutoffInputArray[0]
     DateArray = CutoffInputArray[1]
@@ -68,7 +68,7 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
     ProcessQueue = mp.Manager().Queue()
     for Data,Core in zip(Positionlists,CoreList):
         Child = mp.Process(target=fortran_calls.fortrancallCutoff,  args=(Data, Core, RigidityArray, DateArray, Model, IntModel, ParticleArray, IOPT,
-         WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, Kp, ProcessQueue, g, h,  MHDfile, MHDcoordsys))
+         WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, Kp, ProcessQueue, g, h,  MHDfile, MHDcoordsys,spheresize))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:

@@ -19,7 +19,7 @@ process = psutil.Process()
 
 def fortrancallCutoff(Data, Core, RigidityArray, DateArray, model, IntModel, ParticleArray, IOPT, 
 WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, 
-EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys):
+EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys,spheresize):
     
     if model[1] == 99:
       MHDinit.MHDinitialise(MHDfile)
@@ -44,7 +44,7 @@ EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys):
 
       FileName = NMname + ".csv"
       Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause,
-                                   FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys)
+                                   FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys,spheresize)
 
       
       Rigiditydataframe = pd.DataFrame({Station: Rigidities}, index=['Ru', 'Rc', 'Rl'])
@@ -53,7 +53,7 @@ EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys):
     return
 
 def fortrancallCone(Data, Core, RigidityArray, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause,
-                     CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys):
+                     CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys,spheresize):
     
     if model[1] == 99:
       MHDinit.MHDinitialise(MHDfile)
@@ -75,7 +75,7 @@ def fortrancallCone(Data, Core, RigidityArray, DateArray, model, IntModel, Parti
 
       FileName = NMname + ".csv"
       Cone, Rigidities = OTSOLib.cone(Position, StartRigidity, EndRigidity, RigidityStep, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray,
-                                       Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, length, g, h, MHDCoordSys)
+                                       Magnetopause, FileName, CoordinateSystem, MaxStepPercent, EndParams, length, g, h, MHDCoordSys,spheresize)
       decoded_lines = [line.decode('utf-8').strip() for sublist in Cone for line in sublist]
 
       data = [line.split() for line in decoded_lines]
@@ -92,7 +92,7 @@ def fortrancallCone(Data, Core, RigidityArray, DateArray, model, IntModel, Parti
 
 
 def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, MaxStepPercent, 
-                      EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, PlanetFile,MHDfile, MHDCoordSys):
+                      EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, PlanetFile,MHDfile, MHDCoordSys,spheresize):
   with open(PlanetFile, mode='a', newline='', encoding='utf-8') as file:
     writer = csv.writer(file)
 
@@ -112,7 +112,7 @@ def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
   
         FileName = NMname + ".csv"
         Rigidities = OTSOLib.planet(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName,
-                                     MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys)
+                                     MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys,spheresize)
         CoordinateSystem = "GEO"
   
         lat_long_pairs = []
@@ -134,14 +134,14 @@ def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
               if P == P_List[0]:  # Check if it's the first value in P_List
                   while True:
                       bool, Lat, Long = OTSOLib.trajectory(Position, P, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName,
-                                                            CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys)
+                                                            CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys,spheresize)
                       P += Rigidity[2]
                       if bool == 1:
                           lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
                           break 
               else:
                   bool, Lat, Long = OTSOLib.trajectory(Position, P, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName,
-                                                        CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys)
+                                                        CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys,spheresize)
                   lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
   
           formatted_list = [f"{bool};{lat};{long}" for bool, lat, long in lat_long_pairs]
@@ -164,7 +164,7 @@ def fortrancallPlanet(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
   
 
 def fortrancallTrajectory(Data, Core, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, 
-                          Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys):
+                          Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys,spheresize):
   
   if model[1] == 99:
     MHDinit.MHDinitialise(MHDfile)
@@ -181,7 +181,7 @@ def fortrancallTrajectory(Data, Core, Rigidity, DateArray, model, IntModel, Part
 
     FileName = NMname + ".csv"
     OTSOLib.trajectory_full(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, FileName, 
-                            CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys)
+                            CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys,spheresize)
     Trajectory = pd.read_csv(FileName)
     Trajectory.columns = [f"{col}_Re [{CoordinateSystem}]" for col in Trajectory.columns]
     
@@ -194,7 +194,7 @@ def fortrancallTrajectory(Data, Core, Rigidity, DateArray, model, IntModel, Part
 
 def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, 
                       MaxStepPercent, EndParams, Rcomp, Rscan, asymptotic, asymlevels, unit, queue, g, h, 
-                      CoordinateSystem, FlightFile, MHDfile, MHDCoordSys):
+                      CoordinateSystem, FlightFile, MHDfile, MHDCoordSys,spheresize):
   with open(FlightFile, mode='a', newline='', encoding='utf-8') as file:
     if asymptotic == "YES":
         asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
@@ -231,7 +231,7 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
   
         FileName = NMname + ".csv"
         Rigidities = Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, 
-                                                 FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys)
+                                                 FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys,spheresize)
   
         lat_long_pairs = []
         P_List = []
@@ -252,14 +252,14 @@ def fortrancallFlight(Data, Rigidity, DateArray, model, IntModel, ParticleArray,
               if P == P_List[0]:
                   while True:
                       bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, 
-                                                           CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys)
+                                                           CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys,spheresize)
                       P += RigidityStep
                       if bool == 1:
                           lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
                           break 
               else:
                   bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, FileName, 
-                                                       CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys)
+                                                       CoordinateSystem, MaxStepPercent, EndParams, g, h, MHDCoordSys,spheresize)
                   lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
           
           asymlevels_with_units = [f"{level} [{unit}]" for level in asymlevels]
@@ -333,7 +333,7 @@ def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue):
     return
 
 def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, IOPT, WindArray, Magnetopause, 
-                     CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys):
+                     CoordinateSystem, MaxStepPercent, EndParams, queue, g, h, MHDfile, MHDCoordSys,spheresize):
     
     if model[1] == 99:
       MHDinit.MHDinitialise(MHDfile)
@@ -348,7 +348,8 @@ def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, 
       Filename = f"{x[1]}_{x[2]}.csv"
       name = f"{x[1]}_{x[2]}"
 
-      OTSOLib.fieldtrace(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, Filename, g, h, MHDCoordSys)
+      OTSOLib.fieldtrace(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, CoordinateSystem, MaxStepPercent,
+                          EndParams, Filename, g, h, MHDCoordSys,spheresize)
       Trace = pd.read_csv(Filename)
       coordsystem2 = "GSM"
       columns = Trace.columns

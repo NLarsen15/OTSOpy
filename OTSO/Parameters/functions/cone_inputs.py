@@ -31,8 +31,10 @@ def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth
          Magnetopause = 2
     elif magnetopause == "Kobel":
          Magnetopause = 3
+    elif magnetopause == "NONE":
+         Magnetopause == 99
     else:
-         print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"" ")
+         print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"", ""NONE"" ")
          exit()
 
 

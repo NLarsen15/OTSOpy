@@ -12,13 +12,13 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys):
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,spheresize):
 
     FlightInputArray = flight_inputs.FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys)
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,spheresize)
 
     RigidityArray = FlightInputArray[0]
     DateArray = FlightInputArray[1]
@@ -78,7 +78,8 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
                                                                               ParticleArray, I, Wind, 
                                                                               Magnetopause, MaxStepPercent, EndParams, 
                                                                               Rcomp, Rscan, asymptotic, asymlevels, unit,
-                                                                              ProcessQueue,g,h,CoordinateSystem, flightFile,  MHDfile, MHDcoordsys))
+                                                                              ProcessQueue,g,h,CoordinateSystem, flightFile,  MHDfile, MHDcoordsys,
+                                                                              spheresize))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:

@@ -41,9 +41,10 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
          Magnetopause = 2
     elif magnetopause == "Kobel":
          Magnetopause = 3
+    elif magnetopause == "NONE":
+         Magnetopause == 99
     else:
-         print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"" ")
-         exit()
+         print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"", ""NONE"" ")
 
 
     if intmodel == "4RK":

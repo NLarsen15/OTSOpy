@@ -18,7 +18,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize,
            array_of_lats_and_longs=None,
            grid_params_user_set=False):
 
@@ -31,7 +31,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize,
            array_of_lats_and_longs=array_of_lats_and_longs,
            grid_params_user_set=grid_params_user_set)
 
@@ -144,7 +144,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                                                                               ParticleArray, IOPT, WindArray, 
                                                                               Magnetopause, MaxStepPercent, EndParams, 
                                                                               Rcomp, Rscan, asymptotic, asymlevels, unit,
-                                                                              ProcessQueue,g,h,planetfile, MHDfile, MHDcoordsys))
+                                                                              ProcessQueue,g,h,planetfile, MHDfile, MHDcoordsys,
+                                                                              spheresize))
             ChildProcesses.append(Child)
         
     for a in ChildProcesses:

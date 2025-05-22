@@ -9,7 +9,7 @@
 ! **********************************************************************************************************************
 subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, Rcomputation, scanchoice, &
-    gOTSO, hOTSO, MHDCoordSys, Rigidities)
+    gOTSO, hOTSO, MHDCoordSys,spheresize, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -348,7 +348,7 @@ end subroutine cutoff
 ! **********************************************************************************************************************
 subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    length, gOTSO, hOTSO, MHDCoordSys, ConeArray, Rigidities)
+    length, gOTSO, hOTSO, MHDCoordSys,spheresize, ConeArray, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -536,7 +536,7 @@ end subroutine cone
 ! **********************************************************************************************************************
 subroutine trajectory(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    gOTSO, hOTSO,MHDCoordSys, bool, Lat, Long)
+    gOTSO, hOTSO,MHDCoordSys,spheresize, bool, Lat, Long)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -701,7 +701,7 @@ end subroutine trajectory
 !
 ! **********************************************************************************************************************
 subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti, I, Wind, Pause, &
-     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys, Rigidities)
+     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys,spheresize, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -1031,7 +1031,7 @@ end subroutine planet
 ! **********************************************************************************************************************
 subroutine trajectory_full(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, &
-    End, gOTSO, hOTSO, MHDCoordSys)
+    End, gOTSO, hOTSO, MHDCoordSys,spheresize)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -1302,7 +1302,7 @@ subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, Coor
 ! **********************************************************************************************************************
 subroutine FieldTrace(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, CoordSystem, GyroPercent, &
-    End, FileName, gOTSO,hOTSO,MHDCoordSys)
+    End, FileName, gOTSO,hOTSO,MHDCoordSys,spheresize)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2

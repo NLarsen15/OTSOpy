@@ -25,7 +25,7 @@ end interface
  
  contains
 
-  function functionSphere() ! 25Re Sphere
+  function functionSphere() ! Sphere
     integer(4) :: functionSphere
     real(8) :: GSEPosition(3), x1, y1, z1, TestResult
 
@@ -41,7 +41,7 @@ end interface
     y1 = GSEPosition(2)
     z1 = GSEPosition(3)
 
-    TestResult = (z1**2 + y1**2 + x1**2)**(0.5) - (25)
+    TestResult = (z1**2 + y1**2 + x1**2)**(0.5) - (spheresize)
 
     IF (TestResult < 0) THEN
       functionSphere = 0
@@ -56,36 +56,13 @@ end interface
     return
   end function functionSphere
 
-  function functionLargeSphere() ! 25Re Sphere
-    integer(4) :: functionLargeSphere
-    real(8) :: GSEPosition(3), x1, y1, z1, TestResult
+  function functionDisabled() ! No Magnetopause
+    integer(4) :: functionDisabled
 
-    call CoordinateTransform("GDZ", "GSE", year, day, secondTotal, Position, GSEPosition)
-
-    if (model(1) == 4) then
-      call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, Position, GSEPosition)
-    end if
-    
-    TestResult = -1
-    Result = 0
-    x1 = GSEPosition(1)
-    y1 = GSEPosition(2)
-    z1 = GSEPosition(3)
-
-    TestResult = (z1**2 + y1**2 + x1**2)**(0.5) - (100)
-
-    IF (TestResult < 0) THEN
-      functionLargeSphere = 0
-    ELSE IF (TestResult >= 0) THEN
-      functionLargeSphere = 1
-      IF (FinalStep == 0) THEN
-        FinalStep = 1
-        TestResult = -1
-      END IF
-    END IF
+    functionDisabled = 0
     
     return
-  end function functionLargeSphere
+  end function functionSphere
 
   function functionAberratedFormisano() ! Aberrated Formisano Model
     integer(4) :: functionAberratedFormisano
@@ -332,15 +309,16 @@ end interface
 
   IF (Pause == 0) THEN
     PausePointer => functionSphere ! 25Re Sphere
-  ELSE IF (Pause == 100) THEN
-    PausePointer => functionSphere ! 100Re Sphere
   ELSE IF (Pause == 1) THEN
     PausePointer => functionAberratedFormisano  ! Aberrated Formisano Model
   ELSE IF (Pause == 2) THEN
     PausePointer => functionSibeck  ! Sibeck Model
   ELSE IF (Pause == 3) THEN
     PausePointer => functionKobel   ! Kobel Model
-  ELSE IF (model(2) == 4) THEN
+  END IF
+
+  
+  IF (model(2) == 4) THEN
     PausePointer => functionTSY  ! TSYGANENKO models
   ELSE IF (model(2) == 5) THEN
     PausePointer => functionTSY  ! TSYGANENKO models
@@ -348,8 +326,10 @@ end interface
     PausePointer => functionTSY  ! TSYGANENKO models
   ELSE IF (model(2) == 7) THEN
     PausePointer => functionTSY  ! TSYGANENKO models
-  ELSE
-    print *, "Please enter valid magnetopause model"
+  END IF
+
+  IF (Pause == 99) THEN
+    PausePointer => functionDisabled  ! No Magnetopause
   END IF
 
 

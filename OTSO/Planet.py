@@ -6,7 +6,7 @@ def planet(startaltitude=20,cutoff_comp="Vertical",minaltitude=20,maxdistance=10
            gyropercent=15,magnetopause="Kobel",corenum=None, azimuth=0, zenith=0, asymptotic="NO",
            asymlevels = [0.1,0.3,0.5,1,2,3,4,5,6,7,8,9,10,15,20,30,50,70,100,300,500,700,1000],unit="GeV",
            latstep=-5,longstep=5, maxlat=90,minlat=-90,maxlong=360,minlong=0,g=None,h=None,MHDfile=None,MHDcoordsys=None,
-           array_of_lats_and_longs=None):
+           array_of_lats_and_longs=None,spheresize=25):
     from .Parameters.functions import otso_planet
     import psutil
 
@@ -50,9 +50,9 @@ def planet(startaltitude=20,cutoff_comp="Vertical",minaltitude=20,maxdistance=10
         month, day, hour, minute, second, internalmag, externalmag,
         intmodel, startrigidity, endrigidity, rigiditystep, rigidityscan,
         gyropercent, magnetopause, corenum, azimuth, zenith, asymptotic, asymlevels, unit,
-        latstep, longstep, maxlat, minlat, maxlong, minlong, g, h, MHDfile, MHDcoordsys,
+        latstep, longstep, maxlat, minlat, maxlong, minlong, g, h, MHDfile, MHDcoordsys,spheresize,
         array_of_lats_and_longs=array_of_lats_and_longs,
-        grid_params_user_set=grid_params_user_set # Pass the flag
+        grid_params_user_set=grid_params_user_set
     )
     
     return planet_result
