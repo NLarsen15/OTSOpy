@@ -131,7 +131,7 @@ def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth
     KpS = 0
 
     if ServerData == 1:
-         if int(EventDate.year) > 1981:
+         if int(EventDate.year) >= 1981:
               Server.DownloadServerFile(int(EventDate.year))
          elif int(EventDate.year) < 1981 and int(EventDate.year) > 1963:
               Server.DownloadServerFileLowRes(int(EventDate.year))

@@ -120,7 +120,7 @@ def TraceInputs(startaltitude,Coordsys,
     KpS = 0
 
     if ServerData == 1:
-         if int(EventDate.year) > 1981:
+         if int(EventDate.year) >= 1981:
               Server.DownloadServerFile(int(EventDate.year))
          elif int(EventDate.year) < 1981 and int(EventDate.year) > 1963:
               Server.DownloadServerFileLowRes(int(EventDate.year))

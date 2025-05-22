@@ -186,7 +186,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
     for x in dates:
          
        if ServerData == 1:
-          if int(x.year) > 1981:
+          if int(x.year) >= 1981:
                Server.DownloadServerFile(int(x.year))
           elif int(x.year) < 1981 and int(x.year) > 1963:
                Server.DownloadServerFileLowRes(int(x.year))
