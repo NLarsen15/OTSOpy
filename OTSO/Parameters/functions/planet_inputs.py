@@ -44,7 +44,7 @@ def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     elif magnetopause == "Kobel":
          Magnetopause = 3
     elif magnetopause == "NONE":
-         Magnetopause == 99
+         Magnetopause = 99
     else:
          print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"", ""NONE"" ")
 

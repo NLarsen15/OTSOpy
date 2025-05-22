@@ -19,7 +19,7 @@ def OTSO_trajectory(Stations,rigidity, customlocations,startaltitude,
            minaltitude,zenith,azimuth,maxdistance,maxtime,serverdata,livedata,vx,vy,vz,by,bz,density,
            pdyn,Dst,G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,intmodel,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize)
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys)
 
     Rigidity = TrajectoryInputArray[0]
     DateArray = TrajectoryInputArray[1]

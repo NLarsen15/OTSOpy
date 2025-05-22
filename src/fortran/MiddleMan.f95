@@ -9,7 +9,7 @@
 ! **********************************************************************************************************************
 subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, Rcomputation, scanchoice, &
-    gOTSO, hOTSO, MHDCoordSys,spheresize, Rigidities)
+    gOTSO, hOTSO, MHDCoordSys, sphere, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -23,7 +23,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, EndLoop
+    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, EndLoop, sphere
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
@@ -58,6 +58,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     sumru = 0
     LastCheck = 0
     FailCheck = 0
+    spheresize = sphere
 
     if (mode(1) == 4) then
     Ginput = gOTSO
@@ -107,7 +108,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         EndLoop = 1.0
     ELSE IF (Rcomputation == 2) THEN
         EndLoop = 1.0
-    ELSE
+    ELSE IF (Rcomputation == 1) THEN
         EndLoop = 9.0
     END IF
 
@@ -127,6 +128,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     IF (Rcomputation .NE. 2) THEN
         PositionIN(4) = Zenith(loop)
         PositionIN(5) = Azimuth(loop)
+    END IF
     
     IF (R < Rigidity(3)) THEN
         R = EndRigidity
@@ -232,8 +234,10 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     END IF
     50 Result = 0
 
-    PositionIN(4) = Zenith(loop)
-    PositionIN(5) = Azimuth(loop)
+    IF (Rcomputation .NE. 2) THEN
+        PositionIN(4) = Zenith(loop)
+        PositionIN(5) = Azimuth(loop)
+    END IF
 
     end do
 
@@ -281,8 +285,10 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     !write(10,'(*(G0.6,:""))')PositionIN(4), ",", PositionIN(5), ",", Ru, ",", Ref, ",", Rl 
 
     loop = loop + 1
-    PositionIN(4) = Zenith(loop)
-    PositionIN(5) = Azimuth(loop)
+    IF (Rcomputation .NE. 2) THEN
+        PositionIN(4) = Zenith(loop)
+        PositionIN(5) = Azimuth(loop)
+    END IF
     R = real(StartRigidity, kind = selected_real_kind(15,307))
     Re = 6371.2
     Limit = 0
@@ -348,7 +354,7 @@ end subroutine cutoff
 ! **********************************************************************************************************************
 subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    length, gOTSO, hOTSO, MHDCoordSys,spheresize, ConeArray, Rigidities)
+    length, gOTSO, hOTSO, MHDCoordSys,sphere, ConeArray, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -363,7 +369,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityStep, Date(6), End(3)
     real(8) :: Wind(19), Re, Lat, Long, GyroPercent, Rigidities(3)
-    real(8) :: Geofile(3)
+    real(8) :: Geofile(3), sphere
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
     integer(4) :: I, Limit, bool, Pause, stepNum
     character(len=50) :: FileName
@@ -395,6 +401,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     Step = RigidityStep
     SubResult = 0
     MaxGyroPercent = GyroPercent
+    spheresize = sphere
 
     if (mode(1) == 4) then
     Ginput = gOTSO
@@ -536,7 +543,7 @@ end subroutine cone
 ! **********************************************************************************************************************
 subroutine trajectory(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    gOTSO, hOTSO,MHDCoordSys,spheresize, bool, Lat, Long)
+    gOTSO, hOTSO,MHDCoordSys,sphere, bool, Lat, Long)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -550,7 +557,7 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(19), Re, GyroPercent
+real(8) :: Wind(19), Re, GyroPercent, sphere
 real(8) :: Xnew(3), XnewConverted(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
@@ -575,6 +582,7 @@ Acount = 0
 Result = 0
 SubResult = 0
 MaxGyroPercent = GyroPercent
+spheresize = sphere
 
 if (mode(1) == 4) then
 Ginput = gOTSO
@@ -701,7 +709,7 @@ end subroutine trajectory
 !
 ! **********************************************************************************************************************
 subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti, I, Wind, Pause, &
-     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys,spheresize, Rigidities)
+     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys,sphere, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -715,7 +723,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(19), Re, Lat, Long, GyroPercent
+    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, sphere
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber,EndLoop
@@ -752,6 +760,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     sumru = 0
     LastCheck = 0
     FailCheck = 0
+    spheresize = sphere
 
     CoordSystem = "GEO"
 
@@ -796,7 +805,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         EndLoop = 1.0
     ELSE IF (Rcomputation == 2) THEN
         EndLoop = 1.0
-    ELSE
+    ELSE IF (Rcomputation == 1) THEN
         EndLoop = 9.0
     END IF
 
@@ -815,6 +824,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     IF (Rcomputation .NE. 2) THEN
         PositionIN(4) = Zenith(loop)
         PositionIN(5) = Azimuth(loop)
+    END IF
     
 
     IF (R < Rigidity(3)) THEN
@@ -921,8 +931,10 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     END IF
     50 Result = 0
 
-    PositionIN(4) = Zenith(loop)
-    PositionIN(5) = Azimuth(loop)
+    IF (Rcomputation .NE. 2) THEN
+        PositionIN(4) = Zenith(loop)
+        PositionIN(5) = Azimuth(loop)
+    END IF
 
     end do
 
@@ -970,8 +982,10 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     !write(10,'(*(G0.6,:""))')PositionIN(4), ",", PositionIN(5), ",", Ru, ",", Ref, ",", Rl 
 
     loop = loop + 1
-    PositionIN(4) = Zenith(loop)
-    PositionIN(5) = Azimuth(loop)
+    IF (Rcomputation .NE. 2) THEN
+        PositionIN(4) = Zenith(loop)
+        PositionIN(5) = Azimuth(loop)
+    END IF
     R = real(StartRigidity, kind = selected_real_kind(15,307))
     Re = 6371.2
     Limit = 0
@@ -1031,7 +1045,7 @@ end subroutine planet
 ! **********************************************************************************************************************
 subroutine trajectory_full(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, &
-    End, gOTSO, hOTSO, MHDCoordSys,spheresize)
+    End, gOTSO, hOTSO, MHDCoordSys,sphere)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -1046,7 +1060,7 @@ implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
 real(8) :: Wind(19), Re, Lat, Long, GyroPercent
-real(8) :: Xnew(3), XnewConverted(3)
+real(8) :: Xnew(3), XnewConverted(3), sphere
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
 character(len=50) :: FileName
@@ -1059,6 +1073,7 @@ Acount = 0
 Result = 0
 SubResult = 0
 MaxGyroPercent = GyroPercent
+spheresize = sphere
 
 if (mode(1) == 4) then
 Ginput = gOTSO
@@ -1302,7 +1317,7 @@ subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, Coor
 ! **********************************************************************************************************************
 subroutine FieldTrace(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, CoordSystem, GyroPercent, &
-    End, FileName, gOTSO,hOTSO,MHDCoordSys,spheresize)
+    End, FileName, gOTSO,hOTSO,MHDCoordSys,sphere)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -1317,7 +1332,7 @@ implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
 real(8) :: Wind(19), Re, GyroPercent, Pin(3), Pout(3)
-real(8) :: Xnew(3), XnewConverted(3), Bfield(3)
+real(8) :: Xnew(3), XnewConverted(3), Bfield(3), sphere
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
 character(len=3) :: CoordSystem, MHDCoordSys
@@ -1330,6 +1345,7 @@ Acount = 0
 Result = 0
 SubResult = 0
 MaxGyroPercent = GyroPercent
+spheresize = sphere
 
 if (mode(1) == 4) then
    Ginput = gOTSO

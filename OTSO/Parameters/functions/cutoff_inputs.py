@@ -33,7 +33,7 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
     elif magnetopause == "Kobel":
          Magnetopause = 3
     elif magnetopause == "NONE":
-         Magnetopause == 99
+         Magnetopause = 99
     else:
          print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"", ""NONE"" ")
 

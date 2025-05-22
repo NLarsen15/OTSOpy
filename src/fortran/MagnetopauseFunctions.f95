@@ -62,7 +62,7 @@ end interface
     functionDisabled = 0
     
     return
-  end function functionSphere
+  end function functionDisabled
 
   function functionAberratedFormisano() ! Aberrated Formisano Model
     integer(4) :: functionAberratedFormisano

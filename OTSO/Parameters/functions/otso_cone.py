@@ -19,7 +19,7 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize)
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys)
 
     RigidityArray = ConeInputArray[0]
     DateArray = ConeInputArray[1]

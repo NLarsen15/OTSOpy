@@ -23,7 +23,7 @@ def OTSO_trace(startaltitude,Coordsys,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize)
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys)
 
     LongitudeList = TraceInputArray[0]
     LatitudeList = TraceInputArray[1]

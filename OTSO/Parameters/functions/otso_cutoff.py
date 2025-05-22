@@ -19,7 +19,7 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,spheresize)
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys)
 
     RigidityArray = CutoffInputArray[0]
     DateArray = CutoffInputArray[1]
