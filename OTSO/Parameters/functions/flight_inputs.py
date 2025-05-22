@@ -67,7 +67,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
          Zenith = 0
          Azimuth = 0
     elif cutoff_comp == "Custom":
-         CutoffComputation = 0
+         CutoffComputation = 2
          Zenith = zenith
          Azimuth = azimuth
     else:

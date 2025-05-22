@@ -69,7 +69,7 @@ def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
          Zenith = 0
          Azimuth = 0
     elif cutoff_comp == "Custom":
-         CutoffComputation = 0
+         CutoffComputation = 2
          Zenith = zenith
          Azimuth = azimuth
     else:

@@ -105,6 +105,8 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
 
     IF (Rcomputation == 0) THEN
         EndLoop = 1.0
+    ELSE IF (Rcomputation == 2) THEN
+        EndLoop = 1.0
     ELSE
         EndLoop = 9.0
     END IF
@@ -122,8 +124,9 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         first_region_check = .true.
     END IF
 
-    PositionIN(4) = Zenith(loop)
-    PositionIN(5) = Azimuth(loop)
+    IF (Rcomputation .NE. 2) THEN
+        PositionIN(4) = Zenith(loop)
+        PositionIN(5) = Azimuth(loop)
     
     IF (R < Rigidity(3)) THEN
         R = EndRigidity
@@ -294,7 +297,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
 
     end do
 
-    IF(Rcomputation /= 0) THEN
+    IF(Rcomputation == 1) THEN
         sumrl = RLMemory(1)/2.0
         do i = 2, 9
             sumrl = sumrl + RLMemory(i)/16.0
@@ -790,9 +793,11 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
 
     IF (Rcomputation == 0) THEN
-        EndLoop = 1
+        EndLoop = 1.0
+    ELSE IF (Rcomputation == 2) THEN
+        EndLoop = 1.0
     ELSE
-        EndLoop = 9
+        EndLoop = 9.0
     END IF
 
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
@@ -807,8 +812,9 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     END IF
 
 
-    PositionIN(4) = Zenith(loop)
-    PositionIN(5) = Azimuth(loop)
+    IF (Rcomputation .NE. 2) THEN
+        PositionIN(4) = Zenith(loop)
+        PositionIN(5) = Azimuth(loop)
     
 
     IF (R < Rigidity(3)) THEN
@@ -980,7 +986,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
     end do
 
-    IF(Rcomputation /= 0) THEN
+    IF(Rcomputation == 1) THEN
         sumrl = RLMemory(1)/2.0
         do i = 2, 9
             sumrl = sumrl + RLMemory(i)/16.0
