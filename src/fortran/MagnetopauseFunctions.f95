@@ -258,7 +258,7 @@ end interface
     integer(4) :: functionTSY
     real(8) :: GSMPosition(3), x1, y1, z1, TestResult
 
-    call CoordinateTransform("GSE", "GSM", year, day, secondTotal, GSMPosition, GSMPosition)
+    call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, Position, GSMPosition)
     TestResult = -1
     Result = 0
     x1 = GSMPosition(1)
@@ -307,6 +307,16 @@ end interface
   implicit none
   integer(4) :: Pause
 
+  IF (model(2) == 4) THEN
+    Pause = 4
+  ELSE IF (model(2) == 5) THEN
+    Pause = 5
+  ELSE IF (model(2) == 6) THEN
+    Pause = 6
+  ELSE IF (model(2) == 7) THEN
+    Pause = 7
+  END IF
+
   IF (Pause == 0) THEN
     PausePointer => functionSphere ! 25Re Sphere
   ELSE IF (Pause == 1) THEN
@@ -315,16 +325,13 @@ end interface
     PausePointer => functionSibeck  ! Sibeck Model
   ELSE IF (Pause == 3) THEN
     PausePointer => functionKobel   ! Kobel Model
-  END IF
-
-  
-  IF (model(2) == 4) THEN
+  ELSE IF (Pause == 4) THEN
     PausePointer => functionTSY  ! TSYGANENKO models
-  ELSE IF (model(2) == 5) THEN
+  ELSE IF (Pause == 5) THEN
     PausePointer => functionTSY  ! TSYGANENKO models
-  ELSE IF (model(2) == 6) THEN
+  ELSE IF (Pause == 6) THEN
     PausePointer => functionTSY  ! TSYGANENKO models
-  ELSE IF (model(2) == 7) THEN
+  ELSE IF (Pause == 7) THEN
     PausePointer => functionTSY  ! TSYGANENKO models
   END IF
 

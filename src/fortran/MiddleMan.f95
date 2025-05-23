@@ -120,6 +120,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     do while (loop <= EndLoop)
    
     100 do while (R > EndRigidity)
+    Subresult = 0
 
     IF (mode(2) == 99) THEN
         first_region_check = .true.
@@ -421,6 +422,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     END IF
 
     do while (R > EndRigidity)
+    Subresult = 0
 
     IF (mode(2) == 99) THEN
         first_region_check = .true.
@@ -815,6 +817,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
 
     100 do while (R > EndRigidity)
+    Subresult = 0
 
     IF (mode(2) == 99) THEN
         first_region_check = .true.

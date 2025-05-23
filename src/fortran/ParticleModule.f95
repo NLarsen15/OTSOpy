@@ -56,6 +56,7 @@ h = 0
 hOLD = 0
 MaxT = 0
 FinalStep = 0
+Subresult = 0
 
 end subroutine Reset
       
