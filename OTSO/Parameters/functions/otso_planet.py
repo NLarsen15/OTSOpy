@@ -11,6 +11,7 @@ import numpy as np
 import gc
 import csv
 from collections import defaultdict
+import tempfile
 
 def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -110,7 +111,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
-    planet_list = [get_unique_filename(os.path.join(current_dir, f"Planet{i}.csv")) for i in range(1, CoreNum + 1)]
+    planet_list = [tempfile.NamedTemporaryFile(delete=False, suffix=".csv").name for _ in range(corenum)]
+
     for planet_file in planet_list:
         with open(planet_file, mode='a', newline='', encoding='utf-8') as file:  # Open in write ('w') mode
             writer = csv.writer(file)

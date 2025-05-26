@@ -7,6 +7,7 @@ import pandas as pd
 import sys
 import queue
 import numpy as np
+import tempfile
 
 def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -54,7 +55,7 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
 
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    flight_list = [os.path.join(current_dir, f"Flight{i}.csv") for i in range(1, (corenum) + 1)]
+    flight_list = [tempfile.NamedTemporaryFile(delete=False, suffix=".csv").name for _ in range(corenum)]
     
     print("OTSO Flight Computation Started")
     start = time.time()
