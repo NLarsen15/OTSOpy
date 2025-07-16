@@ -12,7 +12,7 @@ def OTSO_magfield(Locations,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           coordsystemIN,g,h,corenum,MHDfile,MHDcoordsys):
+           coordsystemIN,g,h,corenum,MHDfile,MHDcoordsys,Verbose):
 
     magfieldInputArray = magfield_inputs.MagFieldInputs(Locations,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -39,8 +39,10 @@ def OTSO_magfield(Locations,
     LocationsList = np.array_split(Locations, CoreNum)
 
     start = time.time()
-    print("OTSO Magfield Computation Started")
-    sys.stdout.write(f"\r{0:.2f}% complete")
+
+    if Verbose:
+        print("OTSO Magfield Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
 
 
     try:
@@ -74,8 +76,9 @@ def OTSO_magfield(Locations,
 
         # Calculate and print the progress
         percent_complete = (processed / total_stations) * 100
-        sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-        sys.stdout.flush()
+        if Verbose:
+            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+            sys.stdout.flush()
 
       except queue.Empty:
         # Queue is empty, but processes are still running, so we continue checking
@@ -90,10 +93,12 @@ def OTSO_magfield(Locations,
     combined_df = pd.concat(results, ignore_index=True)
     sorted_df = combined_df.sort_values(by=combined_df.columns[:3].tolist())
 
-    print("\nOTSO Magfield Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
+
+    if Verbose:
+      print("\nOTSO Magfield Computation Complete")
+      print("Whole Program Took: " + str(Printtime) + " seconds")
     
     EventDate = datetime(year,month,day,hour,minute,second)
     README = readme_generators.READMEMagfield(EventDate, Model, IOPT, WindArray,

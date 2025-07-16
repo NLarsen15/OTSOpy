@@ -63,28 +63,48 @@ end subroutine VelocityComponents
 ! NormOUT - Normal vector at the given point on Earth
 !
 ! ************************************************************************************************************************************
-subroutine NormalVector(StartPosition, NormOUT)
+subroutine NormalVector(StartPosition, inputcoord, NormOUT)
 USE particle
 implicit none
     
 real(8) :: Earth, StartPosition(5)
 real(8) :: NormOUT(3), xDT(3), xDTConvert(3), xINConvert(3)
+real(8) :: SPHposition(3)
+character(len=3) :: inputcoord
     
 !f2py intent(in) xIN, year, day, sec
 !f2py intent(out) NormOUT
     
 Earth = 6371200.0
-    
-xDT(1) = StartPosition(1) + 1
-xDT(2) = StartPosition(2)
-xDT(3) = StartPosition(3)
-    
-call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, StartPosition, xINConvert)
-call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, xDT, xDTConvert)
 
-if (model(1) == 4) THEN
-    call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, StartPosition, xINConvert)
-    call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, xDT, xDTConvert)
+if (inputcoord .NE. "GDZ") then
+    call CoordinateTransform("GDZ", "SPH", year, day, secondTotal, StartPosition, SPHposition)
+    xDT(1) = SPHposition(1) + 1
+    xDT(2) = SPHposition(2)
+    xDT(3) = SPHposition(3)
+
+    call CoordinateTransform("SPH", "GSM", year, day, secondTotal, SPHposition, xINConvert)
+    call CoordinateTransform("SPH", "GSM", year, day, secondTotal, xDT, xDTConvert)
+
+    if (model(1) == 4) THEN
+        call CoordinateTransform("SPH", "GEO", year, day, secondTotal, SPHposition, xINConvert)
+        call CoordinateTransform("SPH", "GEO", year, day, secondTotal, xDT, xDTConvert)
+    end if
+
+else
+
+    xDT(1) = StartPosition(1) + 1
+    xDT(2) = StartPosition(2)
+    xDT(3) = StartPosition(3)
+
+    call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, StartPosition, xINConvert)
+    call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, xDT, xDTConvert)
+
+    if (model(1) == 4) THEN
+        call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, StartPosition, xINConvert)
+        call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, xDT, xDTConvert)
+    end if
+
 end if
 
 NormOUT(1) = (xDTConvert(1) - xINConvert(1))*Earth

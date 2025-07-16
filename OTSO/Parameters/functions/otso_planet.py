@@ -19,9 +19,9 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize,
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose,
            array_of_lats_and_longs=None,
-           grid_params_user_set=False):
+           grid_params_user_set=False,):
 
     gc.enable()
 
@@ -32,7 +32,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,inputcoord,
            array_of_lats_and_longs=array_of_lats_and_longs,
            grid_params_user_set=grid_params_user_set)
 
@@ -59,6 +59,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     AntiCheck = PlanetInputArray[20]
     g = PlanetInputArray[21]
     h = PlanetInputArray[22]
+
+    kp = WindArray[17]
 
     del(PlanetInputArray)
 
@@ -132,8 +134,10 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     processed = 0
     totalp = 0
 
-    print("OTSO Planet Computation Started")
-    sys.stdout.write(f"\r{0:.2f}% complete")
+    if Verbose:
+        print("OTSO Planet Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
+
     try:
         if not mp.get_start_method(allow_none=True):
             mp.set_start_method('spawn')
@@ -147,7 +151,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                                                                               Magnetopause, MaxStepPercent, EndParams, 
                                                                               Rcomp, Rscan, asymptotic, asymlevels, unit,
                                                                               ProcessQueue,g,h,planetfile, MHDfile, MHDcoordsys,
-                                                                              spheresize))
+                                                                              spheresize,inputcoord))
             ChildProcesses.append(Child)
         
     for a in ChildProcesses:
@@ -169,8 +173,9 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
             
             gc.collect()
             percent_complete = (totalp / totalprocesses) * 100
-            sys.stdout.write(f"\r{percent_complete:.2f}% complete ({processed}/{totalprocesses} points)")
-            sys.stdout.flush()
+            if Verbose:
+                sys.stdout.write(f"\r{percent_complete:.2f}% complete ({processed}/{totalprocesses} points)")
+                sys.stdout.flush()
 
     
         except queue.Empty:
@@ -187,11 +192,13 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     ChildProcesses.clear()
 
     planet = combine_planet_files(planet_list)
-   
-    print("\nOTSO Planet Computation Complete")
+
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
+
+    if Verbose:
+        print("\nOTSO Planet Computation Complete")
+        print("Whole Program Took: " + str(Printtime) + " seconds")
     
     EventDate = datetime(year,month,day,hour,minute,second)
     
@@ -232,6 +239,39 @@ def combine_planet_files(planet_list):
     combined_planet = combined_planet.drop_duplicates(subset=['Latitude', 'Longitude'])
     combined_planet['Longitude'] = pd.to_numeric(combined_planet['Longitude'], errors='coerce')
     combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'], errors='coerce')
+    
+    # Duplicate polar points for all longitude values
+    unique_longitudes = sorted(combined_planet['Longitude'].unique())
+    polar_rows = []
+    
+    # Find existing polar points (90° and -90°)
+    north_pole_data = combined_planet[combined_planet['Latitude'] == 90.0]
+    south_pole_data = combined_planet[combined_planet['Latitude'] == -90.0]
+    
+    # Remove existing polar points from the dataframe
+    combined_planet = combined_planet[~((combined_planet['Latitude'] == 90.0) | (combined_planet['Latitude'] == -90.0))]
+    
+    # Duplicate north pole data for each longitude
+    if not north_pole_data.empty:
+        for longitude in unique_longitudes:
+            for _, row in north_pole_data.iterrows():
+                new_row = row.copy()
+                new_row['Longitude'] = longitude
+                polar_rows.append(new_row)
+    
+    # Duplicate south pole data for each longitude
+    if not south_pole_data.empty:
+        for longitude in unique_longitudes:
+            for _, row in south_pole_data.iterrows():
+                new_row = row.copy()
+                new_row['Longitude'] = longitude
+                polar_rows.append(new_row)
+    
+    # Add the duplicated polar rows back to the dataframe
+    if polar_rows:
+        polar_df = pd.DataFrame(polar_rows)
+        combined_planet = pd.concat([combined_planet, polar_df], ignore_index=True)
+    
     planet = combined_planet.sort_values(by=["Latitude", "Longitude"], ignore_index=True)
     return planet
 

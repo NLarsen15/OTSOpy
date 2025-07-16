@@ -11,7 +11,7 @@ def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum,azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile, MHDcoordsys,
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile, MHDcoordsys,inputcoord,
            array_of_lats_and_longs=None,
            grid_params_user_set=False): # Add flag
     
@@ -150,6 +150,10 @@ def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
          print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY89_BOBERG"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
          exit()
 
+    if inputcoord not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
+         print("Please select a valid inputcoord: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
+         exit()
+
     
     if rigidityscan == "ON":
          Rscan = 1
@@ -262,7 +266,18 @@ def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
         LatitudeList_meta = _LatitudeList_np.tolist()
         LongitudeList_meta = _LongitudeList_np.tolist()
-        coordinate_pairs = [[lat, lon] for lat in LatitudeList_meta for lon in LongitudeList_meta]
+        
+        # Generate coordinate pairs, handling poles specially to avoid duplicates
+        coordinate_pairs = []
+        for lat in LatitudeList_meta:
+            if abs(lat) == 90.0:  # At the poles (90° or -90°)
+                # Only add one point per pole (use first longitude)
+                if not any(abs(coord[0]) == 90.0 and coord[0] == lat for coord in coordinate_pairs):
+                    coordinate_pairs.append([lat, LongitudeList_meta[0]])
+            else:
+                # For non-polar latitudes, add all longitude combinations
+                for lon in LongitudeList_meta:
+                    coordinate_pairs.append([lat, lon])
     # --- End: Coordinate Generation Logic --- 
 
     PlanetInputArray = [coordinate_pairs, RigidityArray, DateArray, MagFieldModel, IntModel, ParticleArray, IOPTinput, WindArray, Magnetopause, gyropercent, EndParams, CutoffComputation, Rscan, Zenith, Azimuth, corenum, asymptotic, asymlevels, startaltitude, LiveData, AntiCheck, g, h, LatitudeList_meta, LongitudeList_meta]

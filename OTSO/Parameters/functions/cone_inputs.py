@@ -9,7 +9,7 @@ def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys):
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,inputcoord):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -124,6 +124,9 @@ def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth
 
     if coordsystem not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
          print("Please select a valid coordsystem: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
+         exit()
+    if inputcoord not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
+         print("Please select a valid inputcoord: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
          exit()
 
 

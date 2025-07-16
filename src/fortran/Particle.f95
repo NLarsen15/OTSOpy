@@ -20,13 +20,15 @@
 ! Updates parameters within the modules for the simulation. Defining the conditions of the simulation.
 !
 ! ************************************************************************************************************************************
-subroutine CreateParticle(StartPosition, Rigidity, Date, Atomic, Anti, mode)
+subroutine CreateParticle(StartPosition, Rigidity, Date, Atomic, Anti, mode, inputcoord)
 USE Particle
 USE SolarWind
 implicit none
 real(8) :: V(3), StartPosition(5), Date(6), Rigidity, Norm(3), VelocityGEO(3)
 integer(8) :: Anti, Atomic, mode(2)
 real(8) :: LocalVector(3), RotatedVelocity(3), GEOVelocity(3), Re, w
+real(8) :: tempposition(3), temppositionGDZ(3), GEOSPHposition(3)
+character(len=3) :: inputcoord
 
 Re = 6371.2
 
@@ -82,7 +84,13 @@ IF (Atomic == 0) THEN ! Electron
 
  call Rigidity2velocity(V)
 
- call NormalVector(StartPosition, Norm)
+ tempposition(1) = StartPosition(1)
+ tempposition(2) = StartPosition(2)
+ tempposition(3) = StartPosition(3)
+
+ call CoordinateTransform(inputcoord, "GDZ", year, day, secondTotal, tempposition, temppositionGDZ)
+
+ call NormalVector(temppositionGDZ, inputcoord, Norm)
 
  call VelocityComponents(V, Norm)
 
@@ -92,11 +100,13 @@ IF (Atomic == 0) THEN ! Electron
    VelocityGEO = Velocity
  end if
 
- call Vector_Geo2Local(VelocityGEO, StartPosition(2), StartPosition(3), LocalVector)
+ call CoordinateTransform("GDZ", "SPH", year, day, secondTotal, temppositionGDZ, GEOSPHposition)
+
+ call Vector_Geo2Local(VelocityGEO, GEOSPHposition(2), GEOSPHposition(3), LocalVector)
 
  call Rotate(LocalVector, StartPosition(4), StartPosition(5), RotatedVelocity)
 
- call Vector_Local2Geo(RotatedVelocity, StartPosition(2), StartPosition(3), GEOVelocity)
+ call Vector_Local2Geo(RotatedVelocity, GEOSPHposition(2), GEOSPHposition(3), GEOVelocity)
 
  if (model(1) /= 4) then
    call CoordinateTransform("GEO", "GSM", year, day, secondTotal, GEOVelocity, Velocity)

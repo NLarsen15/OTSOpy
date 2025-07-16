@@ -9,7 +9,7 @@ def TraceInputs(startaltitude,Coordsys,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile, MHDcoordsys):
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile, MHDcoordsys,inputcoord):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -103,6 +103,10 @@ def TraceInputs(startaltitude,Coordsys,
             exit()
     else:
          print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY89_BOBERG"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
+         exit()
+
+    if inputcoord not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
+         print("Please select a valid inputcoord: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
          exit()
     
     MinAlt = 0

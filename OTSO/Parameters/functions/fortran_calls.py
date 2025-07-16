@@ -19,7 +19,7 @@ process = psutil.Process()
 
 def fortrancallCutoff(Data, Core, RigidityArray, DateArray, model, IntModel, ParticleArray, IOPT, 
 WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, 
-EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys,spheresize):
+EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys,spheresize, inputcoord):
     
     if model[1] == 99:
       MHDinit.MHDinitialise(MHDfile)
@@ -44,7 +44,7 @@ EndParams, Rcomp, Rscan, Kp, queue, g, h, MHDfile, MHDCoordSys,spheresize):
 
       FileName = NMname + ".csv"
       Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause,
-                                   FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys,spheresize)
+                                   FileName, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, MHDCoordSys,spheresize, inputcoord)
 
       
       Rigiditydataframe = pd.DataFrame({Station: Rigidities}, index=['Ru', 'Rc', 'Rl'])

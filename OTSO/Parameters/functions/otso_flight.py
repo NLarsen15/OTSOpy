@@ -13,13 +13,13 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,spheresize):
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose):
 
     FlightInputArray = flight_inputs.FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys)
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,inputcoord)
 
     RigidityArray = FlightInputArray[0]
     DateArray = FlightInputArray[1]
@@ -56,10 +56,11 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
     flight_list = [tempfile.NamedTemporaryFile(delete=False, suffix=".csv").name for _ in range(corenum)]
-    
-    print("OTSO Flight Computation Started")
+
     start = time.time()
-    sys.stdout.write(f"\r{0:.2f}% complete")
+    if Verbose:
+        print("OTSO Flight Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
 
     results = []
     resultsfinal = []
@@ -80,7 +81,7 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
                                                                               Magnetopause, MaxStepPercent, EndParams, 
                                                                               Rcomp, Rscan, asymptotic, asymlevels, unit,
                                                                               ProcessQueue,g,h,CoordinateSystem, flightFile,  MHDfile, MHDcoordsys,
-                                                                              spheresize))
+                                                                              spheresize,inputcoord))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:
@@ -100,8 +101,9 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
                     break
     
             percent_complete = (totalp / total_stations) * 100
-            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-            sys.stdout.flush()
+            if Verbose:
+                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                sys.stdout.flush()
 
     
         except queue.Empty:
@@ -121,14 +123,15 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
     merged_df = pd.concat(resultsfinal, ignore_index=True)
     merged_df = merged_df.sort_index(axis=0)
 
-    print("\nOTSO Flight Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
 
-    
+    if Verbose:
+        print("\nOTSO Flight Computation Complete")
+        print("Whole Program Took: " + str(Printtime) + " seconds")
 
-    readme = readme_generators.READMEFlight(Data, RigidityArray, Model, IntModel, 
+
+    readme = readme_generators.READMEFlight(Data, RigidityArray, Model, IntModel,
                                             AntiCheck, IOPT, WindArray, Magnetopause, Printtime,
                                             MaxStepPercent*100, EndParams, cutoff_comp, Rscan, 
                                             LiveData, asymptotic, asymlevels, unit, serverdata, kp)

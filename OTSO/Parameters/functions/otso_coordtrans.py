@@ -8,7 +8,7 @@ import sys
 import queue
 import numpy as np
 
-def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum):
+def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
     
     if CoordIN not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
          print("Please select a valid CoordIN: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
@@ -31,8 +31,10 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum):
 
 
     start = time.time()
-    print("OTSO Coordtrans Computation Started")
-    sys.stdout.write(f"\r{0:.2f}% complete")
+
+    if Verbose:
+        print("OTSO Coordtrans Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
 
 
     try:
@@ -81,10 +83,11 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum):
     combined_df = pd.concat(results, ignore_index=True)
     sorted_df = combined_df.sort_values(by=combined_df.columns[:4].tolist())
 
-    print("\nOTSO Coordtrans Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
+    if Verbose:
+        print("\nOTSO Coordtrans Computation Complete")
+        print("Whole Program Took: " + str(Printtime) + " seconds")
     
     README = readme_generators.READMECoordtrans(CoordIN,CoordOUT,Printtime)
     

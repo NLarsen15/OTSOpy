@@ -13,13 +13,13 @@ def OTSO_trajectory(Stations,rigidity, customlocations,startaltitude,
            minaltitude,zenith,azimuth,maxdistance,maxtime,serverdata,livedata,vx,vy,vz,by,bz,density,
            pdyn,Dst,G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,intmodel,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize):
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose):
 
     TrajectoryInputArray = trajectory_inputs.TrajectoryInputs(Stations,rigidity, customlocations,startaltitude,
            minaltitude,zenith,azimuth,maxdistance,maxtime,serverdata,livedata,vx,vy,vz,by,bz,density,
            pdyn,Dst,G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,intmodel,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys)
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,inputcoord)
 
     Rigidity = TrajectoryInputArray[0]
     DateArray = TrajectoryInputArray[1]
@@ -50,8 +50,9 @@ def OTSO_trajectory(Stations,rigidity, customlocations,startaltitude,
 
     start = time.time()
     InputtedStations.find_non_matching_stations()
-    print("OTSO Trajectory Computation Started")
-    sys.stdout.write(f"\r{0:.2f}% complete")
+    if Verbose:
+        print("OTSO Trajectory Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
 
 # Set the process creation method to 'forkserver'
     try:
@@ -67,7 +68,7 @@ def OTSO_trajectory(Stations,rigidity, customlocations,startaltitude,
     for Data,Core in zip(Positionlists,CoreList):
         Child = mp.Process(target=fortran_calls.fortrancallTrajectory,  args=(Data, Core, Rigidity, DateArray, Model, IntModel, ParticleArray, IOPT, 
                                                                               WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, 
-                                                                              ProcessQueue,g,h, MHDfile, MHDcoordsys,spheresize))
+                                                                              ProcessQueue,g,h, MHDfile, MHDcoordsys,spheresize,inputcoord))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:
@@ -86,8 +87,9 @@ def OTSO_trajectory(Stations,rigidity, customlocations,startaltitude,
   
         # Calculate and print the progress
         percent_complete = (processed / total_stations) * 100
-        sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-        sys.stdout.flush()
+        if Verbose:
+            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+            sys.stdout.flush()
 
       except queue.Empty:
         # Queue is empty, but processes are still running, so we continue checking
@@ -103,10 +105,12 @@ def OTSO_trajectory(Stations,rigidity, customlocations,startaltitude,
     for d in results:
         combined_dict.update(d)
 
-    print("\nOTSO Trajectory Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
+    
+    if Verbose:
+        print("\nOTSO Trajectory Computation Complete")
+        print("Whole Program Took: " + str(Printtime) + " seconds")
 
     EventDate = datetime(year,month,day,hour,minute,second)
     AntiCheck = ParticleArray[0]

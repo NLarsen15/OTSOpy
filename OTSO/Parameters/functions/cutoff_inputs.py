@@ -10,7 +10,7 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,
-           MHDfile, MHDcoordsys):
+           MHDfile, MHDcoordsys,inputcoord):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -140,6 +140,9 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
 
     if coordsystem not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
          print("Please select a valid coordsystem: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
+         exit()
+    if inputcoord not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
+         print("Please select a valid inputcoord: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
          exit()
 
     

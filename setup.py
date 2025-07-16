@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.0.16',
+    version='1.0.17',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
@@ -38,8 +38,8 @@ setup(
     ],
     extras_require={
         ':python_version>="3.10"': [
-            'numpy>=2.0.0',
-            'pandas>=2.2.2',
+            'numpy>=2.2.0, <2.3.0',
+            'pandas>=2.2.0, <2.3.0',
             'requests==2.32.3',
         ],
     },

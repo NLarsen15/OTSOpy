@@ -7,9 +7,9 @@
 !            Apparent cutoff computation is roughly 9 times as long as vertical
 !
 ! **********************************************************************************************************************
-subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
-    AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, Rcomputation, scanchoice, &
-    gOTSO, hOTSO, MHDCoordSys, sphere, Rigidities)
+subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, &
+    AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, Rcomputation, &
+    scanchoice, gOTSO, hOTSO, MHDCoordSys, sphere, inputcoord, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -29,7 +29,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
     integer(4) :: I, Limit, bool, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
     character(len=50) :: FileName
-    character(len=3) :: CoordSystem, MHDCoordSys
+    character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
     real(8) :: gOTSO(105), hOTSO(105)
 
     real(8), intent(out) :: Rigidities(3)
@@ -139,7 +139,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     R = real(R, kind = selected_real_kind(10,307))
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
     
-    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode)
+    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode, inputcoord)
     
     call initializeWind(Wind, I, mode)
     call initializeCustomGauss(mode)
@@ -355,7 +355,7 @@ end subroutine cutoff
 ! **********************************************************************************************************************
 subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    length, gOTSO, hOTSO, MHDCoordSys,sphere, ConeArray, Rigidities)
+    length, gOTSO, hOTSO, MHDCoordSys,sphere, inputcoord, ConeArray, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -374,7 +374,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
     integer(4) :: I, Limit, bool, Pause, stepNum
     character(len=50) :: FileName
-    character(len=3) :: CoordSystem, MHDCoordSys
+    character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
     character(len=100) :: ConeArray(1, length)
     character(len=100) :: temp_array(1, length)
     character(len=100) :: temp_string
@@ -431,7 +431,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     R = real(R, kind = selected_real_kind(10,307))
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
 
-    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode)
+    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode, inputcoord)
     call initializeWind(Wind, I, mode)
     call initializeCustomGauss(mode)
     call MagneticFieldAssign(mode)
@@ -545,7 +545,7 @@ end subroutine cone
 ! **********************************************************************************************************************
 subroutine trajectory(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    gOTSO, hOTSO,MHDCoordSys,sphere, bool, Lat, Long)
+    gOTSO, hOTSO,MHDCoordSys,sphere, inputcoord, bool, Lat, Long)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -564,7 +564,7 @@ real(8) :: Xnew(3), XnewConverted(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
 character(len=50) :: FileName
-character(len=3) :: CoordSystem, MHDCoordSys
+character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
 
 real(8), intent(out) :: Lat, Long
 integer(4), intent(out) :: bool
@@ -601,7 +601,7 @@ ELSE IF (PositionIN(5) > 360) THEN
     stop
 END IF
 
-call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode)
+call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
 
 call initializeWind(Wind, I, mode)
 call initializeCustomGauss(mode)
@@ -711,7 +711,8 @@ end subroutine trajectory
 !
 ! **********************************************************************************************************************
 subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti, I, Wind, Pause, &
-     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys,sphere, Rigidities)
+     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys, sphere, &
+     inputcoord, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -731,7 +732,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber,EndLoop
     integer(4) :: I, Limit, bool, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
     character(len=50) :: FileName
-    character(len=3) :: CoordSystem, MHDCoordSys
+    character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
     real(8) :: gOTSO(105), hOTSO(105)
 
     real(8), intent(out) :: Rigidities(3)
@@ -838,7 +839,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     R = real(R, kind = selected_real_kind(10,307))
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
     
-    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode)
+    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode, inputcoord)
     
     call initializeWind(Wind, I, mode)
     call initializeCustomGauss(mode)
@@ -1048,7 +1049,7 @@ end subroutine planet
 ! **********************************************************************************************************************
 subroutine trajectory_full(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, &
-    End, gOTSO, hOTSO, MHDCoordSys,sphere)
+    End, gOTSO, hOTSO, MHDCoordSys,sphere, inputcoord)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -1067,7 +1068,7 @@ real(8) :: Xnew(3), XnewConverted(3), sphere
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
 character(len=50) :: FileName
-character(len=3) :: CoordSystem, MHDCoordSys
+character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
 real(8) :: gOTSO(105), hOTSO(105)
 
 Re = 6371.2
@@ -1100,7 +1101,7 @@ ELSE IF (PositionIN(5) > 360) THEN
     stop
 END IF
 
-call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode)
+call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
 
 call initializeWind(Wind, I, mode)
 call initializeCustomGauss(mode)
@@ -1320,7 +1321,7 @@ subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, Coor
 ! **********************************************************************************************************************
 subroutine FieldTrace(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, CoordSystem, GyroPercent, &
-    End, FileName, gOTSO,hOTSO,MHDCoordSys,sphere)
+    End, FileName, gOTSO,hOTSO,MHDCoordSys, sphere, inputcoord)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -1338,7 +1339,7 @@ real(8) :: Wind(19), Re, GyroPercent, Pin(3), Pout(3)
 real(8) :: Xnew(3), XnewConverted(3), Bfield(3), sphere
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
-character(len=3) :: CoordSystem, MHDCoordSys
+character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
 character(len=50) :: FileName
 real(8) :: gOTSO(105), hOTSO(105)
 
@@ -1361,7 +1362,7 @@ IF (mode(2) == 99) THEN
     first_region = .false.
 END IF
 
-call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode)
+call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
 
 call initializeWind(Wind, I, mode)
 call initializeCustomGauss(mode)
