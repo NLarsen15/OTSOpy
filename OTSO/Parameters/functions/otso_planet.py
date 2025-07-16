@@ -60,6 +60,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     g = PlanetInputArray[21]
     h = PlanetInputArray[22]
 
+    kp = WindArray[17]
+
     del(PlanetInputArray)
 
     ChildProcesses = []
@@ -232,6 +234,39 @@ def combine_planet_files(planet_list):
     combined_planet = combined_planet.drop_duplicates(subset=['Latitude', 'Longitude'])
     combined_planet['Longitude'] = pd.to_numeric(combined_planet['Longitude'], errors='coerce')
     combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'], errors='coerce')
+    
+    # Duplicate polar points for all longitude values
+    unique_longitudes = sorted(combined_planet['Longitude'].unique())
+    polar_rows = []
+    
+    # Find existing polar points (90° and -90°)
+    north_pole_data = combined_planet[combined_planet['Latitude'] == 90.0]
+    south_pole_data = combined_planet[combined_planet['Latitude'] == -90.0]
+    
+    # Remove existing polar points from the dataframe
+    combined_planet = combined_planet[~((combined_planet['Latitude'] == 90.0) | (combined_planet['Latitude'] == -90.0))]
+    
+    # Duplicate north pole data for each longitude
+    if not north_pole_data.empty:
+        for longitude in unique_longitudes:
+            for _, row in north_pole_data.iterrows():
+                new_row = row.copy()
+                new_row['Longitude'] = longitude
+                polar_rows.append(new_row)
+    
+    # Duplicate south pole data for each longitude
+    if not south_pole_data.empty:
+        for longitude in unique_longitudes:
+            for _, row in south_pole_data.iterrows():
+                new_row = row.copy()
+                new_row['Longitude'] = longitude
+                polar_rows.append(new_row)
+    
+    # Add the duplicated polar rows back to the dataframe
+    if polar_rows:
+        polar_df = pd.DataFrame(polar_rows)
+        combined_planet = pd.concat([combined_planet, polar_df], ignore_index=True)
+    
     planet = combined_planet.sort_values(by=["Latitude", "Longitude"], ignore_index=True)
     return planet
 

@@ -262,7 +262,18 @@ def PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
         LatitudeList_meta = _LatitudeList_np.tolist()
         LongitudeList_meta = _LongitudeList_np.tolist()
-        coordinate_pairs = [[lat, lon] for lat in LatitudeList_meta for lon in LongitudeList_meta]
+        
+        # Generate coordinate pairs, handling poles specially to avoid duplicates
+        coordinate_pairs = []
+        for lat in LatitudeList_meta:
+            if abs(lat) == 90.0:  # At the poles (90° or -90°)
+                # Only add one point per pole (use first longitude)
+                if not any(abs(coord[0]) == 90.0 and coord[0] == lat for coord in coordinate_pairs):
+                    coordinate_pairs.append([lat, LongitudeList_meta[0]])
+            else:
+                # For non-polar latitudes, add all longitude combinations
+                for lon in LongitudeList_meta:
+                    coordinate_pairs.append([lat, lon])
     # --- End: Coordinate Generation Logic --- 
 
     PlanetInputArray = [coordinate_pairs, RigidityArray, DateArray, MagFieldModel, IntModel, ParticleArray, IOPTinput, WindArray, Magnetopause, gyropercent, EndParams, CutoffComputation, Rscan, Zenith, Azimuth, corenum, asymptotic, asymlevels, startaltitude, LiveData, AntiCheck, g, h, LatitudeList_meta, LongitudeList_meta]

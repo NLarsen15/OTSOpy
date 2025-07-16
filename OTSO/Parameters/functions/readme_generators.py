@@ -466,9 +466,9 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
       result.append(f"Max Time: {EndParams[2]}s\n\n")
       
       if Data and len(Data[0]) > 5:
-          result.append(f"Start Altitude = {Data[0][3]}km \n")
-          result.append(f"Zenith = {Data[0][4]}\n")
-          result.append(f"Azimuth = {Data[0][5]}\n\n")
+          result.append(f"Start Altitude = {Data[0][4]}km \n")
+          result.append(f"Zenith = {Data[0][5]}\n")
+          result.append(f"Azimuth = {Data[0][6]}\n\n")
       else:
           result.append(f"Start Altitude = Not Available\n")
           result.append(f"Zenith = Not Available\n")
