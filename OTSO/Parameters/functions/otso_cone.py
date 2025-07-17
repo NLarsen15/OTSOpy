@@ -121,15 +121,16 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
     merged_R_df = pd.concat(Rigiditylist, axis=1)
     merged_R_df = merged_R_df.sort_index(axis=1)
 
+    stop = time.time()
+    Printtime = round((stop-start),3)
+
     if Verbose:
         print("\nOTSO Cone Computation Complete")
-        stop = time.time()
-        Printtime = round((stop-start),3)
         print("Whole Program Took: " + str(Printtime) + " seconds")
     
     EventDate = datetime(year,month,day,hour,minute,second)
     README = readme_generators.READMECone(Station_Array, RigidityArray, EventDate, Model, IntModel, Anum, AntiCheck, IOPT, WindArray, Magnetopause, 
-                                          CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, LiveData, serverdata, kp)
+                                          CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, LiveData, serverdata, Kp)
 
     if LiveData == 1:
         misc.remove_files()

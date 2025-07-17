@@ -118,7 +118,7 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
     
     EventDate = datetime(year,month,day,hour,minute,second)
     README = readme_generators.READMECutoff(Station_Array, RigidityArray, EventDate, Model, IntModel, Anum, AntiCheck, IOPT, WindArray, Magnetopause, 
-                                            CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, cutoff_comp, Rscan, LiveData, serverdata, kp)
+                                            CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, cutoff_comp, Rscan, LiveData, serverdata, Kp)
     
     if livedata == 1:
         misc.remove_files()

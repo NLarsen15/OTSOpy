@@ -25,6 +25,6 @@ def trace(startaltitude=20,Coordsys="GEO",
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
            latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,
-           MHDfile,MHDcoordsys,spheresize)
+           MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose)
     
     return trace

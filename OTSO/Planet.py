@@ -51,6 +51,7 @@ def planet(startaltitude=20,cutoff_comp="Vertical",minaltitude=20,maxdistance=10
         intmodel, startrigidity, endrigidity, rigiditystep, rigidityscan,
         gyropercent, magnetopause, corenum, azimuth, zenith, asymptotic, asymlevels, unit,
         latstep, longstep, maxlat, minlat, maxlong, minlong, g, h, MHDfile, MHDcoordsys,spheresize,
+        inputcoord, Verbose,
         array_of_lats_and_longs=array_of_lats_and_longs,
         grid_params_user_set=grid_params_user_set
     )

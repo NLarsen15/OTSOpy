@@ -67,8 +67,9 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
 
         # Calculate and print the progress
         percent_complete = (processed / total_stations) * 100
-        sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-        sys.stdout.flush()
+        if Verbose:
+            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+            sys.stdout.flush()
 
       except queue.Empty:
         # Queue is empty, but processes are still running, so we continue checking
