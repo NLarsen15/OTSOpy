@@ -12,14 +12,14 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize):
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose):
 
     ConeInputArray = cone_inputs.ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys)
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,inputcoord)
 
     RigidityArray = ConeInputArray[0]
     DateArray = ConeInputArray[1]
@@ -51,8 +51,10 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
 
     start = time.time()
     InputtedStations.find_non_matching_stations()
-    print("OTSO Cone Computation Started")
-    sys.stdout.write(f"\r{0:.2f}% complete")
+
+    if Verbose:
+        print("OTSO Cone Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
 
 
     try:
@@ -66,7 +68,7 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
     for Data,Core in zip(Positionlists,CoreList):
         Child = mp.Process(target=fortran_calls.fortrancallCone,  args=(Data, Core, RigidityArray, DateArray, Model, IntModel, ParticleArray, IOPT, WindArray, 
                                                                         Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, ProcessQueue,g,h,MHDfile, MHDcoordsys,
-                                                                        spheresize))
+                                                                        spheresize, inputcoord))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:
@@ -87,8 +89,9 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
 
         # Calculate and print the progress
         percent_complete = (processed / total_stations) * 100
-        sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-        sys.stdout.flush()
+        if Verbose:
+            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+            sys.stdout.flush()
 
       except queue.Empty:
         # Queue is empty, but processes are still running, so we continue checking
@@ -118,14 +121,16 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
     merged_R_df = pd.concat(Rigiditylist, axis=1)
     merged_R_df = merged_R_df.sort_index(axis=1)
 
-    print("\nOTSO Cone Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
+
+    if Verbose:
+        print("\nOTSO Cone Computation Complete")
+        print("Whole Program Took: " + str(Printtime) + " seconds")
     
     EventDate = datetime(year,month,day,hour,minute,second)
     README = readme_generators.READMECone(Station_Array, RigidityArray, EventDate, Model, IntModel, Anum, AntiCheck, IOPT, WindArray, Magnetopause, 
-                                          CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, LiveData, serverdata, kp)
+                                          CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, LiveData, serverdata, Kp)
 
     if LiveData == 1:
         misc.remove_files()

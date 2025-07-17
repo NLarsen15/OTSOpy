@@ -3,7 +3,7 @@ def trajectory(Stations,rigidity, customlocations=[], startaltitude=20,minaltitu
            G1=0,G2=0,G3=0,W1=0,W2=0,W3=0,W4=0,W5=0,W6=0,kp=0,Anum=1,anti="YES",year=2024,
            month=1,day=1,hour=12,minute=0,second=0,internalmag="IGRF",externalmag="TSY89",
            intmodel="Boris",coordsystem="GEO",gyropercent=15,magnetopause="Kobel",corenum=None, g=None, h=None,
-           MHDfile=None,MHDcoordsys=None,spheresize=25):
+           MHDfile=None,MHDcoordsys=None,spheresize=25, inputcoord="GDZ", Verbose=True):
     from .Parameters.functions import otso_trajectory
     import psutil
 
@@ -21,6 +21,6 @@ def trajectory(Stations,rigidity, customlocations=[], startaltitude=20,minaltitu
            minaltitude,zenith,azimuth,maxdistance,maxtime,serverdata,livedata,vx,vy,vz,by,bz,density,
            pdyn,Dst,G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,intmodel,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize)
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize, inputcoord, Verbose)
     
     return trajectory

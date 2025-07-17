@@ -4,7 +4,7 @@ def cutoff(Stations, customlocations=None, startaltitude=20,cutoff_comp="Vertica
            month=1,day=1,hour=12,minute=0,second=0,internalmag="IGRF",externalmag="TSY89",
            intmodel="Boris",startrigidity=20,endrigidity=0,rigiditystep=0.01,rigidityscan="ON",
            coordsystem="GEO",gyropercent=15,magnetopause="Kobel",corenum=None, azimuth=0, zenith=0, g=None,h=None,
-           MHDfile=None,MHDcoordsys=None,spheresize=25):
+           MHDfile=None,MHDcoordsys=None,spheresize=25, inputcoord="GDZ", Verbose=True):
     from .Parameters.functions import otso_cutoff
     import psutil
 
@@ -24,6 +24,6 @@ def cutoff(Stations, customlocations=None, startaltitude=20,cutoff_comp="Vertica
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,arguments["g"],arguments["h"],
-           MHDfile,MHDcoordsys,spheresize)
+           MHDfile,MHDcoordsys,spheresize, inputcoord, Verbose)
     
     return cutoff

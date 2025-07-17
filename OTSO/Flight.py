@@ -4,7 +4,7 @@ def flight(latitudes, longitudes, dates,altitudes,cutoff_comp="Vertical",minalti
            intmodel="Boris",startrigidity=20,endrigidity=0,rigiditystep=0.01,rigidityscan="ON",
            coordsystem="GEO",gyropercent=15,magnetopause="Kobel",corenum=None,azimuth=0,zenith=0,g=None,h=None,
            asymptotic="NO",asymlevels=[0.1,0.3,0.5,1,2,3,4,5,6,7,8,9,10,15,20,30,50,70,100,300,500,700,1000],
-           unit="GeV",MHDfile=None,MHDcoordsys=None,spheresize=25):
+           unit="GeV",MHDfile=None,MHDcoordsys=None,spheresize=25, inputcoord="GDZ", Verbose=True):
     from .Parameters.functions import otso_flight
     import psutil
 
@@ -38,7 +38,7 @@ def flight(latitudes, longitudes, dates,altitudes,cutoff_comp="Vertical",minalti
              arguments["W1"], arguments["W2"], arguments["W3"], arguments["W4"], arguments["W5"], arguments["W6"], 
              arguments["kp"], Anum, anti, internalmag, externalmag, intmodel, startrigidity, endrigidity, rigiditystep, 
              rigidityscan, coordsystem, gyropercent, magnetopause, corenum, azimuth, zenith, arguments["g"], arguments["h"], 
-             asymptotic, asymlevels, unit,MHDfile,MHDcoordsys,spheresize
+             asymptotic, asymlevels, unit,MHDfile,MHDcoordsys,spheresize, inputcoord, Verbose
              )
 
     

@@ -9,7 +9,7 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
-           intmodel,coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile, MHDcoordsys):
+           intmodel,coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile, MHDcoordsys,inputcoord):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -123,6 +123,9 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
          
     if coordsystem not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
          print("Please select a valid coordsystem: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
+         exit()
+    if inputcoord not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
+         print("Please select a valid inputcoord: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
          exit()
 
     misc.DataCheck(ServerData,LiveData,EventDate)

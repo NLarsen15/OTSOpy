@@ -4,7 +4,7 @@ def trace(startaltitude=20,Coordsys="GEO",
            month=1,day=1,hour=12,minute=0,second=0,internalmag="IGRF",externalmag="TSY89",
            gyropercent=15,magnetopause="Kobel",corenum=None,
            latstep=-5,longstep=5, maxlat=90,minlat=-90,maxlong=360,minlong=0,g=None,h=None,
-           MHDfile=None,MHDcoordsys=None,spheresize=25):
+           MHDfile=None,MHDcoordsys=None,spheresize=25, inputcoord="GDZ", Verbose=True):
     from .Parameters.functions import otso_trace
     import psutil
 
@@ -25,6 +25,6 @@ def trace(startaltitude=20,Coordsys="GEO",
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
            latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,
-           MHDfile,MHDcoordsys,spheresize)
+           MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose)
     
     return trace

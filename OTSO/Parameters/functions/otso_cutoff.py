@@ -12,14 +12,14 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,spheresize):
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,spheresize,inputcoord,Verbose):
 
     CutoffInputArray = cutoff_inputs.CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys)
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,inputcoord)
 
     RigidityArray = CutoffInputArray[0]
     DateArray = CutoffInputArray[1]
@@ -51,9 +51,10 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
     Positionlists = UsedCores.getPositions()
     InputtedStations.find_non_matching_stations()
 
-    print("OTSO Cutoff Computation Started")
     start = time.time()
-    sys.stdout.write(f"\r{0:.2f}% complete")
+    if Verbose:
+        print("OTSO Cutoff Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
 
 # Set the process creation method to 'forkserver'
     try:
@@ -68,7 +69,7 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
     ProcessQueue = mp.Manager().Queue()
     for Data,Core in zip(Positionlists,CoreList):
         Child = mp.Process(target=fortran_calls.fortrancallCutoff,  args=(Data, Core, RigidityArray, DateArray, Model, IntModel, ParticleArray, IOPT,
-         WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, Kp, ProcessQueue, g, h,  MHDfile, MHDcoordsys,spheresize))
+         WindArray, Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, Kp, ProcessQueue, g, h,  MHDfile, MHDcoordsys,spheresize,inputcoord))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:
@@ -89,8 +90,9 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
 
         # Calculate and print the progress
         percent_complete = (processed / total_stations) * 100
-        sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-        sys.stdout.flush()
+        if Verbose:
+            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+            sys.stdout.flush()
 
       except queue.Empty:
         # Queue is empty, but processes are still running, so we continue checking
@@ -107,14 +109,16 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
     merged_df = pd.concat(results, axis=1)
     merged_df = merged_df.sort_index(axis=1)
 
-    print("\nOTSO Cutoff Computation Complete")
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
+
+    if Verbose:
+        print("\nOTSO Cutoff Computation Complete")
+        print("Whole Program Took: " + str(Printtime) + " seconds")
     
     EventDate = datetime(year,month,day,hour,minute,second)
     README = readme_generators.READMECutoff(Station_Array, RigidityArray, EventDate, Model, IntModel, Anum, AntiCheck, IOPT, WindArray, Magnetopause, 
-                                            CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, cutoff_comp, Rscan, LiveData, serverdata, kp)
+                                            CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, cutoff_comp, Rscan, LiveData, serverdata, Kp)
     
     if livedata == 1:
         misc.remove_files()

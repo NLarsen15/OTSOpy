@@ -15,7 +15,7 @@ def OTSO_trace(startaltitude,Coordsys,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize):
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose):
 
     Anum = 1
     TraceInputArray = trace_inputs.TraceInputs(startaltitude,Coordsys,
@@ -23,7 +23,7 @@ def OTSO_trace(startaltitude,Coordsys,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys)
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,inputcoord)
 
     LongitudeList = TraceInputArray[0]
     LatitudeList = TraceInputArray[1]
@@ -71,8 +71,11 @@ def OTSO_trace(startaltitude,Coordsys,
     CoreList = np.arange(1, CoreNum + 1)
     start = time.time()
 
-    print("OTSO Trace Computation Started")
-    sys.stdout.write(f"\r{0:.2f}% complete")
+
+    if Verbose:
+        print("OTSO Trace Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
+
 # Set the process creation method to 'forkserver'
     try:
         if not mp.get_start_method(allow_none=True):
@@ -88,7 +91,7 @@ def OTSO_trace(startaltitude,Coordsys,
                                                                               ParticleArray, IOPT, WindArray, 
                                                                               Magnetopause, Coordsys, MaxStepPercent, EndParams,
                                                                               ProcessQueue,g,h, MHDfile, MHDcoordsys,
-                                                                              spheresize))
+                                                                              spheresize,inputcoord))
             ChildProcesses.append(Child)
 
     for a in ChildProcesses:
@@ -114,8 +117,9 @@ def OTSO_trace(startaltitude,Coordsys,
     
             # Calculate and print the progress
             percent_complete = (processed / totalprocesses) * 100
-            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-            sys.stdout.flush()
+            if Verbose:
+                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                sys.stdout.flush()
     
         except queue.Empty:
             # Queue is empty, but processes are still running, so we continue checking
@@ -127,11 +131,12 @@ def OTSO_trace(startaltitude,Coordsys,
     for b in ChildProcesses:
         b.join()
 
-    print("\nOTSO Trace Computation Complete")
-
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
+
+    if Verbose:
+        print("\nOTSO Trace Computation Complete")
+        print("Whole Program Took: " + str(Printtime) + " seconds")
 
     # Sorting the dictionary by its keys
     sorted_results = dict(sorted(results.items(), key=lambda item: parse_key(item[0])))

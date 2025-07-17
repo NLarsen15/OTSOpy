@@ -9,7 +9,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,
-           MHDfile, MHDcoordsys):
+           MHDfile, MHDcoordsys,inputcoord):
     
     DateArrayList = []
     for x in dates:
@@ -164,6 +164,9 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
 
     if coordsystem not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
          print("Please select a valid coordsystem: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
+         exit()
+    if inputcoord not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
+         print("Please select a valid inputcoord: ""GDZ"", ""GEO"", ""GSM"", ""GSE"", ""SM"", ""GEI"", ""MAG"", ""SPH"", ""RLL""")
          exit()
 
     

@@ -38,8 +38,8 @@ setup(
     ],
     extras_require={
         ':python_version>="3.10"': [
-            'numpy>=2.0.0',
-            'pandas>=2.2.2',
+            'numpy>=2.2.0, <2.3.0',
+            'pandas>=2.2.0, <2.3.0',
             'requests==2.32.3',
         ],
     },

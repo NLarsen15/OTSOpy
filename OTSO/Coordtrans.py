@@ -1,4 +1,4 @@
-def coordtrans(Locations,dates,CoordIN,CoordOUT,corenum=None):
+def coordtrans(Locations,dates,CoordIN,CoordOUT,corenum=None, Verbose=True):
     from .Parameters.functions import otso_coordtrans
     import psutil
 
@@ -12,6 +12,6 @@ def coordtrans(Locations,dates,CoordIN,CoordOUT,corenum=None):
        if arguments[arg] is None:
           arguments[arg] = []
 
-    coordtrans = otso_coordtrans.OTSO_coordtrans(Locations,dates,CoordIN,CoordOUT,corenum)
+    coordtrans = otso_coordtrans.OTSO_coordtrans(Locations,dates,CoordIN,CoordOUT,corenum, Verbose)
     
     return coordtrans

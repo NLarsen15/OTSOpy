@@ -19,9 +19,9 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize,
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose,
            array_of_lats_and_longs=None,
-           grid_params_user_set=False):
+           grid_params_user_set=False,):
 
     gc.enable()
 
@@ -32,7 +32,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
-           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,
+           latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,inputcoord,
            array_of_lats_and_longs=array_of_lats_and_longs,
            grid_params_user_set=grid_params_user_set)
 
@@ -134,8 +134,10 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     processed = 0
     totalp = 0
 
-    print("OTSO Planet Computation Started")
-    sys.stdout.write(f"\r{0:.2f}% complete")
+    if Verbose:
+        print("OTSO Planet Computation Started")
+        sys.stdout.write(f"\r{0:.2f}% complete")
+
     try:
         if not mp.get_start_method(allow_none=True):
             mp.set_start_method('spawn')
@@ -149,7 +151,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                                                                               Magnetopause, MaxStepPercent, EndParams, 
                                                                               Rcomp, Rscan, asymptotic, asymlevels, unit,
                                                                               ProcessQueue,g,h,planetfile, MHDfile, MHDcoordsys,
-                                                                              spheresize))
+                                                                              spheresize,inputcoord))
             ChildProcesses.append(Child)
         
     for a in ChildProcesses:
@@ -171,8 +173,9 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
             
             gc.collect()
             percent_complete = (totalp / totalprocesses) * 100
-            sys.stdout.write(f"\r{percent_complete:.2f}% complete ({processed}/{totalprocesses} points)")
-            sys.stdout.flush()
+            if Verbose:
+                sys.stdout.write(f"\r{percent_complete:.2f}% complete ({processed}/{totalprocesses} points)")
+                sys.stdout.flush()
 
     
         except queue.Empty:
@@ -189,11 +192,13 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     ChildProcesses.clear()
 
     planet = combine_planet_files(planet_list)
-   
-    print("\nOTSO Planet Computation Complete")
+
     stop = time.time()
     Printtime = round((stop-start),3)
-    print("Whole Program Took: " + str(Printtime) + " seconds")
+
+    if Verbose:
+        print("\nOTSO Planet Computation Complete")
+        print("Whole Program Took: " + str(Printtime) + " seconds")
     
     EventDate = datetime(year,month,day,hour,minute,second)
     
