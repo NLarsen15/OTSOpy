@@ -124,7 +124,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                 default_headers = ["Latitude", "Longitude", "Rc GV", "Rc Asym"]
                 headers = default_headers + asymlevels_with_units
             else:
-                headers = ["Latitude", "Longitude", "Rl", "Rc", "Ru"]
+                headers = ["Latitude", "Longitude", "Ru", "Rc", "Rl"]
             writer.writerow(headers)
 
     ProcessQueue = mp.Manager().Queue()
