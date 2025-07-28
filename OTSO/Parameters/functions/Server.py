@@ -8,9 +8,21 @@ import sys
 import platform
 
 def round_to_nearest_five_minutes(date):
-    if date.minute % 5 == 0 and date.second == 0 and date.microsecond == 0:
-        return date.replace(second=0, microsecond=0)
-    return (date + timedelta(minutes=5 - date.minute % 5)).replace(second=0, microsecond=0)
+    # If year is below 1981, round to nearest full hour
+    if date.year < 1981:
+        # Calculate minutes past the hour
+        minutes = date.minute + date.second / 60 + date.microsecond / 60000000
+        # If minutes < 30, round down; else round up
+        if minutes < 30:
+            return date.replace(minute=0, second=0, microsecond=0)
+        else:
+            rounded = date.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            return rounded
+    # Otherwise, round to nearest 5 minutes
+    minutes = date.minute + date.second / 60 + date.microsecond / 60000000
+    nearest = int(5 * round(minutes / 5))
+    rounded = date.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=nearest)
+    return rounded
 
 def GetServerData(Date, External):
     OMNIYEAR = int(Date.year)

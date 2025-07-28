@@ -360,13 +360,14 @@ def CombineLowRes(input_file, year):
     # Create a new DataFrame with the required structure
     new_df = pd.DataFrame(columns=new_headers)
     
-    # Copy Date and Kp values
+    # Copy Date, Kp, and Dst values
     new_df['Date'] = df['Date']
     new_df['Kp'] = df['Kp']
+    new_df['Dst'] = df['Dst']
     
     # Fill all other columns with zero
     for col in new_headers:
-        if col not in ['Date', 'Kp']:
+        if col not in ['Date', 'Kp', 'Dst']:
             new_df[col] = 0
 
     new_df.to_csv(f'{year}_TSY_Inputs.csv', index=False)
