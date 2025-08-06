@@ -17,7 +17,7 @@ class Cores:
    def CheckCoreNum(self):
            if(psutil.cpu_count(logical=True) < self.CoreNum):
 
-              print("You have entered an invalid number of cores")
+              print("ERROR: You have entered an invalid number of cores")
               print("You have " + str(psutil.cpu_count(logical=True)) + " and have tried to use " + str(self.CoreNum) + " cores")
               print("To ensure operational integrity of your computer OTSO will run using 2 less than the max cores available, with a minumum value of 1.")
 
