@@ -15,13 +15,13 @@ class Cores:
 
 
    def CheckCoreNum(self):
-           if(psutil.cpu_count(logical=False) < self.CoreNum):
+           if(psutil.cpu_count(logical=True) < self.CoreNum):
 
               print("You have entered an invalid number of cores")
-              print("You have " + str(psutil.cpu_count(logical=False)) + " and have tried to use " + str(self.CoreNum) + " cores")
+              print("You have " + str(psutil.cpu_count(logical=True)) + " and have tried to use " + str(self.CoreNum) + " cores")
               print("To ensure operational integrity of your computer OTSO will run using 2 less than the max cores available, with a minumum value of 1.")
 
-              self.CoreNum = psutil.cpu_count(logical=False) - 2
+              self.CoreNum = psutil.cpu_count(logical=True) - 2
               if self.CoreNum <= 0:
                   self.CoreNum = 1
 

@@ -11,7 +11,7 @@ def planet(startaltitude=20,cutoff_comp="Vertical",minaltitude=20,maxdistance=10
     import psutil
 
     if corenum is None:
-       corenum = psutil.cpu_count(logical=False) - 2
+       corenum = psutil.cpu_count(logical=True) - 2
        if corenum <= 0:
           corenum = 1
     

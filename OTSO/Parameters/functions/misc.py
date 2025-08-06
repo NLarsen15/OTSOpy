@@ -77,11 +77,11 @@ def FlightCopy(final_directory):
 
 def CheckCoreNumPlanet(x):
   NewCore = x
-  if(psutil.cpu_count(logical=False) < x):
+  if(psutil.cpu_count(logical=True) < x):
     print("ERROR: You have entered an invalid number of cores")
-    print("You have " + str(psutil.cpu_count(logical=False)) + " and have tried to use " + str(x) + " cores")
+    print("You have " + str(psutil.cpu_count(logical=True)) + " and have tried to use " + str(x) + " cores")
     print("To ensure operational integrity of your computer OTSO will run using 2 less than the max cores available, with a minumum value of 1.")
-    NewCore = psutil.cpu_count(logical=False) - 2
+    NewCore = psutil.cpu_count(logical=True) - 2
     if NewCore <= 0:
       NewCore = 1
   return NewCore
