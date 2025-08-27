@@ -392,12 +392,16 @@ def Combine(TSYfile, high_res_file, low_res_file, year):
     partial_df = pd.read_csv(TSYfile, parse_dates=['Date']).set_index('Date')
     high_res_df = pd.read_csv(high_res_file, parse_dates=['Date']).set_index('Date')
     low_res_df = pd.read_csv(low_res_file, parse_dates=['Date']).set_index('Date')
-    low_res_5min = low_res_df.resample('5min').ffill()
-
     
+    # For most columns, use forward-fill
+    low_res_5min = low_res_df.resample('5min').ffill()
+    
+    # For Dst, use backward-fill since hourly values represent mean of prior hour
+    # This means 17:00-18:00 period should use the 18:00 Dst value
     if 'Dst' in low_res_df.columns:
-        low_res_5min['Dst'] = (low_res_df['Dst'].resample('5min').interpolate(method='linear').round().astype(int)
-        )
+        # Shift Dst timestamps by +1 hour to align with the period they represent
+        low_res_df.index = low_res_df.index + pd.Timedelta(hours=1)
+        low_res_5min['Dst'] = low_res_df['Dst'].resample('5min').bfill().astype(int)
 
     # Define full 5-minute time range for the year
     start_time = partial_df.index.min()
