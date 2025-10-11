@@ -7,6 +7,8 @@ import pandas as pd
 import sys
 import queue
 import numpy as np
+from tqdm import tqdm
+from .igrf_process import compute_gauss_coefficients
 
 def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
     
@@ -20,11 +22,16 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
     ChildProcesses = []
     results = []
     DateArrayList = []
+    hlist = []
+    glist = []
 
     for x in Dates:
           DateCreate = date.Date(x)
           DateArray = DateCreate.GetDate()
           DateArrayList.append(DateArray)
+          gausscoefs = compute_gauss_coefficients(DateArray)
+          hlist.append(gausscoefs['H_coefficients'])
+          glist.append(gausscoefs['G_coefficients'])
 
     LocationsList = np.array_split(Locations, corenum)
     DateArrayList = np.array_split(DateArrayList, corenum)
@@ -34,7 +41,6 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
 
     if Verbose:
         print("OTSO Coordtrans Computation Started")
-        sys.stdout.write(f"\r{0:.2f}% complete")
 
 
     try:
@@ -45,8 +51,8 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
         pass
 # Create a shared message queue for the processes to produce/consume data
     ProcessQueue = mp.Manager().Queue()
-    for Data,Date in zip(LocationsList,DateArrayList):
-        Child = mp.Process(target=fortran_calls.fortrancallCoordtrans,  args=(Data, Date, CoordIN, CoordOUT, ProcessQueue))
+    for Data,Date,g,h in zip(LocationsList,DateArrayList,glist,hlist):
+        Child = mp.Process(target=fortran_calls.fortrancallCoordtrans,  args=(Data, Date, CoordIN, CoordOUT, ProcessQueue, g, h))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:
@@ -58,6 +64,14 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
     total_stations = len(Locations)
     processed = 0
 
+    # Initialize progress bar if tqdm is available and Verbose is True
+    progress_bar = None
+    if Verbose and tqdm is not None:
+        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" transformations")
+    elif Verbose:
+        # Fallback to simple counter if tqdm is not available
+        print(f"Processing {total_stations} coordinates...")
+
     while processed < total_stations:
       try:
         # Check if the ProcessQueue has any new results
@@ -65,17 +79,25 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
         results.append(result_df)
         processed += 1
 
-        # Calculate and print the progress
-        percent_complete = (processed / total_stations) * 100
+        # Update progress
         if Verbose:
-            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-            sys.stdout.flush()
+            if progress_bar is not None:
+                progress_bar.update(1)
+            else:
+                # Fallback to percentage if tqdm is not available
+                percent_complete = (processed / total_stations) * 100
+                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                sys.stdout.flush()
 
       except queue.Empty:
         # Queue is empty, but processes are still running, so we continue checking
         pass
       
       time.sleep(0.0001)
+
+    # Close progress bar if it was created
+    if progress_bar is not None:
+        progress_bar.close()
 
     # Ensure that all processes have completed
     for b in ChildProcesses:

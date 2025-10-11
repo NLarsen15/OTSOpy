@@ -11,11 +11,6 @@ def ParamCheck(Alt, Year, Internal, EndParams):
         print("ERROR: Inputted minimum altitude is larger than starting altitude. Value must be less than or equal to the starting altitude. Please check inputs. \nOTSO program will now terminate.")
         exit()
 
-       if Internal == 1:
-         if Year<1900 or Year>2030:
-          print("ERROR: IGRF 14 model currently only works for dates between 1900 to 2030. Please select a date within this range to use the IGRF model")
-          exit()
-
 def DataCheck(ServerData, LiveData, EventDate):
        current_date = datetime.utcnow()
        if (ServerData == 1 or LiveData == 1) and EventDate > current_date:

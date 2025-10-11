@@ -24,6 +24,6 @@ module GEOPACK2
     implicit none
     save
 
-    real(8), dimension(105) :: G, H, REC
+    real(8), dimension(136) :: G, H, REC
 
 end module GEOPACK2

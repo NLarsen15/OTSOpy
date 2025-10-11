@@ -3,6 +3,7 @@ from datetime import datetime,timedelta
 import os
 from . import date, solar_wind, stations
 from . import misc, Request, Server
+from .igrf_process import compute_gauss_coefficients
 
 def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -68,29 +69,35 @@ def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth
     
     if internalmag == "NONE":
          Internal = 0
-         if not g or not h: 
-            g = [0] * 105
-            h = [0] * 105
+         if g is None or h is None or len(g) == 0 or len(h) == 0: 
+            g = [0] * 136
+            h = [0] * 136
     elif internalmag == "IGRF":
          Internal = 1
-         if not g or not h: 
-            g = [0] * 105
-            h = [0] * 105
+         coeffs = compute_gauss_coefficients(DateArray)
+         g = coeffs['G_coefficients']
+         h = coeffs['H_coefficients']
+         if len(g) == 0 or len(h) == 0: 
+            g = [0] * 136
+            h = [0] * 136
     elif internalmag == "Dipole":
          Internal = 2
-         if not g or not h: 
-            g = [0] * 105
-            h = [0] * 105
+         coeffs = compute_gauss_coefficients(DateArray)
+         g = coeffs['G_coefficients']
+         h = coeffs['H_coefficients']
+         if len(g) == 0 or len(h) == 0: 
+            g = [0] * 136
+            h = [0] * 136
     elif internalmag == "Custom Gauss":
          Internal = 4
-         if not g or not h:
+         if g is None or h is None:
               print("Please enter values for the g and h Gaussian coefficients to use the Custom Gauss option")
               exit()
-         elif len(g) != 105:
-              print(f"There should be 105 g coefficents in the inputted list, you have entered {len(g)}")
+         elif len(g) != 136:
+              print(f"There should be 136 g coefficents in the inputted list, you have entered {len(g)}")
               exit()
-         elif len(h) != 105:
-              print(f"There should be 105 h coefficents in the inputted list, you have enetered {len(h)}")
+         elif len(h) != 136:
+              print(f"There should be 136 h coefficents in the inputted list, you have enetered {len(h)}")
     else:
          print("Please enter a valid internalmag model: ""NONE"",""IGRF"",""Dipole"", or ""Custom Gauss""")
          exit()

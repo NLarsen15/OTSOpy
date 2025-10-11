@@ -8,6 +8,7 @@ import sys
 import queue
 import random
 import numpy as np
+from tqdm import tqdm
 
 
 def OTSO_trace(startaltitude,Coordsys,
@@ -74,7 +75,6 @@ def OTSO_trace(startaltitude,Coordsys,
 
     if Verbose:
         print("OTSO Trace Computation Started")
-        sys.stdout.write(f"\r{0:.2f}% complete")
 
 # Set the process creation method to 'forkserver'
     try:
@@ -97,6 +97,14 @@ def OTSO_trace(startaltitude,Coordsys,
     for a in ChildProcesses:
         a.start()
 
+    # Initialize progress bar if tqdm is available and Verbose is True
+    progress_bar = None
+    if Verbose and tqdm is not None:
+        progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" traces")
+    elif Verbose:
+        # Fallback to simple counter if tqdm is not available
+        print(f"Processing {totalprocesses} grid points...")
+
     results = {}
     processed = 0
     while processed < totalprocesses:
@@ -115,11 +123,15 @@ def OTSO_trace(startaltitude,Coordsys,
             for x in result_collector:
                 results.update(x)
     
-            # Calculate and print the progress
-            percent_complete = (processed / totalprocesses) * 100
+            # Update progress
             if Verbose:
-                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-                sys.stdout.flush()
+                if progress_bar is not None:
+                    progress_bar.update(len(result_collector))
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (processed / totalprocesses) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                    sys.stdout.flush()
     
         except queue.Empty:
             # Queue is empty, but processes are still running, so we continue checking
@@ -127,6 +139,10 @@ def OTSO_trace(startaltitude,Coordsys,
         
         # Wait for 5 seconds before the next iteration
         time.sleep(0.0001)
+
+    # Close progress bar if it was created
+    if progress_bar is not None:
+        progress_bar.close()
 
     for b in ChildProcesses:
         b.join()

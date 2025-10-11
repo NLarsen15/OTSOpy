@@ -7,6 +7,7 @@ import pandas as pd
 import sys
 import queue
 import numpy as np
+from tqdm import tqdm
 
 def OTSO_magfield(Locations,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -42,7 +43,6 @@ def OTSO_magfield(Locations,
 
     if Verbose:
         print("OTSO Magfield Computation Started")
-        sys.stdout.write(f"\r{0:.2f}% complete")
 
 
     try:
@@ -67,6 +67,11 @@ def OTSO_magfield(Locations,
     total_stations = len(Locations)
     processed = 0
 
+    # Initialize progress bar if tqdm is available and Verbose is True
+    progress_bar = None
+    if Verbose:
+        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" field calculations")
+
     while processed < total_stations:
       try:
         # Check if the ProcessQueue has any new results
@@ -74,17 +79,25 @@ def OTSO_magfield(Locations,
         results.append(result_df)
         processed += 1
 
-        # Calculate and print the progress
-        percent_complete = (processed / total_stations) * 100
+        # Update progress
         if Verbose:
-            sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-            sys.stdout.flush()
+            if progress_bar is not None:
+                progress_bar.update(1)
+            else:
+                # Fallback to percentage if tqdm is not available
+                percent_complete = (processed / total_stations) * 100
+                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                sys.stdout.flush()
 
       except queue.Empty:
         # Queue is empty, but processes are still running, so we continue checking
         pass
       
       time.sleep(0.0001)
+
+    # Close progress bar if it was created
+    if progress_bar is not None:
+        progress_bar.close()
 
     # Ensure that all processes have completed
     for b in ChildProcesses:

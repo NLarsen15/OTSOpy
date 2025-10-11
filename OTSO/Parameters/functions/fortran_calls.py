@@ -305,7 +305,7 @@ def fortrancallMagfield(Data, DateArray, model, IOPT, WindArray, CoordinateSyste
 
   return
 
-def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue):
+def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, g, h):
     for x,y in zip(Data,DateArray):
       Position = [1+(x[2]/6371.0),x[0],x[1]]
 
@@ -318,7 +318,7 @@ def fortrancallCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue):
       secint = y[4]
       sectot = y[5]
       
-      Coords = OTSOLib.coordtrans(Position,year,day,hour,minute,secint,sectot,CoordIN,CoordOUT)
+      Coords = OTSOLib.coordtrans(Position,year,day,hour,minute,secint,sectot,CoordIN,CoordOUT, g, h)
       combined_array = np.concatenate(([datetimeobj], Position, Coords))
 
       coord_suffix = f"_{CoordIN}"

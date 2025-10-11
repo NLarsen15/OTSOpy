@@ -23,7 +23,7 @@ C
 C
        INTEGER*4 ierr
        REAL*8    year
-       REAL*8    ga(105),ha(105)
+       REAL*8    ga(136),ha(136)
        REAL*8    xc,yc,zc                  
        REAL*8    thet,phit           
        REAL*8    ct,st,cp,sp

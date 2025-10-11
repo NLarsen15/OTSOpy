@@ -12,6 +12,7 @@ import gc
 import csv
 from collections import defaultdict
 import tempfile
+from tqdm import tqdm
 
 def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
@@ -136,7 +137,6 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
     if Verbose:
         print("OTSO Planet Computation Started")
-        sys.stdout.write(f"\r{0:.2f}% complete")
 
     try:
         if not mp.get_start_method(allow_none=True):
@@ -156,6 +156,14 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
         
     for a in ChildProcesses:
         a.start()
+
+    # Initialize progress bar if tqdm is available and Verbose is True
+    progress_bar = None
+    if Verbose and tqdm is not None:
+        progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" locations")
+    elif Verbose:
+        # Fallback to simple counter if tqdm is not available
+        print(f"Processing {totalprocesses} grid points...")
  
     while processed < totalprocesses:
         try:
@@ -165,23 +173,36 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                     countint = ProcessQueue.get(timeout=0.001)
                     result_collector.append(countint)
                     processed += 1
-                    totalp = totalp + sum(result_collector)
-                    result_collector = []
                 except queue.Empty:
                     break
     
+            # Update totalp with the sum of items processed by cores
+            if result_collector:
+                totalp = totalp + sum(result_collector)
             
             gc.collect()
-            percent_complete = (totalp / totalprocesses) * 100
+            # Update progress
             if Verbose:
-                sys.stdout.write(f"\r{percent_complete:.2f}% complete ({processed}/{totalprocesses} points)")
-                sys.stdout.flush()
+                if progress_bar is not None:
+                    # Update progress bar with the actual number of items processed
+                    progress_bar.update(sum(result_collector) if result_collector else 0)
+                    # Update the description to show current progress
+                    progress_bar.set_description(f"OTSO Running ({totalp}/{totalprocesses})")
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (totalp / totalprocesses) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% complete ({totalp}/{totalprocesses} points)")
+                    sys.stdout.flush()
 
     
         except queue.Empty:
             pass
         
-        time.sleep(1)
+        time.sleep(0.5)
+
+    # Close progress bar if it was created
+    if progress_bar is not None:
+        progress_bar.close()
 
     for b in ChildProcesses:
         b.join()
