@@ -614,9 +614,8 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       INTEGER :: iyear, iday, ihour, min_bn, isec
       REAL*8 :: vgsex, vgsey, vgsez  
-      
+
 C
-   
 C
 C  THE COMMON BLOCK /GEOPACK1/ CONTAINS ELEMENTS OF THE ROTATION MATRICES AND OTHER
 C   PARAMETERS RELATED TO THE COORDINATE TRANSFORMATIONS PERFORMED BY THIS PACKAGE
@@ -640,7 +639,7 @@ C  CALCULATE THE ARRAY REC, CONTAINING COEFFICIENTS FOR THE RECURSION RELATIONS,
 C  USED IN THE IGRF SUBROUTINE FOR CALCULATING THE ASSOCIATE LEGENDRE POLYNOMIALS
 C  AND THEIR DERIVATIVES:
 c
-      DO 20 N=1,14
+      DO 20 N=1,16
          N2=2*N-1
          N2=N2*(N2-2)
          DO 21 M=1,N
@@ -654,28 +653,10 @@ c
         G(N)=Ginput(N)
         H(N)=Hinput(N)
 40001 ENDDO
-
-      GOTO 300
 C
 C   COEFFICIENTS FOR A GIVEN YEAR HAVE BEEN CALCULATED; NOW MULTIPLY
 C   THEM BY SCHMIDT NORMALIZATION FACTORS:
 C
-300   S=1.D0
-      DO 250 N=2,14
-         MN=N*(N-1)/2+1
-         S=S*DFLOAT(2*N-3)/DFLOAT(N-1)
-         G(MN)=G(MN)*S
-         H(MN)=H(MN)*S
-         P=S
-         DO 251 M=2,N
-            AA=1.D0
-            IF (M.EQ.2) AA=2.D0
-            P=P*DSQRT(AA*DFLOAT(N-M+1)/DFLOAT(N+M-2))
-            MNN=MN+M-1
-            G(MNN)=G(MNN)*P
-            H(MNN)=H(MNN)*P
-251     ENDDO
-250   ENDDO
            G_10=-G(2)
            G_11= G(3)
            H_11= H(3)
@@ -1007,6 +988,7 @@ C
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 :: xgsw, ygsw, zgsw, xgse, ygse, zgse
       INTEGER :: j
+
       
 C
 C  DIRECT TRANSFORMATION:
@@ -1025,6 +1007,7 @@ C
         ZGSW=XGSE*E13+YGSE*E23+ZGSE*E33
       ENDIF
 C
+
       RETURN
       END
 C

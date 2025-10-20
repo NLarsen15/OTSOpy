@@ -111,50 +111,57 @@ def save_to_csv_Mag(data, version):
         print(f"Error converting JSON to CSV: {e}")
 
 def Get_Data(current_time):
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    os.makedirs(script_dir, exist_ok=True)
 
-    os.makedirs(output_directory, exist_ok=True)
+    # Check if the required CSV files already exist in the script directory
+    space_csv = os.path.join(script_dir, 'space_data.csv')
+    mag_csv = os.path.join(script_dir, 'Magnetic_data.csv')
+    dst_txt = os.path.join(script_dir, 'Dst_data.txt')
+    kp_txt = os.path.join(script_dir, 'Kp_data.txt')
+    need_download = not (os.path.exists(space_csv) and os.path.exists(mag_csv) and os.path.exists(dst_txt) and os.path.exists(kp_txt))
 
-    #current_time = datetime.utcnow()
-    #current_time = current_time - timedelta(hours=3)
-    current_month = f"{current_time.month:02d}"
-    current_year = current_time.year
-    curretnt_year_two_digits = current_year % 100
+    if need_download:
+        current_month = f"{current_time.month:02d}"
+        current_year = current_time.year
+        curretnt_year_two_digits = current_year % 100
 
-    dststring1 = str(current_year)+str(current_month)
-    dststring2 = str(curretnt_year_two_digits)+str(current_month)
-    
-    urlSpace = 'https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json'
-    urlMag = 'https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json'
-    urlDst = 'https://wdc.kugi.kyoto-u.ac.jp/dst_realtime/'+dststring1+'/dst'+dststring2+'.for.request'
-    urlKp = 'https://kp.gfz-potsdam.de/app/files/Kp_ap_nowcast.txt'
+        dststring1 = str(current_year) + str(current_month)
+        dststring2 = str(curretnt_year_two_digits) + str(current_month)
 
-    data_Space = fetch_data_Space(urlSpace)
-    data_Mag = fetch_data_Mag(urlMag)
-    data_Dst = fetch_data_Dst(urlDst)
-    data_Kp = fetch_data_Kp(urlKp)
-    if data_Space:
-        version = get_next_version()
-        save_to_json_space(data_Space, version)
-        save_to_json_magnetic(data_Space, version)
-        save_to_csv_Space(data_Space, version)
-        save_to_csv_Mag(data_Mag, version)
-        save_to_txt_Dst(data_Dst, version)
-        save_to_txt_Kp(data_Kp, version)
-    else:
-        print("Failed to obtain online data")
-    
-    DstFile = os.path.join(output_directory, f'Dst_data.txt')
-    Dst,daily_dst = extract_dst_value(DstFile, current_time)
-    Speed,Density = extract_solar_wind(current_time)
+        urlSpace = 'https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json'
+        urlMag = 'https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json'
+        urlDst = 'https://wdc.kugi.kyoto-u.ac.jp/dst_realtime/' + dststring1 + '/dst' + dststring2 + '.for.request'
+        urlKp = 'https://kp.gfz-potsdam.de/app/files/Kp_ap_nowcast.txt'
+
+        data_Space = fetch_data_Space(urlSpace)
+        data_Mag = fetch_data_Mag(urlMag)
+        data_Dst = fetch_data_Dst(urlDst)
+        data_Kp = fetch_data_Kp(urlKp)
+        if data_Space:
+            version = get_next_version()
+            save_to_json_space(data_Space, version)
+            save_to_json_magnetic(data_Space, version)
+            save_to_csv_Space(data_Space, version)
+            save_to_csv_Mag(data_Mag, version)
+            save_to_txt_Dst(data_Dst, version)
+            save_to_txt_Kp(data_Kp, version)
+        else:
+            print("Failed to obtain online data")
+
+    DstFile = os.path.join(script_dir, 'Dst_data.txt')
+    Dst, daily_dst = extract_dst_value(DstFile, current_time)
+    Speed, Density = extract_solar_wind(current_time)
+    speed_avg, density_avg, By_avg, Bz_avg, Bx_avg, N_norm, B_norm = extract_30min_average(current_time)
     By, Bz = extract_magnetic(current_time)
-    Kp,IOPT = extract_kp_index(current_time)
-    G1,G2,G3 = TSY01_Constants(By,Bz,-1*Speed,Density)
-    Speed = round(Speed,3)
-    Density = round(Density,3)
-    By = round(By,3)
-    Bz = round(Bz,3)
-    G1 = round(G1,3)
-    G2 = round(G2,3)
-    G3 = round(G3,3)
+    Kp, IOPT = extract_kp_index(current_time)
+    G1, G2, G3 = TSY01_Constants(By, Bz, -1 * Speed, Density)
+    Speed = round(Speed, 3)
+    Density = round(Density, 3)
+    By = round(By, 3)
+    Bz = round(Bz, 3)
+    G1 = round(G1, 3)
+    G2 = round(G2, 3)
+    G3 = round(G3, 3)
 
-    return Dst, Speed, Density, By, Bz, IOPT, G1, G2, G3, Kp
+    return Dst, Speed, Density, By, Bz, IOPT, G1, G2, G3, Kp, Bx_avg, By_avg, Bz_avg, N_norm, B_norm

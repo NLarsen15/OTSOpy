@@ -3,11 +3,11 @@ from datetime import datetime,timedelta
 import os
 from . import date, solar_wind, stations
 from . import misc, Request, Server
-from .igrf_process import compute_gauss_coefficients
+from .igrf_process import compute_gauss_coefficients, schmidt_normalize
 
 def MagFieldInputs(Locations,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,year,
            month,day,hour,minute,second,internalmag,externalmag,
            coordsystemIN,g,h,corenum,MHDfile, MHDcoordsys):
     
@@ -54,6 +54,7 @@ def MagFieldInputs(Locations,
             h = [0] * 136
     elif internalmag == "Custom Gauss":
          Internal = 4
+         g, h = schmidt_normalize(g, h, 15)
          if g is None or h is None:
               print("Please enter values for the g and h Gaussian coefficients to use the Custom Gauss option")
               exit()
@@ -84,13 +85,19 @@ def MagFieldInputs(Locations,
          External = 7
     elif externalmag == "TSY89_BOBERG":
          External = 8
+    elif externalmag == "TSY15N":
+         External = 9
+    elif externalmag == "TSY15B":
+         External = 10
+    elif externalmag == "TA16_RBF":
+         External = 11
     elif externalmag == "MHD":
          External = 99
          if not os.path.exists(MHDfile):
             print(f"The file '{MHDfile}' does not exist.")
             exit()
     else:
-         print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY89_BOBERG"",""TSY96"",""TSY01"",""TSY01S"",""TSY04""")
+         print("Please enter a valid externalmag model: ""NONE"", ""TSY87short"",""TSy87long"",""TSY89"",""TSY89_BOBERG"",""TSY96"",""TSY01"",""TSY01S"",""TSY04"",""TSY15N"",""TSY15B"",""TA16_RBF""")
          exit()
 
     if coordsystemIN not in ["GDZ","GEO","GSM","GSE","SM","GEI","MAG","SPH","RLL"]:
@@ -104,28 +111,32 @@ def MagFieldInputs(Locations,
 
     if ServerData == 1:
          if int(EventDate.year) >= 1981:
-              Server.DownloadServerFile(int(EventDate.year))
+              Server.DownloadServerFile(int(EventDate.year),g,h)
          elif int(EventDate.year) < 1981 and int(EventDate.year) > 1963:
               Server.DownloadServerFileLowRes(int(EventDate.year))
          else:
               print("Server data only valid for 1963 to present, please enter a valid date.")
-         ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S = Server.GetServerData(EventDate,External)
+         BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS = Server.GetServerData(EventDate,External)
          IOPTinput = misc.IOPTprocess(KpS)
-         WindCreate = solar_wind.Solar_Wind(VS, vy, vz, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS)
+         WindCreate = solar_wind.Solar_Wind(VS, vy, vz, BxS, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS, External)
          WindArray = WindCreate.GetWind()
          
     if LiveData == 1:
+         if External == 7 or External == 11:
+              print("LIVE DATA NOT SUPPORTED FOR TSY04 OR TA16 MAGNETOSPHERIC MODELS. PLEASE SELECT ANOTHER EXTERNAL MAGNETIC FIELD MODEL.")
+              exit()
          misc.DateCheck(EventDate)
-         DstLive, VxLive, DensityLive, ByLive, BzLive, IOPTLive, G1Live, G2Live, G3Live, KpLive = Request.Get_Data(EventDate)
+         DstLive, VxLive, DensityLive, ByLive, BzLive, IOPTLive, G1Live, G2Live, G3Live, KpLive, By_avgLive, Bx_avgLive, Bz_avgLive, NIndexLive, BIndexLive = Request.Get_Data(EventDate)
          PdynLive = misc.Pdyn_comp(DensityLive,VxLive)
          IOPTinput = IOPTLive
-         WindCreate = solar_wind.Solar_Wind(VxLive, vy, vz, ByLive, BzLive, DensityLive, PdynLive, DstLive, G1Live, G2Live, G3Live, W1, W2, W3, W4, W5, W6, KpLive)
+         kp = KpLive
+         WindCreate = solar_wind.Solar_Wind(VxLive, vy, vz, Bx_avgLive, ByLive, BzLive, DensityLive, PdynLive, DstLive, G1Live, G2Live, G3Live, W1, W2, W3, W4, W5, W6, KpLive, By_avgLive, Bz_avgLive, NIndexLive, BIndexLive, sym_h_corrected)
          WindArray = WindCreate.GetWind()
 
     if ServerData == 0 and LiveData == 0:
           if vx > 0:
                vx = -1*vx
-          WindCreate = solar_wind.Solar_Wind(vx, vy, vz, by, bz, density, pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, kp)
+          WindCreate = solar_wind.Solar_Wind(vx, vy, vz, bx, by, bz, density, pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, kp, by_avg, bz_avg, n_index, b_index, sym_h_corrected, External)
           WindArray = WindCreate.GetWind()
 
     MagFieldModel = np.array([Internal,External])

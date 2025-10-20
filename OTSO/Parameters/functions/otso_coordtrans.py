@@ -67,7 +67,7 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
     # Initialize progress bar if tqdm is available and Verbose is True
     progress_bar = None
     if Verbose and tqdm is not None:
-        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" transformations")
+        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" transformation")
     elif Verbose:
         # Fallback to simple counter if tqdm is not available
         print(f"Processing {total_stations} coordinates...")

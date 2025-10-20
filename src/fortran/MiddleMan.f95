@@ -23,7 +23,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, EndLoop, sphere
+    real(8) :: Wind(25), Re, Lat, Long, GyroPercent, EndLoop, sphere
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
@@ -367,7 +367,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, Rigidities(3)
+    real(8) :: Wind(25), Re, Lat, Long, GyroPercent, Rigidities(3)
     real(8) :: Geofile(3), sphere
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
     integer(4) :: I, Limit, bool_val, Pause, stepNum
@@ -555,7 +555,7 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(19), Re, GyroPercent, sphere
+real(8) :: Wind(25), Re, GyroPercent, sphere
 real(8) :: Xnew(3), XnewConverted(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
@@ -722,7 +722,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, sphere
+    real(8) :: Wind(25), Re, Lat, Long, GyroPercent, sphere
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber,EndLoop
@@ -1058,7 +1058,7 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(19), Re, Lat, Long, GyroPercent
+real(8) :: Wind(25), Re, Lat, Long, GyroPercent
 real(8) :: Xnew(3), XnewConverted(3), sphere
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
@@ -1243,7 +1243,7 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
     USE Interpolation
     implicit none
     
-    real(8) :: Pin(3), Pout(3), Wind(19), Date(6)
+    real(8) :: Pin(3), Pout(3), Wind(25), Date(6)
     character(len = 3) :: CoordIN, MHDCoordSys
     integer(4) :: I
     integer(8) :: mode(2)
@@ -1311,7 +1311,7 @@ subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, Coor
     secondINT = INT(secondINT)
     secondTotal = real(secondTotal)
 
-    call RECALC_08(year, day, hour, minute, secondINT, -500, 0, 0)
+    call RECALC_08(year, day, hour, minute, secondINT, -500.0, 0.0, 0.0)
     
     call CoordinateTransform(CoordIN, CoordOUT, year, day, secondTotal, Pin, Pout)
     
@@ -1338,7 +1338,7 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(19), Re, GyroPercent, Pin(3), Pout(3)
+real(8) :: Wind(25), Re, GyroPercent, Pin(3), Pout(3)
 real(8) :: Xnew(3), XnewConverted(3), Bfield(3), sphere
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
@@ -1544,3 +1544,41 @@ end do
 end subroutine MHDstartupSorted
 
 
+subroutine gse2gswTSY15(date, position_gse, Wind, gOTSO, hOTSO, position_gsw)
+    USE GEOPACK1
+    USE GEOPACK2
+    USE CUSTOMGAUSS
+    implicit none
+    
+    real(8) :: sec, Pin(3), secondTotal
+    real(4) :: Wind(3)
+    real(8) :: XGSW, YGSW, ZGSW, XGSE, YGSE, ZGSE
+    real(8) :: date(6), position_gse(3)
+    real(8) :: gOTSO(136), hOTSO(136)
+    integer(8) :: year, day, hour, minute, secondINT
+    real(8), intent(out) :: position_gsw(3)
+    
+    year = INT(Date(1))
+    day = INT(Date(2))
+    hour = INT(Date(3))
+    minute = INT(Date(4))
+    secondINT = INT(Date(5))
+    secondTotal = real(Date(6))
+
+    Ginput = gOTSO
+    Hinput = hOTSO
+    
+    XGSE = position_gse(1)
+    YGSE = position_gse(2)
+    ZGSE = position_gse(3)
+
+    call RECALC_08(year, day, hour, minute, secondINT, Wind(1), Wind(2), Wind(3))
+    
+    call GSWGSE_08(XGSW,YGSW,ZGSW,XGSE,YGSE,ZGSE,-1)
+
+    position_gsw(1) = XGSW
+    position_gsw(2) = YGSW      
+    position_gsw(3) = ZGSW
+
+
+end subroutine gse2gswTSY15

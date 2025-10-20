@@ -15,8 +15,8 @@ import tempfile
 from tqdm import tqdm
 
 def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,anti,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
@@ -28,8 +28,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
     Anum = 1
     PlanetInputArray = planet_inputs.PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
@@ -160,7 +160,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     # Initialize progress bar if tqdm is available and Verbose is True
     progress_bar = None
     if Verbose and tqdm is not None:
-        progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" locations")
+        progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" location")
     elif Verbose:
         # Fallback to simple counter if tqdm is not available
         print(f"Processing {totalprocesses} grid points...")
@@ -240,7 +240,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                                             LiveData, asymptotic, asymlevels, unit, serverdata, kp,
                                             custom_coords_provided=(array_of_lats_and_longs is not None))
 
-    if LiveData == 1:
+    if livedata == "ON" or livedata == 1:
         misc.remove_files()
 
     return [planet, readme]

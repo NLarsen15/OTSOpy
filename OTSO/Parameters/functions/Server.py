@@ -1,5 +1,6 @@
 from . import MiddleMan as OTSOLib
 from . import OmniPull
+from . import TSY15_OTSO_Download_v2 as TSY15
 import os
 from datetime import datetime, timedelta
 import pandas as pd
@@ -27,9 +28,9 @@ def round_to_nearest_five_minutes(date):
 def GetServerData(Date, External):
     OMNIYEAR = int(Date.year)
     RoundedDate = round_to_nearest_five_minutes(Date)
-    Date, By, Bz, V, Density, Pdyn, Kp, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6 = ExtractServerData(RoundedDate, External)
+    Date, Bx, By, Bz, V, Density, Pdyn, Kp, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, ByAvg, BzAvg, NIndex, BIndex, SymHCorrected = ExtractServerData(RoundedDate, External)
 
-    return By, Bz, V, Density, Pdyn, Kp, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6
+    return Bx, By, Bz, V, Density, Pdyn, Kp, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, ByAvg, BzAvg, NIndex, BIndex, SymHCorrected
 
 
 def ExtractServerData(RoundedDate,External):
@@ -65,6 +66,7 @@ def ExtractServerData(RoundedDate,External):
         row_data = matching_row.iloc[0]  
 
         Date = row_data['Date'] if 'Date' in row_data else None
+        Bx = row_data['Bx'] if 'Bx' in row_data else None
         By = row_data['By'] if 'By' in row_data else None
         Bz = row_data['Bz'] if 'Bz' in row_data else None
         V = row_data['V'] if 'V' in row_data else None
@@ -81,27 +83,44 @@ def ExtractServerData(RoundedDate,External):
         W4 = row_data['W4'] if 'W4' in row_data else None
         W5 = row_data['W5'] if 'W5' in row_data else None
         W6 = row_data['W6'] if 'W6' in row_data else None
+        ByAvg = row_data['By_avg'] if 'By_avg' in row_data else None
+        BzAvg = row_data['Bz_avg'] if 'Bz_avg' in row_data else None
+        NIndex = row_data['N_index'] if 'N_index' in row_data else None
+        BIndex = row_data['B_index'] if 'B_index' in row_data else None
+        SymHCorrected = row_data['SYM_H'] if 'SYM_H' in row_data else None
 
-        if External == 7 and (np.isnan(W1) or W1 == 0) and (np.isnan(V) or V == 0) and (np.isnan(Bz) or Bz == 0):
-           print("ERROR: No TSY04 parameters found for given time. \nOTSO program will now terminate.")
-           exit()
-        elif External == 6 and (np.isnan(G3) or G3 == 0) and (np.isnan(V) or V == 0) and (np.isnan(Bz) or Bz == 0):
-           print("ERROR: No TSY01S parameters found for given time. \nOTSO program will now terminate.")
-           exit()
-        elif External == 5 and (np.isnan(G1) or G1 == 0) and (np.isnan(G2) or G2 == 0) and (np.isnan(V) or V == 0) and  (np.isnan(Bz) or Bz == 0):
-           print("ERROR: No TSY01 parameters found for given time. \nOTSO program will now terminate.")
-           exit()
-        elif External == 4 and (np.isnan(V) or V == 0) and (np.isnan(Bz) or Bz == 0):
-           print("ERROR: No TSY96 parameters found for given time. \nOTSO program will now terminate.")
-           exit()
+        if External == 7 and ((np.isnan(W1)) or (np.isnan(V)) or (np.isnan(Bz))):
+           raise ValueError("ERROR: No TSY04 parameters found for given time.")
+        elif External == 6 and ((np.isnan(G3)) or (np.isnan(V)) or (np.isnan(Bz))):
+           raise ValueError("ERROR: No TSY01S parameters found for given time.")
+        elif External == 5 and ((np.isnan(G1)) or (np.isnan(G2)) or (np.isnan(V)) or (np.isnan(Bz))):
+           raise ValueError("ERROR: No TSY01 parameters found for given time.")
+        elif External == 4 and ((np.isnan(V)) or (np.isnan(Bz))):
+           raise ValueError("ERROR: No TSY96 parameters found for given time.")
+        elif External == 9 and ((np.isnan(NIndex)) or (np.isnan(ByAvg)) or (np.isnan(BzAvg))):
+           raise ValueError("ERROR: No TSY15N parameters found for given time.")
+        elif External == 10 and ((np.isnan(BIndex)) or (np.isnan(ByAvg)) or (np.isnan(BzAvg))):
+           raise ValueError("ERROR: No TSY15B parameters found for given time.")
+        elif External == 11 and ((np.isnan(SymHCorrected)) or (np.isnan(ByAvg)) or (np.isnan(BzAvg)) or (np.isnan(NIndex))):
+           raise ValueError("ERROR: No TA16 parameters found for given time.")
+        
+        if External == 9 or External == 11:
+             if NIndex > 2:
+                 print(f'WARNING: N-INDEX ({NIndex}) OUT OF ALLOWED RANGE (0-2). SETTING TO MAX ALLOWED VALUE OF 2')
+                 NIndex = 2
+
+        if External == 10:
+            if BIndex > 2:
+                print(f'WARNING: B-INDEX ({BIndex}) OUT OF ALLOWED RANGE (0-2). SETTING TO MAX ALLOWED VALUE OF 2')
+                BIndex = 2
 
         if V > 0:
             V = -1*V
 
-        return Date, By, Bz, V, Density, Pdyn, Kp, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6
+        return Date, Bx, By, Bz, V, Density, Pdyn, Kp, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, ByAvg, BzAvg, NIndex, BIndex, SymHCorrected
 
 
-def DownloadServerFile(OMNIYEAR):
+def DownloadServerFile(OMNIYEAR, g, h):
     source_file = f'{OMNIYEAR}_TSY_Inputs.csv'
     TSY_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "ServerData")
     TSY_file = os.path.join(TSY_folder, source_file)
@@ -109,6 +128,7 @@ def DownloadServerFile(OMNIYEAR):
     if not os.path.exists(TSY_file):
         print(f"Data for {OMNIYEAR} does not exist in OTSO files.")
         print(f'Attempting to download data for {OMNIYEAR}')
+        TSY15.process_year(OMNIYEAR, g, h)
         OmniPull.PullOMNI(OMNIYEAR)
         DIRECTORY = os.path.join(os.path.dirname(os.path.dirname(__file__)),"functions")
         length = len(DIRECTORY)
@@ -118,7 +138,8 @@ def DownloadServerFile(OMNIYEAR):
             OmniPull.TSY01(f'{OMNIYEAR}_TSY_Data.csv')
             OmniPull.TSY01(f'omni_{OMNIYEAR}_high_res.csv')
             OmniPull.TSY01(f'omni_{OMNIYEAR}_low_res.csv')
-            OmniPull.Combine(f'{OMNIYEAR}_TSY_Data.csv', f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv', OMNIYEAR)
+            OmniPull.Combine(f'{OMNIYEAR}_TSY_Data.csv', f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv',
+                             f'TSY15_{OMNIYEAR}.csv', OMNIYEAR)
             OmniPull.Omnidelete(OMNIYEAR)
             print(f'Finished downloading data for {OMNIYEAR}.')
         elif platform.system() == "Linux"  or "Darwin":
@@ -127,7 +148,8 @@ def DownloadServerFile(OMNIYEAR):
             OmniPull.TSY01(f'{OMNIYEAR}_TSY_Data.csv')
             OmniPull.TSY01(f'omni_{OMNIYEAR}_high_res.csv')
             OmniPull.TSY01(f'omni_{OMNIYEAR}_low_res.csv')
-            OmniPull.Combine(f'{OMNIYEAR}_TSY_Data.csv', f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv', OMNIYEAR)
+            OmniPull.Combine(f'{OMNIYEAR}_TSY_Data.csv', f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv',
+                              f'TSY15_{OMNIYEAR}.csv', OMNIYEAR)
             OmniPull.Omnidelete(OMNIYEAR)
             print(f'Finished downloading data for {OMNIYEAR}.')
 

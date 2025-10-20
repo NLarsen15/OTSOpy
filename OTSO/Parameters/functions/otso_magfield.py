@@ -10,14 +10,14 @@ import numpy as np
 from tqdm import tqdm
 
 def OTSO_magfield(Locations,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,year,
            month,day,hour,minute,second,internalmag,externalmag,
            coordsystemIN,g,h,corenum,MHDfile,MHDcoordsys,Verbose):
 
     magfieldInputArray = magfield_inputs.MagFieldInputs(Locations,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,year,
            month,day,hour,minute,second,internalmag,externalmag,
            coordsystemIN,g,h,corenum,MHDfile,MHDcoordsys)
 
@@ -70,7 +70,7 @@ def OTSO_magfield(Locations,
     # Initialize progress bar if tqdm is available and Verbose is True
     progress_bar = None
     if Verbose:
-        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" field calculations")
+        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" field calculation")
 
     while processed < total_stations:
       try:
@@ -117,7 +117,7 @@ def OTSO_magfield(Locations,
     README = readme_generators.READMEMagfield(EventDate, Model, IOPT, WindArray,
                                           CoordinateSystem, Printtime, LiveData, serverdata, kp)
 
-    if LiveData == 1:
+    if livedata == "ON" or livedata == 1:
         misc.remove_files()
     
     return [sorted_df,README]

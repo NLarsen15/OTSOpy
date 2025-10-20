@@ -1,46 +1,41 @@
-import ftplib
 import pandas as pd
 import csv, math
 from datetime import datetime, timedelta
 import shutil
 import os
-from ftplib import FTP_TLS
 import numpy as np
+import requests
 
 def download_omni_data(year):
-    ftps = FTP_TLS('spdf.gsfc.nasa.gov')
-    ftps.login()
-    ftps.prot_p()
-    ftps.cwd('/pub/data/omni/high_res_omni/')
-    files = ftps.nlst()
-    file_name = f'omni_5min{year}.asc'
+    url = f"https://spdf.gsfc.nasa.gov/pub/data/omni/high_res_omni/omni_5min{year}.asc"
     
-    if file_name not in files:
-        print(f"File for year {year} not found.")
-        ftps.quit()
-        return
-
     # Get the directory of the current script
     script_dir = os.path.join(os.path.dirname(__file__), "")
     save_path = os.path.join(script_dir, f'omni_5min_{year}.lst')
 
-    with open(save_path, 'wb') as f:
-        ftps.retrbinary(f'RETR {file_name}', f.write)
+    #print(f"Downloading OMNI 5-minute data for year {year}...")
+    #print(f"URL: {url}")
+    #print(f"Saving to: {save_path}")
 
-    ftps.quit()
+    try:
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
 
-    parse_and_convert_to_csv_high_res(save_path, f'omni_{year}_high_res.csv')
+        with open(save_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        #print(f"Downloaded successfully: {save_path}")
+        parse_and_convert_to_csv_high_res(save_path, f'omni_{year}_high_res.csv')
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading file: {e}")
+        return
 
 
 def download_omni_low_res_data(year):
-    ftps = FTP_TLS('spdf.gsfc.nasa.gov')
-    ftps.login()
-    ftps.prot_p()
-
-    ftps.cwd('/pub/data/omni/low_res_omni/')
-
-    files = ftps.nlst()
-
+    base_url = "https://spdf.gsfc.nasa.gov/pub/data/omni/low_res_omni/"
     file_name = f'omni2_{year}.dat'
     file_name2 = f'omni2_{year+1}.dat'
 
@@ -57,22 +52,44 @@ def download_omni_low_res_data(year):
     csvfile_path = os.path.join(script_dir, csvfile_name)
     csvfile_path2 = os.path.join(script_dir, csvfile_name2)
     
-    if file_name not in files:
-        print(f"File for year {year} not found.")
-        ftps.quit()
-        return
+    # Download primary year file
+    url = base_url + file_name
+    #print(f"Downloading {file_name}...")
     
-    if file_name2 in files:
+    try:
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
+
+        with open(file_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        #print(f"Downloaded successfully: {file_path}")
+        parse_and_convert_to_csv_low_res(file_path, f'omni_{year}_low_res.csv')
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading {file_name}: {e}")
+        return
+
+    # Try to download next year file (optional)
+    url2 = base_url + file_name2
+    #print(f"Attempting to download {file_name2}...")
+    
+    try:
+        response2 = requests.get(url2, stream=True, timeout=30)
+        response2.raise_for_status()
+
         with open(file_path2, 'wb') as f:
-            ftps.retrbinary(f'RETR {file_name2}', f.write)
+            for chunk in response2.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        #print(f"Downloaded successfully: {file_path2}")
         parse_and_convert_to_csv_low_res(file_path2, f'omni_{year+1}_low_res.csv')
 
-    with open(file_path, 'wb') as f:
-        ftps.retrbinary(f'RETR {file_name}', f.write)
-
-    ftps.quit()
-
-    parse_and_convert_to_csv_low_res(file_path, f'omni_{year}_low_res.csv')
+    except requests.exceptions.RequestException as e:
+        print(f"Could not download {file_name2}: {e} (this is normal if the file doesn't exist yet)")
 
 
 
@@ -99,7 +116,7 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
 
     rows = [line.split() for line in lines]
 
-    output_headers = ["Date", "By", "Bz", "V", "Density", "Pdyn"]
+    output_headers = ["Date", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
 
     # Get the directory of the current script
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -112,21 +129,62 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
         for row in rows:
             try:
                 datetime_str = convert_to_datetime(row[0], row[1], row[2],row[3])  # Year, DOY, Hour, Minute
+                Bx_value = row[16]
                 By_value = row[17]
                 Bz_value = row[18]
                 V_value = row[21]
                 Density_value = row[25]
                 Pdyn_value = row[27]
 
-                values_to_check = {By_value, Bz_value, V_value, Density_value, Pdyn_value}
+                values_to_check = {Bx_value, By_value, Bz_value, V_value, Density_value, Pdyn_value}
 
                 # Skip the row if any value is a filler
                 if any(val in FILLER_VALUES for val in values_to_check):
                     continue
 
-                csv_writer.writerow([datetime_str, By_value, Bz_value, V_value, Density_value, Pdyn_value])
+                csv_writer.writerow([datetime_str, Bx_value, By_value, Bz_value, V_value, Density_value, Pdyn_value])
             except (IndexError, ValueError):
                 continue
+
+    # Add rolling averages for By and Bz
+    add_rolling_averages(output_path)
+
+def add_rolling_averages(csv_file_path):
+    """
+    Add 30-minute rolling averages for By and Bz columns to the CSV file.
+    OMNI 5-minute data: 30 minutes = 6 data points for rolling average.
+    """
+    try:
+        # Read the CSV file
+        df = pd.read_csv(csv_file_path)
+        
+        # Convert Date column to datetime for proper sorting
+        df['Date'] = pd.to_datetime(df['Date'])
+        
+        # Sort by date to ensure proper chronological order
+        df = df.sort_values('Date')
+        
+        # Convert By and Bz to numeric, handling any non-numeric values
+        df['By'] = pd.to_numeric(df['By'], errors='coerce')
+        df['Bz'] = pd.to_numeric(df['Bz'], errors='coerce')
+        
+        # Calculate 30-minute rolling averages (6 data points for 5-minute data)
+        # Using center=False to use past 6 points including current point
+        df['By_avg'] = df['By'].rolling(window=6, min_periods=1, center=False).mean()
+        df['Bz_avg'] = df['Bz'].rolling(window=6, min_periods=1, center=False).mean()
+        
+        # Round the averages to appropriate precision
+        df['By_avg'] = df['By_avg'].round(2)
+        df['Bz_avg'] = df['Bz_avg'].round(2)
+        
+        # Save the updated DataFrame back to CSV
+        df.to_csv(csv_file_path, index=False)
+        
+        #print(f"Added 30-minute rolling averages for By and Bz to {csv_file_path}")
+        
+    except Exception as e:
+        print(f"Error adding rolling averages: {e}")
+        print("Continuing without rolling averages...")
 
 def parse_and_convert_to_csv_low_res(input_file, output_file):
     """ Parse the data file and convert it to a CSV with only specific columns. """
@@ -135,7 +193,7 @@ def parse_and_convert_to_csv_low_res(input_file, output_file):
         
         rows = [line.split() for line in lines]
         
-    output_headers = ["Date", "Kp", "Dst", "By", "Bz", "V", "Density", "Pdyn"]
+    output_headers = ["Date", "Kp", "Dst", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
 
     # Get the directory of the current script
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -150,13 +208,14 @@ def parse_and_convert_to_csv_low_res(input_file, output_file):
                 datetime_str = convert_to_datetime(row[0], row[1], row[2],0)
                 kp_value = process_kp_value(row[38])
                 dst_value = row[40]
+                Bx_value = row[14]  # Bx is typically at index 14 in low-res OMNI
                 By_value = row[15]
                 Bz_value = row[16]
                 V_value = row[24]
                 Density_value = row[23]
                 Pdyn_value = row[28]
 
-                csv_writer.writerow([datetime_str, kp_value, dst_value, By_value, Bz_value, V_value, Density_value, Pdyn_value])
+                csv_writer.writerow([datetime_str, kp_value, dst_value, Bx_value, By_value, Bz_value, V_value, Density_value, Pdyn_value])
             
             except (IndexError, ValueError):
                 continue
@@ -168,7 +227,7 @@ def parse_and_convert_to_csv(input_file, output_file):
         
         rows = [line.split() for line in lines]
         
-    output_headers = ["Date", "Kp", "Dst", "By", "Bz", "V", "Density", "Pdyn"]
+    output_headers = ["Date", "Kp", "Dst", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
 
     # Get the directory of the current script
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -183,13 +242,14 @@ def parse_and_convert_to_csv(input_file, output_file):
                 datetime_str = convert_to_datetime(row[0], row[1], row[2],0)
                 kp_value = process_kp_value(row[38])
                 dst_value = row[40]
+                Bx_value = row[14]  # Bx is typically at index 14 in low-res OMNI
                 By_value = row[15]
                 Bz_value = row[16]
                 V_value = row[24]
                 Density_value = row[23]
                 Pdyn_value = row[28]
 
-                csv_writer.writerow([datetime_str, kp_value, dst_value, By_value, Bz_value, V_value, Density_value, Pdyn_value])
+                csv_writer.writerow([datetime_str, kp_value, dst_value, Bx_value, By_value, Bz_value, V_value, Density_value, Pdyn_value])
             
             except (IndexError, ValueError):
                 continue
@@ -381,17 +441,60 @@ import os
 import pandas as pd
 import shutil
 
-def Combine(TSYfile, high_res_file, low_res_file, year):
+def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
     base_dir = os.path.dirname(__file__)
     TSYfile = os.path.join(base_dir, TSYfile)
     high_res_file = os.path.join(base_dir, high_res_file)
     low_res_file = os.path.join(base_dir, low_res_file)
+    TSY15file = os.path.join(base_dir, TSY15file)
     futurefile = os.path.join(base_dir, f'omni_{year+1}_low_res.csv')
 
     # Load all data
     partial_df = pd.read_csv(TSYfile, parse_dates=['Date']).set_index('Date')
     high_res_df = pd.read_csv(high_res_file, parse_dates=['Date']).set_index('Date')
     low_res_df = pd.read_csv(low_res_file, parse_dates=['Date']).set_index('Date')
+    
+    # Load TSY15 data if file exists
+    tsy15_df = None
+    if os.path.exists(TSY15file):
+        try:
+            tsy15_df = pd.read_csv(TSY15file, parse_dates=['DateTime']).set_index('DateTime')
+            # Rename index to match other dataframes
+            tsy15_df.index.name = 'Date'
+            
+            # Select only the N, B, and SYM_H index columns we want to merge
+            available_columns = []
+            if 'N_index_normalised' in tsy15_df.columns:
+                available_columns.append('N_index_normalised')
+            elif 'N_index' in tsy15_df.columns:
+                available_columns.append('N_index')
+                
+            if 'B_index' in tsy15_df.columns:
+                available_columns.append('B_index')
+                
+            if 'SYM_H' in tsy15_df.columns:
+                available_columns.append('SYM_H')
+            elif 'SYM-H' in tsy15_df.columns:
+                available_columns.append('SYM-H')
+                
+            if available_columns:
+                tsy15_df = tsy15_df[available_columns]
+                
+                # Rename N_index_normalised to N_index if it exists
+                if 'N_index_normalised' in tsy15_df.columns:
+                    tsy15_df = tsy15_df.rename(columns={'N_index_normalised': 'N_index'})
+                
+                #print(f"Loaded TSY15 data with columns: {available_columns}")
+                #if 'N_index_normalised' in available_columns:
+                    #print("Renamed N_index_normalised to N_index")
+            #else:
+                #print("Warning: No N_index, B_index, or SYM_H columns found in TSY15 file")
+                #tsy15_df = None
+        except Exception as e:
+            print(f"Error loading TSY15 file: {e}")
+            tsy15_df = None
+    else:
+        print(f"TSY15 file not found: {TSY15file}")
     
     # For most columns, use forward-fill
     low_res_5min = low_res_df.resample('5min').ffill()
@@ -408,15 +511,17 @@ def Combine(TSYfile, high_res_file, low_res_file, year):
     end_time = partial_df.index.max()
     full_index = pd.date_range(start=start_time, end=end_time, freq='5min')
 
-    # Reindex and combine with priority: partial > high_res > low_res
+    # Reindex and combine with priority: high_res > partial > low_res > tsy15
     combined_df = pd.DataFrame(index=full_index)
-    combined_df = combined_df.combine_first(partial_df)
     combined_df = combined_df.combine_first(high_res_df)
+    combined_df = combined_df.combine_first(partial_df)
     combined_df = combined_df.combine_first(low_res_5min)
+    # Add TSY15 data if available (without V_km_s)
+    if tsy15_df is not None:
+        combined_df = combined_df.combine_first(tsy15_df)
 
-    # Reset index and fix column order
     combined_df = combined_df.reset_index().rename(columns={'index': 'Date'})
-
+    
     # Ensure V is positive
     if 'V' in combined_df.columns:
         combined_df['V'] = combined_df['V'].abs()
@@ -436,12 +541,21 @@ def Combine(TSYfile, high_res_file, low_res_file, year):
             combined_df.loc[mask, 'Kp'] = kp_value
 
     # Ensure column completeness and order
-    desired_order = ['Date', 'By', 'Bz', 'V', 'Density', 'Pdyn', 'Dst', 'Kp',
-                     'G1', 'G2', 'G3', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6']
-    for col in desired_order:
+    desired_order = ['Date', 'Bx', 'By', 'Bz', 'By_avg', 'Bz_avg', 'V', 'Density', 'Pdyn', 'Dst', 'Kp',
+                     'G1', 'G2', 'G3', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6',
+                     'N_index', 'B_index', 'SYM_H']
+    
+    # Only include columns that actually exist in the combined dataframe
+    existing_columns = ['Date']  # Date will be added after reset_index
+    for col in desired_order[1:]:  # Skip 'Date' since it's handled separately
+        if col in combined_df.columns:
+            existing_columns.append(col)
+    
+    for col in existing_columns[1:]:  # Skip 'Date'
         if col not in combined_df.columns:
             combined_df[col] = pd.NA
-    combined_df = combined_df[desired_order]
+    
+    combined_df = combined_df[existing_columns]
     combined_df = combined_df.drop_duplicates(subset='Date', keep='first')
 
     # Write output CSV
@@ -471,9 +585,12 @@ def Omnidelete(OMNIYEAR):
     file9 = f'omni_{OMNIYEAR+1}_low_res.csv'
     file10 = f'omni2_{OMNIYEAR+1}.dat'
     file11 = f'omni_{OMNIYEAR}_high_res.csv'
+    file12 = f'tempfile.csv'
+    file13 = f'TSY15_{OMNIYEAR}.csv'
+    file14 = f'omni_5min{OMNIYEAR}.asc'
     
     if OMNIYEAR < datetime.now().year:
-        filelist = [file1,file2,file3,file4,file5,file6,file7,file8,file9,file10,file11]
+        filelist = [file1,file2,file3,file4,file5,file6,file7,file8,file9,file10,file11,file12,file13,file14]
     else:
         filelist = [file1,file2,file3,file4,file5,file6,file7,file8]
 

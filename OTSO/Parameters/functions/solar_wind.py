@@ -1,10 +1,11 @@
 import numpy as np
 
 class Solar_Wind:
- def __init__(self, Vx, Vy, Vz, By, Bz, Density, Pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, Kp):
+ def __init__(self, Vx, Vy, Vz, Bx, By, Bz, Density, Pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, Kp, by_avg, bz_avg, n_index, b_index, sym_h_corrected):
     self.Vx = Vx
     self.Vy = Vy
     self.Vz = Vz
+    self.Bx = Bx
     self.By = By
     self.Bz = Bz
     self.Density = Density
@@ -20,6 +21,12 @@ class Solar_Wind:
     self.W5 = W5
     self.W6 = W6
     self.KpIndex = Kp
+    self.by_avg = by_avg
+    self.bz_avg = bz_avg
+    self.n_index = n_index
+    self.b_index = b_index
+    self.sym_h_corrected = sym_h_corrected
+
 
     self.DstBob = 0
 
@@ -29,7 +36,7 @@ class Solar_Wind:
     if Dst != 0:
       self.DstBob = Dst
 
-    self.WindArray = np.array([self.Vx, self.Vy, self.Vz, self.By, self.Bz, self.Density, self.Pdyn, self.Dst, self.G1, self.G2, self.G3, self.W1, self.W2, self.W3, self.W4, self.W5, self.W6, self.KpIndex, self.DstBob])
+    self.WindArray = np.array([self.Vx, self.Vy, self.Vz, self.Bx, self.By, self.Bz, self.Density, self.Pdyn, self.Dst, self.G1, self.G2, self.G3, self.W1, self.W2, self.W3, self.W4, self.W5, self.W6, self.KpIndex, self.DstBob, self.by_avg, self.bz_avg, self.n_index, self.b_index, self.sym_h_corrected])
 
  def GetWind(self):
     return self.WindArray

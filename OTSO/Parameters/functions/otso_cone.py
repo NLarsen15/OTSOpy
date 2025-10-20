@@ -10,15 +10,15 @@ from tqdm import tqdm
 
 
 def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
            coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose):
 
     ConeInputArray = cone_inputs.ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
            coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,inputcoord)
@@ -84,7 +84,7 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
     # Initialize progress bar if tqdm is available and Verbose is True
     progress_bar = None
     if Verbose and tqdm is not None:
-        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" cones")
+        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" cone")
     elif Verbose:
         # Fallback to simple counter if tqdm is not available
         print(f"Processing {total_stations} stations...")
@@ -149,7 +149,7 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
     README = readme_generators.READMECone(Station_Array, RigidityArray, EventDate, Model, IntModel, Anum, AntiCheck, IOPT, WindArray, Magnetopause, 
                                           CoordinateSystem, Printtime, MaxStepPercent*100, EndParams, LiveData, serverdata, Kp)
 
-    if LiveData == 1:
+    if livedata == "ON" or livedata == 1:
         misc.remove_files()
     
     return [merged_cone_df, merged_R_df, README]

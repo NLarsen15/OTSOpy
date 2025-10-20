@@ -4,7 +4,7 @@
 !
 !********************************************************************************************************************************
 module SolarWind
-real(8) :: SW(3), IMF(2), Dst, DSTBob, PDYN, clock, B, Bs, PI, hb, G1, G2, KpIndex
+real(8) :: SW(3), IMF(3), Dst, DSTBob, PDYN, Magpressure, clock, B, Bs, PI, hb, G1, G2, KpIndex, Bmag
 integer(4) :: IOPT
 real(8), Dimension(10) :: parmod
 SAVE
@@ -38,7 +38,7 @@ contains
 !
 !********************************************************************************************************************************
 subroutine initializeWind(X,D,model)
-real(8) :: X(19), Vmax
+real(8) :: X(25), Vmax
 integer(4) :: D
 integer(8) :: model(2)
 
@@ -59,48 +59,75 @@ END IF
 
 IMF(1) = X(4)
 IMF(2) = X(5)
+IMF(3) = X(6)
 
-B = (X(4)**2 + X(5)**2)**(0.5)
+B = (X(5)**2 + X(6)**2)**(0.5)
+Bmag = (X(4)**2 + X(5)**2 + X(6)**2)**(0.5)
 
 
-Dst = X(8)
+Dst = X(9)
 Vmax = (SW(1)**2 + SW(2)**2 + SW(3)**2)**0.5
 
-IF (X(7) == 0) THEN
-    PDYN = ((X(6)*10**6.0) * (1.672621898e-27) * ((Vmax*1000)**2))
+IF (X(9) == 0) THEN
+    PDYN = ((X(7)*10**6.0) * (1.672621898e-27) * ((Vmax*1000)**2))
 ELSE
-    PDYN = X(7)*10**(-9.0)
+    PDYN = X(8)*10**(-9.0)
 END IF
+
+! Debug magnetic pressure calculation
+Magpressure = ((Bmag*1.0d-9)**2)/(2.0d0*4.0d0*3.14159265358979323846d0*1.0d-7) * 1.0d9
+
 
 hb = ((B/40)**2 / (1 + (B/40)))
 
-
-clock = ATAN(X(4)/X(5))
+clock = ATAN(X(5)/X(6))
 
 IOPT = D
 
 parmod(1) = PDYN*10**(9.0)
 parmod(2) = Dst
-parmod(3) = X(4)
-parmod(4) = X(5)
+parmod(3) = X(5)
+parmod(4) = X(6)
 
 IF (model(2) == 5) THEN
-    parmod(5) = X(9)
-    parmod(6) = X(10)
-END IF
-
-IF (model(2) == 6) THEN
     parmod(5) = X(10)
     parmod(6) = X(11)
 END IF
 
+IF (model(2) == 6) THEN
+    parmod(5) = X(11)
+    parmod(6) = X(12)
+END IF
+
 IF (model(2) == 7) THEN
-    parmod(5) = X(12)
-    parmod(6) = X(13)
-    parmod(7) = X(14)
-    parmod(8) = X(15)
-    parmod(9) = X(16)
-    parmod(10) = X(17)
+    parmod(5) = X(13)
+    parmod(6) = X(14)
+    parmod(7) = X(15)
+    parmod(8) = X(16)
+    parmod(9) = X(17)
+    parmod(10) = X(18)
+END IF
+
+IF (model(2) == 9) THEN
+    parmod(1) = PDYN*10**(9.0)
+    parmod(2) = X(21)
+    parmod(3) = X(22)
+    parmod(4) = X(23)
+END IF
+
+IF (model(2) == 10) THEN
+    parmod(1) = PDYN*10**(9.0)
+    parmod(2) = X(21)
+    parmod(3) = X(22)
+    parmod(4) = X(24)
+END IF
+
+
+IF (model(2) == 11) THEN
+    parmod(1) = PDYN*10**(9.0)
+    parmod(2) = X(25)
+    parmod(3) = X(23)
+    parmod(4) = X(21)
 END IF
 
 

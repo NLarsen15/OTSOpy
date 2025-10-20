@@ -12,14 +12,14 @@ from tqdm import tqdm
 
 
 def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose):
 
     FlightInputArray = flight_inputs.FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,inputcoord)
 
@@ -72,7 +72,7 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
     # Initialize progress bar if tqdm is available and Verbose is True
     progress_bar = None
     if Verbose and tqdm is not None:
-        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" locations", position=0)
+        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" location", position=0)
     elif Verbose:
         # Fallback to simple counter if tqdm is not available
         print(f"Processing flight paths for {total_stations} stations...")
@@ -161,7 +161,7 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
     
     datareadme = readme_generators.READMEFlightData(DateArray,WindArray,KpList)
     
-    if livedata == 1:
+    if livedata == "ON" or livedata == 1:
         misc.remove_files()
 
     return [merged_df,readme,datareadme]

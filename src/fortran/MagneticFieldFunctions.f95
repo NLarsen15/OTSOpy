@@ -261,6 +261,56 @@ end interface
     return
   end function function04
 
+
+  function function15N(x) ! Tsyganenko 2015 N-index 
+    real(8) :: function15N(3), TSYGSM(3), TSYGSM1(3)
+    real(8), intent (in) :: x(3)
+  
+    call TA_2015_N(0, parmod, PSI, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
+    function15N = TSYGSM
+  
+    return
+  end function function15N
+
+
+  function function15B(x) ! Tsyganenko 2015 B-index 
+    real(8) :: function15B(3), TSYGSM(3), TSYGSM1(3)
+    real(8), intent (in) :: x(3)
+  
+    call TA_2015_B(0, parmod, PSI, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
+    function15B = TSYGSM
+  
+    return
+  end function function15B
+
+  function function16(x) ! Tsyganenko 2015 B-index 
+    real(8) :: function16(3), TSYGSM(3), TSYGSM1(3)
+    real(8), intent (in) :: x(3)
+  
+    call RBF_MODEL_2016(0, parmod, PSI, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
+    function16 = TSYGSM
+  
+    return
+  end function function16
+
   function functionMHD(x) ! MHD 
     real(8) :: functionMHD(3), MHDexternal(3), PositionMAG
     real(8), intent (in) :: x(3)
@@ -334,6 +384,12 @@ end interface
     ExternalMagPointer => function04  ! TSYGANENKO 04
   ELSE IF (mode(2) == 8) THEN
     ExternalMagPointer => function89Boberg ! TSYGANENKO 89 BOBERG EXTENSION
+  ELSE IF (mode(2) == 9) THEN
+    ExternalMagPointer => function15N  ! TSYGANENKO 15 N-index
+  ELSE IF (mode(2) == 10) THEN
+    ExternalMagPointer => function15B  ! TSYGANENKO 15 B-index
+  ELSE IF (mode(2) == 11) THEN
+    ExternalMagPointer => function16  ! TSYGANENKO 16 RBF
   ELSE IF (mode(2) == 99) THEN
     ExternalMagPointer => functionMHD  ! MHD
   ELSE

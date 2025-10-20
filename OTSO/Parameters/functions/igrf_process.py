@@ -271,6 +271,8 @@ def compute_gauss_coefficients(date_array):
     
     # Get interpolated coefficients (returns actual year used)
     G, H, actual_year_used = interpolate_coefficients(df, original_target_year)
+
+    G, H = schmidt_normalize(G, H, max_n=15)
     
     # Calculate derived values
     G_10 = abs(G[2])  # g(1,0) magnitude
@@ -291,3 +293,20 @@ def compute_gauss_coefficients(date_array):
         'dipole_moment': dipole_moment,
         'decimal_year': actual_year_used
     }
+
+
+def schmidt_normalize(G, H, max_n=15):
+    S = 1.0
+    for N in range(2, max_n + 1):
+        MN = N * (N - 1) // 2 + 1
+        S *= (2 * N - 3) / (N - 1)
+        G[MN] *= S
+        H[MN] *= S
+        P = S
+        for M in range(2, N + 1):
+            AA = 2.0 if M == 2 else 1.0
+            P *= np.sqrt(AA * (N - M + 1) / (N + M - 2))
+            MNN = MN + M - 1
+            G[MNN] *= P
+            H[MNN] *= P
+    return G, H
