@@ -118,7 +118,7 @@ def MagFieldInputs(Locations,
               print("Server data only valid for 1963 to present, please enter a valid date.")
          BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS = Server.GetServerData(EventDate,External)
          IOPTinput = misc.IOPTprocess(KpS)
-         WindCreate = solar_wind.Solar_Wind(VS, vy, vz, BxS, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS, External)
+         WindCreate = solar_wind.Solar_Wind(VS, vy, vz, BxS, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS)
          WindArray = WindCreate.GetWind()
          
     if LiveData == 1:
