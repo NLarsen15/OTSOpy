@@ -69,3 +69,7 @@ def removestation(*args, **kwargs):
 def liststations(*args, **kwargs):
     from .OTSO import ListStations as liststations_func
     return liststations_func(*args, **kwargs)
+
+def IGRFupdate(*args, **kwargs):
+    from .OTSO import IGRFupdate as IGRFupdate_func
+    return IGRFupdate_func(*args, **kwargs)

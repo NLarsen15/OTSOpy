@@ -25,6 +25,7 @@ setup(
                 'OTSO.addstation=OTSO:addstation',
                 'OTSO.removestation=OTSO:removestation',
                 'OTSO.liststations=OTSO:liststations',
+                'OTSO.IGRFupdate=OTSO:IGRFupdate',
             ],
     },
     classifiers=[
