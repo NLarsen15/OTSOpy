@@ -218,7 +218,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
           IOPTList.append(IOPTinput)
           vytemp = 0
           vztemp = 0
-          WindCreate = solar_wind.Solar_Wind(VS, vytemp, vztemp, BxS, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS, External)
+          WindCreate = solar_wind.Solar_Wind(VS, vytemp, vztemp, BxS, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS)
           WindArray = WindCreate.GetWind()
           WindArrayList.append(WindArray)
           
