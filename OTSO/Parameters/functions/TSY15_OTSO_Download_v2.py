@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-"""
-Compute N_index_normalised and B_index from OMNI data using the CORRECTED approach:
-1. Interpolate missing solar wind parameters (B, V, density) between valid values
-2. Convert each instantaneous OMNI data point from GSE to GSW
-3. Compute N and B indices for each instantaneous point
-4. Apply 30-minute rolling average to the N and B indices
-
-This matches the TSY15 methodology more accurately than averaging the raw parameters.
-
-By default, this script downloads and processes OMNI 5-minute data.
-Use --check-tsy15 flag to check for TSY15 pre-computed data first.
-"""
-
 import csv
 import math
 import requests
@@ -23,23 +9,10 @@ import os
 from datetime import datetime
 from . import MiddleMan as OTSOLib
 
-# Disable SSL warnings for TSY15 server
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def convert_to_gsw_coordinates(datetime_str, vx_gse, vy_gse, vz_gse, bx_gse, by_gse, bz_gse, g, h):
-    """
-    Convert GSE magnetic field components to GSW using GEOPACK.
-    
-    Args:
-        datetime_str: DateTime string in format "YYYY-MM-DD HH:MM:SS"
-        vx_gse, vy_gse, vz_gse: Velocity components in GSE coordinates (km/s)
-        bx_gse, by_gse, bz_gse: Magnetic field components in GSE (nT)
-        
-    Returns:
-        tuple: (bx_gsw, by_gsw, bz_gsw, bt_gsw) or (None, None, None, None) if conversion fails
-    """
     try:
-        # Parse datetime
         dt = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
         year = dt.year
         day_of_year = dt.timetuple().tm_yday
@@ -52,10 +25,8 @@ def convert_to_gsw_coordinates(datetime_str, vx_gse, vy_gse, vz_gse, bx_gse, by_
         Wind = [vx_gse, vy_gse, vz_gse]
 
         
-        # Convert B field from GSE to GSW
         position_gsw = OTSOLib.gse2gswtsy15(date, position_gse, Wind, g, h)
         
-        # Calculate transverse component in GSW
         bt_gsw = math.sqrt(position_gsw[1]**2 + position_gsw[2]**2)
 
         return float(position_gsw[0]), float(position_gsw[1]), float(position_gsw[2]), float(bt_gsw)
@@ -65,15 +36,6 @@ def convert_to_gsw_coordinates(datetime_str, vx_gse, vy_gse, vz_gse, bx_gse, by_
         return None, None, None, None
 
 def is_valid_value(value_str):
-    """
-    Check if a value string represents valid data (not missing/invalid).
-    
-    Args:
-        value_str: String representation of the value
-    
-    Returns:
-        bool: True if valid, False if invalid/missing
-    """
     if not value_str or value_str.strip() == '':
         return False
     
@@ -89,26 +51,12 @@ def is_valid_value(value_str):
         return False
 
 def compute_corrected_symh(symh_values, pdyn_values):
-    """
-    Compute corrected SYM-H index using TSY15 method.
-    SymHc = 0.8*SymH - 13*sqrt(PDYN)
-    where the values are 30-minute centered averages.
-    
-    Args:
-        symh_values: Array of SYM-H values
-        pdyn_values: Array of flow pressure values
-    
-    Returns:
-        Array of corrected SYM-H values
-    """
     try:
         import numpy as np
         
-        # Convert to numpy arrays if not already
         symh_array = np.array(symh_values, dtype=float)
         pdyn_array = np.array(pdyn_values, dtype=float)
-        
-        # Clean SYM-H data first - remove fill values
+    
         symh_clean = np.where(
             (symh_array == -9223372036854775808) | 
             (symh_array >= 99999) | 
@@ -118,7 +66,6 @@ def compute_corrected_symh(symh_values, pdyn_values):
             symh_array
         )
         
-        # For PDYN, treat negative values as invalid and clean fill values
         pdyn_clean = np.where(
             (pdyn_array < 0) | 
             (pdyn_array >= 99999) | 
@@ -127,11 +74,9 @@ def compute_corrected_symh(symh_values, pdyn_values):
             pdyn_array
         )
         
-        # Compute 30-minute centered averages (6 five-minute periods)
         symh_30min = compute_rolling_average_centered(symh_clean, window_size=6)
         pdyn_30min = compute_rolling_average_centered(pdyn_clean, window_size=6)
         
-        # Only compute correction where both averages are valid
         valid_mask = ~np.isnan(symh_30min) & ~np.isnan(pdyn_30min)
         symh_corrected = np.full_like(symh_array, np.nan)
         symh_corrected[valid_mask] = 0.8 * symh_30min[valid_mask] - 13 * np.sqrt(pdyn_30min[valid_mask])
@@ -146,9 +91,6 @@ def compute_corrected_symh(symh_values, pdyn_values):
         return [None] * len(symh_values)
 
 def compute_corrected_symh_basic(symh_values, pdyn_values):
-    """
-    Basic corrected SYM-H computation without numpy dependency.
-    """
     result = []
     
     for i, (symh, pdyn) in enumerate(zip(symh_values, pdyn_values)):
@@ -187,17 +129,12 @@ def compute_corrected_symh_basic(symh_values, pdyn_values):
     return result
 
 def compute_rolling_average_centered(values, window_size=6):
-    """
-    Compute centered rolling average for a given window size.
-    For each point, includes (window_size//2) points before and after the current point.
-    """
     try:
         import numpy as np
         n = len(values)
         rolling_avg = np.full(n, np.nan)
         half_window = window_size // 2
         
-        # Create a copy of input values to avoid chain reaction
         input_values = np.array(values)
         
         for i in range(n):
@@ -205,20 +142,14 @@ def compute_rolling_average_centered(values, window_size=6):
             end_idx = min(n, i + half_window + 1)
             window_values = input_values[start_idx:end_idx]
             
-            # Get only valid values and compute mean if we have any valid data
             valid_values = window_values[~np.isnan(window_values)]
             if len(valid_values) > 0:
                 rolling_avg[i] = np.mean(valid_values)
-            # Otherwise, leave as NaN
         return rolling_avg
     except ImportError:
-        # Fallback without numpy
         return compute_rolling_average_centered_basic(values, window_size)
 
 def compute_rolling_average_centered_basic(values, window_size=6):
-    """
-    Basic centered rolling average computation without numpy.
-    """
     n = len(values)
     result = []
     half_window = window_size // 2
@@ -227,7 +158,6 @@ def compute_rolling_average_centered_basic(values, window_size=6):
         start_idx = max(0, i - half_window)
         end_idx = min(n, i + half_window + 1)
         
-        # Get valid values in window
         valid_values = []
         for j in range(start_idx, end_idx):
             if j < len(values) and values[j] is not None:
@@ -246,7 +176,6 @@ def compute_rolling_average_centered_basic(values, window_size=6):
     return result
 
 def is_valid_symh_value(value):
-    """Check if SYM-H value is valid."""
     try:
         val = float(value)
         return not (val >= 99999 or val <= -99999 or math.isnan(val) or not math.isfinite(val))
@@ -254,7 +183,6 @@ def is_valid_symh_value(value):
         return False
 
 def is_valid_pdyn_value(value):
-    """Check if flow pressure value is valid."""
     try:
         val = float(value)
         return not (val < 0 or val >= 99999 or math.isnan(val) or not math.isfinite(val))
@@ -262,18 +190,7 @@ def is_valid_pdyn_value(value):
         return False
 
 def compute_instantaneous_indices(row, g, h):
-    """
-    Compute N and B indices for a single instantaneous OMNI data point.
-    
-    Args:
-        row: Dictionary containing the OMNI data point
-    
-    Returns:
-        tuple: (N_norm, B_idx, bx_gsw, by_gsw, bz_gsw, bt_gsw, V, thetac_gsw, Vx, Vy, Vz, Np) 
-               or (None, None, None, None, None, None, None, None, None, None, None, None) if computation fails
-    """
     try:
-        # Extract and validate all required parameters
         if not (is_valid_value(row['BX_nT_GSE_GSM']) and
                 is_valid_value(row['BY_nT_GSE']) and 
                 is_valid_value(row['BZ_nT_GSE']) and
@@ -323,16 +240,6 @@ def compute_instantaneous_indices(row, g, h):
         return (None, None, None, None, None, None, None, None, None, None, None, None)
 
 def calculate_rolling_average_indices(all_rows, window_size=7):
-    """
-    Calculate rolling average of N and B indices over a 30-minute window.
-    
-    Args:
-        all_rows: List of dictionaries containing OMNI data with instantaneous indices
-        window_size: Number of points in rolling window (7 for 30 minutes with 5-min data)
-    
-    Returns:
-        list: List of dictionaries with rolling averaged indices
-    """
     results = []
     
     for i, current_row in enumerate(all_rows):
@@ -399,16 +306,6 @@ def calculate_rolling_average_indices(all_rows, window_size=7):
     return results
 
 def convert_omni_to_tempfile(omni_filename, output_filename='tempfile.csv'):
-    """
-    Convert OMNI 5-minute ASCII file to tempfile.csv format.
-    
-    Parameters:
-    omni_filename: Path to OMNI .asc file
-    output_filename: Output CSV filename (default: tempfile.csv)
-    
-    Returns:
-    bool: Success status
-    """
     # print(f"\nConverting {omni_filename} to {output_filename}...")
     
     # Column specifications for OMNI 5-minute fixed-width format
@@ -443,7 +340,6 @@ def convert_omni_to_tempfile(omni_filename, output_filename='tempfile.csv'):
         import pandas as pd
         import numpy as np
         
-        # Read the fixed-width file
         df = pd.read_fwf(omni_filename, colspecs=colspecs, names=column_names, header=None)
         
         # Replace fill values with NaN
@@ -453,7 +349,6 @@ def convert_omni_to_tempfile(omni_filename, output_filename='tempfile.csv'):
             df = df.replace(fill_val, np.nan)
         
         # Interpolate missing solar wind parameters between valid values
-        # print("  Interpolating missing solar wind parameters...")
         solar_wind_columns = ['Bx_GSE_nT', 'By_GSE_nT', 'Bz_GSE_nT', 
                              'By_GSM_nT', 'Bz_GSM_nT',
                              'Vx_GSE_km_s', 'Vy_GSE_km_s', 'Vz_GSE_km_s',
@@ -470,7 +365,6 @@ def convert_omni_to_tempfile(omni_filename, output_filename='tempfile.csv'):
         # print(f"  Interpolated {nans_before - nans_after} missing values")
         # print(f"  Remaining NaN values: {nans_after} (gaps at boundaries)")
         
-        # Create DateTime column
         df['DateTime'] = pd.to_datetime(
             df['Year'].astype(int).astype(str) + '-' + 
             df['Day'].astype(int).astype(str) + '-' + 
@@ -479,10 +373,9 @@ def convert_omni_to_tempfile(omni_filename, output_filename='tempfile.csv'):
             format='%Y-%j-%H-%M'
         )
         
-        # Format DateTime as string
         df['DateTime'] = df['DateTime'].dt.strftime('%Y-%m-%d %H:%M:%S')
         
-        # Create output DataFrame with required columns
+
         output_df = pd.DataFrame({
             'DateTime': df['DateTime'],
             'BX_nT_GSE_GSM': df['Bx_GSE_nT'],
@@ -508,7 +401,6 @@ def convert_omni_to_tempfile(omni_filename, output_filename='tempfile.csv'):
         
         # print(f"  Added corrected SYM-H column")
         
-        # Save to CSV in OTSO package directory
         script_dir = os.path.join(os.path.dirname(__file__), "")
         output_path = os.path.join(script_dir, output_filename)
         output_df.to_csv(output_path, index=False)
@@ -526,16 +418,6 @@ def convert_omni_to_tempfile(omni_filename, output_filename='tempfile.csv'):
         return False
 
 def convert_tsy15_to_tempfile(tsy15_filename, output_filename='tempfile.csv'):
-    """
-    Convert TSY15 .dat file to tempfile.csv format.
-    
-    Parameters:
-    tsy15_filename: Path to TSY15 .dat file
-    output_filename: Output CSV filename (default: tempfile.csv)
-    
-    Returns:
-    bool: Success status
-    """
     # print(f"\nConverting {tsy15_filename} to {output_filename}...")
     
     # Column specifications for TSY15 fixed-width format
@@ -635,15 +517,6 @@ def convert_tsy15_to_tempfile(tsy15_filename, output_filename='tempfile.csv'):
         return False
 
 def check_and_download_tsy15_data(year):
-    """
-    Check if TSY15 pre-computed data is available for the given year and download it.
-    
-    Parameters:
-    year: Year to check (int)
-    
-    Returns:
-    tuple: (success, local_filename)
-    """
     tsy15_url = f"https://geo.phys.spbu.ru/~tsyganenko/models/ta15/{year}_OMNI_5m_with_TA15_drivers.dat"
     
     # Save to OTSO package directory
@@ -672,27 +545,13 @@ def check_and_download_tsy15_data(year):
         return False, None
 
 def download_omni_file(year):
-    """
-    Download OMNI 5-minute data file for the specified year with progress tracking.
-    
-    Parameters:
-    year: Year to download (int)
-    
-    Returns:
-    tuple: (success, local_filename)
-    """
     url = f"https://spdf.gsfc.nasa.gov/pub/data/omni/high_res_omni/omni_5min{year}.asc"
     
     # Save to OTSO package directory
     script_dir = os.path.join(os.path.dirname(__file__), "")
     local_filename = os.path.join(script_dir, f"omni_5min{year}.asc")
     
-    # print(f"Downloading OMNI 5-minute data for year {year}...")
-    # print(f"URL: {url}")
-    # print(f"Saving to: {local_filename}")
-    
     try:
-        # Get file size first (without requiring it)
         total_size = 0
         try:
             response = requests.head(url, timeout=10)
@@ -701,8 +560,7 @@ def download_omni_file(year):
         except:
             print("Could not determine file size, showing download amount only...")
         
-        # Start actual download with timeout
-        response = requests.get(url, stream=True, timeout=30)
+        response = requests.get(url, stream=True)
         response.raise_for_status()
         
         downloaded_size = 0
@@ -753,16 +611,6 @@ def download_omni_file(year):
         return False, None
 
 def check_and_download_data(year, check_tsy15=False):
-    """
-    Download OMNI or TSY15 data for the specified year.
-    
-    Parameters:
-    year: Year to download (int or None)
-    check_tsy15: If True, check TSY15 first before falling back to OMNI (bool)
-    
-    Returns:
-    tuple: (success, filename, data_source) where data_source is 'tsy15' or 'omni'
-    """
     if year is None:
         #print("Error: No year specified")
         #print("Please specify a year to download data")
@@ -787,13 +635,6 @@ def check_and_download_data(year, check_tsy15=False):
         return False, None, None
 
 def process_omni_with_instantaneous_indices(g, h, year):
-    """
-    Process OMNI data using the CORRECTED approach:
-    1. Compute instantaneous N and B indices for each point (from interpolated parameters)
-    2. Apply rolling average to the indices
-    
-    Note: Solar wind parameters are already interpolated during conversion from OMNI format.
-    """
     # Get the directory of the current script (OTSO package location)
     script_dir = os.path.join(os.path.dirname(__file__), "")
     input_file = os.path.join(script_dir, 'tempfile.csv')
@@ -874,19 +715,6 @@ def process_omni_with_instantaneous_indices(g, h, year):
                 break
 
 def process_year(year, g, h, check_tsy15=False):
-    """
-    Download and process data for a given year.
-    
-    Parameters:
-    year: Year to download data for (int)
-    check_tsy15: If True, check for TSY15 pre-computed data first (bool, default: False)
-    
-    Returns:
-    tuple: (success, output_file, data_source) where:
-        - success: True if processing completed successfully
-        - output_file: Path to output file created
-        - data_source: 'tsy15' or 'omni'
-    """
     # Validate year
     current_year = datetime.now().year
     #if year < 1995 or year > current_year:
@@ -968,9 +796,6 @@ def process_year(year, g, h, check_tsy15=False):
     return False, None, None
 
 def TSY15_OTSO_Download_v2(OMNI_year,g,h,check_tsy15=False):
-
-
-    # Call the main processing function
     success, output_file, data_source = process_year(OMNI_year, g, h, check_tsy15)
     
     if not success:

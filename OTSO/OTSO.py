@@ -94,15 +94,6 @@ def ListStations():
 
 
 def find_latest_igrf_url(base_url: str = "https://www.ngdc.noaa.gov/IAGA/vmod/coeffs/") -> str:
-    """
-    Find the latest IGRF coefficients file by checking for the highest generation number.
-    
-    Args:
-        base_url: Base URL for IGRF coefficients
-        
-    Returns:
-        URL to the latest IGRF coefficients file
-    """
     latest_valid_generation = None
     latest_valid_url = None
     
@@ -135,15 +126,6 @@ def find_latest_igrf_url(base_url: str = "https://www.ngdc.noaa.gov/IAGA/vmod/co
 
 
 def download_igrf_data(url: str = None) -> List[str]:
-    """
-    Download IGRF coefficient data from NOAA website.
-    
-    Args:
-        url: URL to download IGRF data from. If None, will auto-detect latest version.
-        
-    Returns:
-        List of lines from the downloaded file
-    """
     if url is None:
         url, _ = find_latest_igrf_url()
     
@@ -157,17 +139,6 @@ def download_igrf_data(url: str = None) -> List[str]:
 
 
 def parse_igrf_header(lines: List[str]) -> Tuple[List[str], int]:
-    """
-    Parse the header of IGRF file to extract available years and find data start line.
-    Handles both IGRF-10 format (g/h  n  m) and IGRF-11+ format (g/h n m).
-    Also handles prediction columns like "2025-30".
-    
-    Args:
-        lines: Raw lines from IGRF file
-        
-    Returns:
-        Tuple of (list of available years, line number where data starts)
-    """
     header_line = None
     data_start_line = 0
     
@@ -220,17 +191,6 @@ def parse_igrf_header(lines: List[str]) -> Tuple[List[str], int]:
 
 
 def parse_igrf_data_all_years(lines: List[str], start_line: int, available_years: List[str]) -> List[Tuple[str, int, int, List[float]]]:
-    """
-    Parse IGRF coefficient data for all available years.
-    
-    Args:
-        lines: Raw lines from IGRF file
-        start_line: Line number where data starts
-        available_years: List of all available years
-        
-    Returns:
-        List of tuples (coeff_type, degree, order, [values for all years])
-    """
     coefficients = []
     zero_values = [0.0] * len(available_years)
     
@@ -292,14 +252,6 @@ def parse_igrf_data_all_years(lines: List[str], start_line: int, available_years
 
 
 def write_csv_all_years(coefficients: List[Tuple[str, int, int, List[float]]], output_file: str, years: List[str]):
-    """
-    Write coefficients to CSV file with all years as columns.
-    
-    Args:
-        coefficients: List of (coeff_type, degree, order, values) tuples
-        output_file: Output CSV filename
-        years: List of year strings for the header
-    """
     with open(output_file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
@@ -317,10 +269,6 @@ def write_csv_all_years(coefficients: List[Tuple[str, int, int, List[float]]], o
 
 
 def IGRFupdate():
-    """
-    Update IGRF coefficients by downloading the latest version and saving to the functions folder.
-    """
-
     # Get the path to the functions folder
     script_dir = os.path.dirname(os.path.abspath(__file__))
     functions_dir = os.path.join(script_dir, 'Parameters', 'functions')
@@ -362,7 +310,6 @@ def IGRFupdate():
 
 
 def addstation():
-    """Command line interface for adding a station."""
     if len(sys.argv) != 4:
         print("Usage: OTSO.addstation <Name> <Latitude> <Longitude>")
         print("Example: OTSO.addstation 'My Station' 45.0 -122.0")
@@ -380,7 +327,6 @@ def addstation():
 
 
 def removestation():
-    """Command line interface for removing a station."""
     if len(sys.argv) != 2:
         print("Usage: OTSO.removestation <Name>")
         print("Example: OTSO.removestation 'My Station'")
@@ -391,7 +337,6 @@ def removestation():
 
 
 def liststations():
-    """Command line interface for listing stations."""
     ListStations()
 
 

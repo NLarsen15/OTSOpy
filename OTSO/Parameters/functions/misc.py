@@ -92,19 +92,15 @@ def day_of_year_to_date(doy, year):
     else:
         days_in_months = days_in_months_non_leap
 
-    # Initialize variables to accumulate days and find the month
     accumulated_days = 0
     month = 0
 
-    # Find the month and day corresponding to the day of the year (DOY)
     for i in range(12):
         accumulated_days += days_in_months[i]
         if doy <= accumulated_days:
             month = i + 1
             day = doy - (accumulated_days - days_in_months[i])
             break
-
-    # Return the month and day as a tuple
     return (month, day)
 
 def DateCheck(Date):

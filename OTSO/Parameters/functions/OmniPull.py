@@ -65,16 +65,13 @@ def download_omni_low_res_data(year):
                 if chunk:
                     f.write(chunk)
 
-        #print(f"Downloaded successfully: {file_path}")
         parse_and_convert_to_csv_low_res(file_path, f'omni_{year}_low_res.csv')
 
     except requests.exceptions.RequestException as e:
         print(f"Error downloading {file_name}: {e}")
         return
 
-    # Try to download next year file (optional)
     url2 = base_url + file_name2
-    #print(f"Attempting to download {file_name2}...")
     
     try:
         response2 = requests.get(url2, stream=True, timeout=30)
@@ -118,7 +115,6 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
 
     output_headers = ["Date", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
 
-    # Get the directory of the current script
     script_dir = os.path.dirname(os.path.realpath(__file__))
     output_path = os.path.join(script_dir, output_file)
 
@@ -146,7 +142,6 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
             except (IndexError, ValueError):
                 continue
 
-    # Add rolling averages for By and Bz
     add_rolling_averages(output_path)
 
 def add_rolling_averages(csv_file_path):
@@ -155,32 +150,23 @@ def add_rolling_averages(csv_file_path):
     OMNI 5-minute data: 30 minutes = 6 data points for rolling average.
     """
     try:
-        # Read the CSV file
         df = pd.read_csv(csv_file_path)
         
-        # Convert Date column to datetime for proper sorting
         df['Date'] = pd.to_datetime(df['Date'])
         
-        # Sort by date to ensure proper chronological order
         df = df.sort_values('Date')
-        
-        # Convert By and Bz to numeric, handling any non-numeric values
+
         df['By'] = pd.to_numeric(df['By'], errors='coerce')
         df['Bz'] = pd.to_numeric(df['Bz'], errors='coerce')
         
-        # Calculate 30-minute rolling averages (6 data points for 5-minute data)
-        # Using center=False to use past 6 points including current point
         df['By_avg'] = df['By'].rolling(window=6, min_periods=1, center=False).mean()
         df['Bz_avg'] = df['Bz'].rolling(window=6, min_periods=1, center=False).mean()
         
-        # Round the averages to appropriate precision
+ 
         df['By_avg'] = df['By_avg'].round(2)
         df['Bz_avg'] = df['Bz_avg'].round(2)
         
-        # Save the updated DataFrame back to CSV
         df.to_csv(csv_file_path, index=False)
-        
-        #print(f"Added 30-minute rolling averages for By and Bz to {csv_file_path}")
         
     except Exception as e:
         print(f"Error adding rolling averages: {e}")
@@ -195,7 +181,6 @@ def parse_and_convert_to_csv_low_res(input_file, output_file):
         
     output_headers = ["Date", "Kp", "Dst", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
 
-    # Get the directory of the current script
     script_dir = os.path.dirname(os.path.realpath(__file__))
     output_path = os.path.join(script_dir, output_file)
     
@@ -208,7 +193,7 @@ def parse_and_convert_to_csv_low_res(input_file, output_file):
                 datetime_str = convert_to_datetime(row[0], row[1], row[2],0)
                 kp_value = process_kp_value(row[38])
                 dst_value = row[40]
-                Bx_value = row[14]  # Bx is typically at index 14 in low-res OMNI
+                Bx_value = row[14]
                 By_value = row[15]
                 Bz_value = row[16]
                 V_value = row[24]
@@ -229,7 +214,6 @@ def parse_and_convert_to_csv(input_file, output_file):
         
     output_headers = ["Date", "Kp", "Dst", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
 
-    # Get the directory of the current script
     script_dir = os.path.dirname(os.path.realpath(__file__))
     output_path = os.path.join(script_dir, output_file)
     
@@ -242,7 +226,7 @@ def parse_and_convert_to_csv(input_file, output_file):
                 datetime_str = convert_to_datetime(row[0], row[1], row[2],0)
                 kp_value = process_kp_value(row[38])
                 dst_value = row[40]
-                Bx_value = row[14]  # Bx is typically at index 14 in low-res OMNI
+                Bx_value = row[14]
                 By_value = row[15]
                 Bz_value = row[16]
                 V_value = row[24]
@@ -312,11 +296,9 @@ def OMNI_to_csv(year):
     split_values = data[13].apply(split_column)
     data[13] = split_values.apply(lambda x: x[0])
 
-    # Check if any value contains an asterisk and add new column if necessary
     if split_values.apply(lambda x: x[1]).notna().any():
         data.insert(14, 'new_column', split_values.apply(lambda x: x[1]).fillna(0.0))
 
-    # Convert the original column back to float
     data[13] = data[13].astype(float)
     
     data['Date'] = [
@@ -410,22 +392,18 @@ def TSY01_Constants(data):
     return round(G1, 2), round(G2, 2), round(G3, 2)
 
 def CombineLowRes(input_file, year):
-    # Read the CSV file
     df = pd.read_csv(input_file)
     
-    # Define new headers
     new_headers = ['Date', 'By', 'Bz', 'V', 'Density', 'Pdyn', 'Dst', 'Kp', 
                    'G1', 'G2', 'G3', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6']
     
-    # Create a new DataFrame with the required structure
+
     new_df = pd.DataFrame(columns=new_headers)
     
-    # Copy Date, Kp, and Dst values
     new_df['Date'] = df['Date']
     new_df['Kp'] = df['Kp']
     new_df['Dst'] = df['Dst']
     
-    # Fill all other columns with zero
     for col in new_headers:
         if col not in ['Date', 'Kp', 'Dst']:
             new_df[col] = 0
@@ -449,20 +427,16 @@ def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
     TSY15file = os.path.join(base_dir, TSY15file)
     futurefile = os.path.join(base_dir, f'omni_{year+1}_low_res.csv')
 
-    # Load all data
     partial_df = pd.read_csv(TSYfile, parse_dates=['Date']).set_index('Date')
     high_res_df = pd.read_csv(high_res_file, parse_dates=['Date']).set_index('Date')
     low_res_df = pd.read_csv(low_res_file, parse_dates=['Date']).set_index('Date')
     
-    # Load TSY15 data if file exists
     tsy15_df = None
     if os.path.exists(TSY15file):
         try:
             tsy15_df = pd.read_csv(TSY15file, parse_dates=['DateTime']).set_index('DateTime')
-            # Rename index to match other dataframes
             tsy15_df.index.name = 'Date'
             
-            # Select only the N, B, and SYM_H index columns we want to merge
             available_columns = []
             if 'N_index_normalised' in tsy15_df.columns:
                 available_columns.append('N_index_normalised')
@@ -480,7 +454,6 @@ def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
             if available_columns:
                 tsy15_df = tsy15_df[available_columns]
                 
-                # Rename N_index_normalised to N_index if it exists
                 if 'N_index_normalised' in tsy15_df.columns:
                     tsy15_df = tsy15_df.rename(columns={'N_index_normalised': 'N_index'})
                 
@@ -496,17 +469,15 @@ def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
     else:
         print(f"TSY15 file not found: {TSY15file}")
     
-    # For most columns, use forward-fill
+
     low_res_5min = low_res_df.resample('5min').ffill()
     
-    # For Dst, use backward-fill since hourly values represent mean of prior hour
-    # This means 17:00-18:00 period should use the 18:00 Dst value
+
     if 'Dst' in low_res_df.columns:
-        # Shift Dst timestamps by +1 hour to align with the period they represent
         low_res_df.index = low_res_df.index + pd.Timedelta(hours=1)
         low_res_5min['Dst'] = low_res_df['Dst'].resample('5min').bfill().astype(int)
 
-    # Define full 5-minute time range for the year
+
     start_time = partial_df.index.min()
     end_time = partial_df.index.max()
     full_index = pd.date_range(start=start_time, end=end_time, freq='5min')
@@ -516,13 +487,11 @@ def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
     combined_df = combined_df.combine_first(high_res_df)
     combined_df = combined_df.combine_first(partial_df)
     combined_df = combined_df.combine_first(low_res_5min)
-    # Add TSY15 data if available (without V_km_s)
     if tsy15_df is not None:
         combined_df = combined_df.combine_first(tsy15_df)
 
     combined_df = combined_df.reset_index().rename(columns={'index': 'Date'})
     
-    # Ensure V is positive
     if 'V' in combined_df.columns:
         combined_df['V'] = combined_df['V'].abs()
 
@@ -545,13 +514,13 @@ def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
                      'G1', 'G2', 'G3', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6',
                      'N_index', 'B_index', 'SYM_H']
     
-    # Only include columns that actually exist in the combined dataframe
-    existing_columns = ['Date']  # Date will be added after reset_index
-    for col in desired_order[1:]:  # Skip 'Date' since it's handled separately
+
+    existing_columns = ['Date']  
+    for col in desired_order[1:]:  
         if col in combined_df.columns:
             existing_columns.append(col)
     
-    for col in existing_columns[1:]:  # Skip 'Date'
+    for col in existing_columns[1:]:
         if col not in combined_df.columns:
             combined_df[col] = pd.NA
     
