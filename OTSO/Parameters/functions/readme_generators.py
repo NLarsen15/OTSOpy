@@ -27,18 +27,19 @@ def READMECone(UsedStationstemp, RigidityArray, EventDate, model, IntModel, Atom
 
     ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
+        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension",
+        "Tsyganenko 15 N Model", "Tsyganenko 15 B Model", "Tsyganenko 16 Model"
     ]
-    External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
+    External = ExternalModels[model[1]] if 0 <= model[1] <= 11 else "Unknown External Model"
     if model[1] == 99:
          External = "MHD file"
 
     PauseModels = [
-        "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
+        "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model","Lin 2010 Model"
         "Tsyganenko 96 Magnetopause Model", "Tsyganenko 01 Magnetopause Model",
-        "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model"
+        "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model",
     ]
-    PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 7 else "Unknown Magnetopause Model"
+    PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 8 else "Unknown Magnetopause Model"
 
     today = date.today()
     result.append(f"\n")
@@ -47,7 +48,11 @@ def READMECone(UsedStationstemp, RigidityArray, EventDate, model, IntModel, Atom
     result.append(f"Output Coordinate System:\n{CoordinateSystem}\n\n")
     result.append(f"Integration Method:\n{IntegrationMethod}\n\n")
     result.append(f"Input Variables:\n\n")
-    result.append(f"Data Used: {OnlineData}\n\n")
+    result.append(f"Data Used: {OnlineData}\n")
+    if OnlineData == "Online Space Weather Data Used":
+      result.append("NOAA preliminary data used, these values are not final and may differ from the finalised OMNI database used in the ServerData function. The OMNI database results take precident over the preliminary NOAA values used in LiveData.\n\n")
+    else:
+      result.append("\n")
     result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
     result.append(f"Max Time Step [% of gyrofrequency]: {MaxStepPercent}\n\n")
     result.append(f"Minimum Altitude: {EndParams[0]}km\n")
@@ -63,20 +68,26 @@ def READMECone(UsedStationstemp, RigidityArray, EventDate, model, IntModel, Atom
     result.append(f"Vy = {WindArray[1]}\n")
     result.append(f"Vz = {WindArray[2]}\n\n")
     result.append(f"IMF [nT]:\n")
-    result.append(f"By = {WindArray[3]}\n")
-    result.append(f"Bz = {WindArray[4]}\n\n")
-    result.append(f"Density = {WindArray[5]} cm^-3\n")
-    result.append(f"Pdyn = {pressure} nPa\n\n")
-    result.append(f"Dst = {WindArray[7]} nT\n\n")
-    result.append(f"G1 = {WindArray[8]}\n")
-    result.append(f"G2 = {WindArray[9]}\n")
-    result.append(f"G3 = {WindArray[10]}\n\n")
-    result.append(f"W1 = {WindArray[11]}\n")
-    result.append(f"W2 = {WindArray[12]}\n")
-    result.append(f"W3 = {WindArray[13]}\n")
-    result.append(f"W4 = {WindArray[14]}\n")
-    result.append(f"W5 = {WindArray[15]}\n")
-    result.append(f"W6 = {WindArray[16]}\n\n")
+    result.append(f"Bx = {WindArray[3]}\n")
+    result.append(f"By = {WindArray[4]}\n")
+    result.append(f"Bz = {WindArray[5]}\n\n")
+    result.append(f"By Average (30mins) = {WindArray[20]}\n")
+    result.append(f"Bz Average (30mins) = {WindArray[21]}\n\n")
+    result.append(f"Density = {WindArray[6]} cm^-3\n")
+    result.append(f"Pdyn = {WindArray[7]} nPa\n\n")
+    result.append(f"Dst = {WindArray[8]} nT\n\n")
+    result.append(f"G1 = {WindArray[9]}\n")
+    result.append(f"G2 = {WindArray[10]}\n")
+    result.append(f"G3 = {WindArray[11]}\n\n")
+    result.append(f"W1 = {WindArray[12]}\n")
+    result.append(f"W2 = {WindArray[13]}\n")
+    result.append(f"W3 = {WindArray[14]}\n")
+    result.append(f"W4 = {WindArray[15]}\n")
+    result.append(f"W5 = {WindArray[16]}\n")
+    result.append(f"W6 = {WindArray[17]}\n\n")
+    result.append(f"N = {WindArray[22]}\n")
+    result.append(f"B = {WindArray[23]}\n\n")
+    result.append(f"SYM-H = {WindArray[24]}\n\n")
     result.append(f"Atomic Number = {AtomicNum}\n\n")
     result.append(f"Particle Type = {particle}\n\n")
     result.append(f"Magnetic Field Models:\n")
@@ -125,18 +136,19 @@ def READMECutoff(UsedStationstemp, RigidityArray, EventDate, model, IntModel, At
 
     ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
+        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension",
+        "Tsyganenko 15 N Model", "Tsyganenko 15 B Model", "Tsyganenko 16 Model"
     ]
-    External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
+    External = ExternalModels[model[1]] if 0 <= model[1] <= 11 else "Unknown External Model"
     if model[1] == 99:
          External = "MHD file"
 
     PauseModels = [
-        "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
+        "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model","Lin 2010 Model"
         "Tsyganenko 96 Magnetopause Model", "Tsyganenko 01 Magnetopause Model",
-        "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model"
+        "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model",
     ]
-    PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 7 else "Unknown Magnetopause Model"
+    PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 8 else "Unknown Magnetopause Model"
 
     today = date.today()
     result.append(f"\n")
@@ -147,7 +159,11 @@ def READMECutoff(UsedStationstemp, RigidityArray, EventDate, model, IntModel, At
     result.append(f"Rigidity Scan:\n{RigidityScan}\n\n")
     result.append(f"Integration Method:\n{IntegrationMethod}\n\n")
     result.append(f"Input Variables:\n\n")
-    result.append(f"Data Used: {OnlineData}\n\n")
+    result.append(f"Data Used: {OnlineData}\n")
+    if OnlineData == "Online Space Weather Data Used":
+      result.append("NOAA preliminary data used, these values are not final and may differ from the finalised OMNI database used in the ServerData function. The OMNI database results take precident over the preliminary NOAA values used in LiveData.\n\n")
+    else:
+      result.append("\n")
     result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
     result.append(f"Max Time Step [% of gyrofrequency]: {MaxStepPercent}\n\n")
     result.append(f"Minimum Altitude: {EndParams[0]}km\n")
@@ -163,20 +179,26 @@ def READMECutoff(UsedStationstemp, RigidityArray, EventDate, model, IntModel, At
     result.append(f"Vy = {WindArray[1]}\n")
     result.append(f"Vz = {WindArray[2]}\n\n")
     result.append(f"IMF [nT]:\n")
-    result.append(f"By = {WindArray[3]}\n")
-    result.append(f"Bz = {WindArray[4]}\n\n")
-    result.append(f"Density = {WindArray[5]} cm^-3\n")
-    result.append(f"Pdyn = {pressure} nPa\n\n")
-    result.append(f"Dst = {WindArray[7]} nT\n\n")
-    result.append(f"G1 = {WindArray[8]}\n")
-    result.append(f"G2 = {WindArray[9]}\n")
-    result.append(f"G3 = {WindArray[10]}\n\n")
-    result.append(f"W1 = {WindArray[11]}\n")
-    result.append(f"W2 = {WindArray[12]}\n")
-    result.append(f"W3 = {WindArray[13]}\n")
-    result.append(f"W4 = {WindArray[14]}\n")
-    result.append(f"W5 = {WindArray[15]}\n")
-    result.append(f"W6 = {WindArray[16]}\n\n")
+    result.append(f"Bx = {WindArray[3]}\n")
+    result.append(f"By = {WindArray[4]}\n")
+    result.append(f"Bz = {WindArray[5]}\n\n")
+    result.append(f"By Average (30mins) = {WindArray[20]}\n")
+    result.append(f"Bz Average (30mins) = {WindArray[21]}\n\n")
+    result.append(f"Density = {WindArray[6]} cm^-3\n")
+    result.append(f"Pdyn = {WindArray[7]} nPa\n\n")
+    result.append(f"Dst = {WindArray[8]} nT\n\n")
+    result.append(f"G1 = {WindArray[9]}\n")
+    result.append(f"G2 = {WindArray[10]}\n")
+    result.append(f"G3 = {WindArray[11]}\n\n")
+    result.append(f"W1 = {WindArray[12]}\n")
+    result.append(f"W2 = {WindArray[13]}\n")
+    result.append(f"W3 = {WindArray[14]}\n")
+    result.append(f"W4 = {WindArray[15]}\n")
+    result.append(f"W5 = {WindArray[16]}\n")
+    result.append(f"W6 = {WindArray[17]}\n\n")
+    result.append(f"N = {WindArray[22]}\n")
+    result.append(f"B = {WindArray[23]}\n\n")
+    result.append(f"SYM-H = {WindArray[24]}\n\n")
     result.append(f"Atomic Number = {AtomicNum}\n\n")
     result.append(f"Particle Type = {particle}\n\n")
     result.append(f"Magnetic Field Models:\n")
@@ -222,18 +244,19 @@ def READMEFlight(Data, Rigidity, model, IntModel, AntiCheck, IOPT, WindArray, Ma
   
       ExternalModels = [
           "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
+          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension",
+          "Tsyganenko 15 N Model", "Tsyganenko 15 B Model", "Tsyganenko 16 Model"
       ]
-      External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
+      External = ExternalModels[model[1]] if 0 <= model[1] <= 11 else "Unknown External Model"
       if model[1] == 99:
-         External = "MHD file"
+           External = "MHD file"
   
       PauseModels = [
-          "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
+          "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model","Lin 2010 Model"
           "Tsyganenko 96 Magnetopause Model", "Tsyganenko 01 Magnetopause Model",
-          "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model"
+          "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model",
       ]
-      PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 7 else "Unknown Magnetopause Model"
+      PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 8 else "Unknown Magnetopause Model"
   
       today = date.today()
       result.append(f"\n")
@@ -243,7 +266,11 @@ def READMEFlight(Data, Rigidity, model, IntModel, AntiCheck, IOPT, WindArray, Ma
       result.append(f"Integration Method:\n{IntegrationMethod}\n\n")
       result.append(f"Rigidity Scan:\n{RigidityScan}\n\n")
       result.append(f"Input Variables:\n\n")
-      result.append(f"Data Used: {OnlineData}\n\n")
+      result.append(f"Data Used: {OnlineData}\n")
+      if OnlineData == "Online Space Weather Data Used":
+        result.append("NOAA preliminary data used, these values are not final and may differ from the finalised OMNI database used in the ServerData function. The OMNI database results take precident over the preliminary NOAA values used in LiveData.\n\n")
+      else:
+        result.append("\n")
       result.append(f"Max Time Step [% of gyrofrequency]: {MaxStepPercent}\n\n")
       result.append(f"Minimum Altitude: {EndParams[0]}km\n")
       result.append(f"Max Distance: {EndParams[1]}Re\n")
@@ -268,8 +295,8 @@ def READMEFlight(Data, Rigidity, model, IntModel, AntiCheck, IOPT, WindArray, Ma
 
 def READMEFlightData(DateArray,WindArray,kparray):
 
-   headers = ["Date","kp","Vx [km/s]", "Vy [km/s]", "Vz [km/s]", "By [nT]", "Bz [nT]", "Density [cm^-3]", "Pdyn [nPa]", "Dst [nT]", "G1", "G2",
-              "G3", "W1", "W2", "W3", "W4", "W5", "W6"]
+   headers = ["Date","kp","Vx [km/s]", "Vy [km/s]", "Vz [km/s]", "Bx [nT]", "By [nT]", "Bz [nT]", "By Average (30mins) [nT]", "Bz Average (30mins)[nT]", "Density [cm^-3]", "Pdyn [nPa]", "Dst [nT]", "G1", "G2",
+              "G3", "W1", "W2", "W3", "W4", "W5", "W6", "N", "B", "SYM-H"]
    
    rows = []
 
@@ -279,28 +306,37 @@ def READMEFlightData(DateArray,WindArray,kparray):
       Vx = abs(Wind[0])
       Vy = Wind[1]
       Vz = Wind[2]
-      By = Wind[3]
-      Bz = Wind[4]
-      Density = Wind[5]
-      Pdyn = pressure
-      Dst = Wind[7]
-      G1 = Wind[8]
-      G2 = Wind[9]
-      G3 = Wind[10]
-      W1 = Wind[11]
-      W2 = Wind[12]
-      W3 = Wind[13]
-      W4 = Wind[14]
-      W5 = Wind[15]
-      W6 = Wind[16]
+      Bx = Wind[3]
+      By = Wind[4]
+      Bz = Wind[5]
+      By_av = Wind[20]
+      Bz_av = Wind[21]
+      Density = Wind[6]
+      Pdyn = Wind[7]
+      Dst = Wind[8]
+      G1 = Wind[9]
+      G2 = Wind[10]
+      G3 = Wind[11]
+      W1 = Wind[12]
+      W2 = Wind[13]
+      W3 = Wind[14]
+      W4 = Wind[15]
+      W5 = Wind[16]
+      W6 = Wind[17]
+      n_index = Wind[22]
+      b_index = Wind[23]
+      sym_h_corrected = Wind[24]
       data = {
       "Date": datetimeobj,
       "kp": kp,
       "Vx [km/s]": Vx,
       "Vy [km/s]": Vy,
       "Vz [km/s]": Vz,
+      "Bx [nT]": Bx,
       "By [nT]": By,
       "Bz [nT]": Bz,
+      "By Average (30mins) [nT]": By_av,
+      "Bz Average (30mins) [nT]": Bz_av,
       "Density [cm^-3]": Density,
       "Pdyn [nPa]": Pdyn,
       "Dst [nT]": Dst,
@@ -312,7 +348,10 @@ def READMEFlightData(DateArray,WindArray,kparray):
       "W3": W3,
       "W4": W4,
       "W5": W5,
-      "W6": W6,}
+      "W6": W6,
+      "N": n_index,
+      "B": b_index,
+      "SYM-H": sym_h_corrected,}
       
       rows.append(data)
 
@@ -342,18 +381,19 @@ def READMETrajectory(UsedStationstemp, Rigidity, EventDate, model, IntModel, Ato
 
     ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
+        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension",
+        "Tsyganenko 15 N Model", "Tsyganenko 15 B Model", "Tsyganenko 16 Model"
     ]
-    External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
+    External = ExternalModels[model[1]] if 0 <= model[1] <= 11 else "Unknown External Model"
     if model[1] == 99:
          External = "MHD file"
 
     PauseModels = [
-        "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
+        "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model","Lin 2010 Model"
         "Tsyganenko 96 Magnetopause Model", "Tsyganenko 01 Magnetopause Model",
-        "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model"
+        "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model",
     ]
-    PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 7 else "Unknown Magnetopause Model"
+    PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 8 else "Unknown Magnetopause Model"
 
     today = date.today()
     result.append(f"\n")
@@ -362,7 +402,11 @@ def READMETrajectory(UsedStationstemp, Rigidity, EventDate, model, IntModel, Ato
     result.append(f"Output Coordinate System:\n{CoordinateSystem}\n\n")
     result.append(f"Integration Method:\n{IntegrationMethod}\n\n")
     result.append(f"Input Variables:\n\n")
-    result.append(f"Data Used: {OnlineData}\n\n")
+    result.append(f"Data Used: {OnlineData}\n")
+    if OnlineData == "Online Space Weather Data Used":
+      result.append("NOAA preliminary data used, these values are not final and may differ from the finalised OMNI database used in the ServerData function. The OMNI database results take precident over the preliminary NOAA values used in LiveData.\n\n")
+    else:
+      result.append("\n")
     result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
     result.append(f"Max Time Step [% of gyrofrequency]: {MaxStepPercent}\n\n")
     result.append(f"Minimum Altitude: {EndParams[0]}km\n")
@@ -378,20 +422,26 @@ def READMETrajectory(UsedStationstemp, Rigidity, EventDate, model, IntModel, Ato
     result.append(f"Vy = {WindArray[1]}\n")
     result.append(f"Vz = {WindArray[2]}\n\n")
     result.append(f"IMF [nT]:\n")
-    result.append(f"By = {WindArray[3]}\n")
-    result.append(f"Bz = {WindArray[4]}\n\n")
-    result.append(f"Density = {WindArray[5]} cm^-3\n")
-    result.append(f"Pdyn = {pressure} nPa\n\n")
-    result.append(f"Dst = {WindArray[7]} nT\n\n")
-    result.append(f"G1 = {WindArray[8]}\n")
-    result.append(f"G2 = {WindArray[9]}\n")
-    result.append(f"G3 = {WindArray[10]}\n\n")
-    result.append(f"W1 = {WindArray[11]}\n")
-    result.append(f"W2 = {WindArray[12]}\n")
-    result.append(f"W3 = {WindArray[13]}\n")
-    result.append(f"W4 = {WindArray[14]}\n")
-    result.append(f"W5 = {WindArray[15]}\n")
-    result.append(f"W6 = {WindArray[16]}\n\n")
+    result.append(f"Bx = {WindArray[3]}\n")
+    result.append(f"By = {WindArray[4]}\n")
+    result.append(f"Bz = {WindArray[5]}\n\n")
+    result.append(f"By Average (30mins) = {WindArray[20]}\n")
+    result.append(f"Bz Average (30mins) = {WindArray[21]}\n\n")
+    result.append(f"Density = {WindArray[6]} cm^-3\n")
+    result.append(f"Pdyn = {WindArray[7]} nPa\n\n")
+    result.append(f"Dst = {WindArray[8]} nT\n\n")
+    result.append(f"G1 = {WindArray[9]}\n")
+    result.append(f"G2 = {WindArray[10]}\n")
+    result.append(f"G3 = {WindArray[11]}\n\n")
+    result.append(f"W1 = {WindArray[12]}\n")
+    result.append(f"W2 = {WindArray[13]}\n")
+    result.append(f"W3 = {WindArray[14]}\n")
+    result.append(f"W4 = {WindArray[15]}\n")
+    result.append(f"W5 = {WindArray[16]}\n")
+    result.append(f"W6 = {WindArray[17]}\n\n")
+    result.append(f"N = {WindArray[22]}\n")
+    result.append(f"B = {WindArray[23]}\n\n")
+    result.append(f"SYM-H = {WindArray[24]}\n\n")
     result.append(f"Atomic Number = {AtomicNum}\n\n")
     result.append(f"Particle Type = {particle}\n\n")
     result.append(f"Magnetic Field Models:\n")
@@ -436,19 +486,20 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
   
       ExternalModels = [
           "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
+          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension",
+          "Tsyganenko 15 N Model", "Tsyganenko 15 B Model", "Tsyganenko 16 Model"
       ]
-      External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
+      External = ExternalModels[model[1]] if 0 <= model[1] <= 11 else "Unknown External Model"
       if model[1] == 99:
-         External = "MHD file"
+           External = "MHD file"
       
   
       PauseModels = [
-          "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
+          "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model","Lin 2010 Model"
           "Tsyganenko 96 Magnetopause Model", "Tsyganenko 01 Magnetopause Model",
-          "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model"
+          "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model",
       ]
-      PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 7 else "Unknown Magnetopause Model"
+      PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 8 else "Unknown Magnetopause Model"
   
       today = date.today()
       result.append(f"\n")
@@ -458,7 +509,11 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
       result.append(f"Integration Method:\n{IntegrationMethod}\n\n")
       result.append(f"Rigidity Scan:\n{RigidityScan}\n\n")
       result.append(f"Input Variables:\n\n")
-      result.append(f"Data Used: {OnlineData}\n\n")
+      result.append(f"Data Used: {OnlineData}\n")
+      if OnlineData == "Online Space Weather Data Used":
+        result.append("NOAA preliminary data used, these values are not final and may differ from the finalised OMNI database used in the ServerData function. The OMNI database results take precident over the preliminary NOAA values used in LiveData.\n\n")
+      else:
+        result.append("\n")
       result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
       result.append(f"Max Time Step [% of gyrofrequency]: {MaxStepPercent}\n\n")
       result.append(f"Minimum Altitude: {EndParams[0]}km\n")
@@ -481,20 +536,26 @@ def READMEPlanet(Data, Rigidity, EventDate, model, IntModel, AntiCheck, IOPT, Wi
       result.append(f"Vy = {WindArray[1]}\n")
       result.append(f"Vz = {WindArray[2]}\n\n")
       result.append(f"IMF [nT]:\n")
-      result.append(f"By = {WindArray[3]}\n")
-      result.append(f"Bz = {WindArray[4]}\n\n")
-      result.append(f"Density = {WindArray[5]} cm^-3\n")
-      result.append(f"Pdyn = {pressure} nPa\n\n")
-      result.append(f"Dst = {WindArray[7]} nT\n\n")
-      result.append(f"G1 = {WindArray[8]}\n")
-      result.append(f"G2 = {WindArray[9]}\n")
-      result.append(f"G3 = {WindArray[10]}\n\n")
-      result.append(f"W1 = {WindArray[11]}\n")
-      result.append(f"W2 = {WindArray[12]}\n")
-      result.append(f"W3 = {WindArray[13]}\n")
-      result.append(f"W4 = {WindArray[14]}\n")
-      result.append(f"W5 = {WindArray[15]}\n")
-      result.append(f"W6 = {WindArray[16]}\n\n")
+      result.append(f"Bx = {WindArray[3]}\n")
+      result.append(f"By = {WindArray[4]}\n")
+      result.append(f"Bz = {WindArray[5]}\n\n")
+      result.append(f"By Average (30mins) = {WindArray[20]}\n")
+      result.append(f"Bz Average (30mins) = {WindArray[21]}\n\n")
+      result.append(f"Density = {WindArray[6]} cm^-3\n")
+      result.append(f"Pdyn = {WindArray[7]} nPa\n\n")
+      result.append(f"Dst = {WindArray[8]} nT\n\n")
+      result.append(f"G1 = {WindArray[9]}\n")
+      result.append(f"G2 = {WindArray[10]}\n")
+      result.append(f"G3 = {WindArray[11]}\n\n")
+      result.append(f"W1 = {WindArray[12]}\n")
+      result.append(f"W2 = {WindArray[13]}\n")
+      result.append(f"W3 = {WindArray[14]}\n")
+      result.append(f"W4 = {WindArray[15]}\n")
+      result.append(f"W5 = {WindArray[16]}\n")
+      result.append(f"W6 = {WindArray[17]}\n\n")
+      result.append(f"N = {WindArray[22]}\n")
+      result.append(f"B = {WindArray[23]}\n\n")
+      result.append(f"SYM-H = {WindArray[24]}\n\n")
       result.append(f"Particle Type = {particle}\n\n")
       result.append(f"Magnetic Field Models:\n")
       result.append(f"Internal Model = {Internal}\n")
@@ -541,9 +602,10 @@ def READMEMagfield(EventDate, model, IOPT, WindArray, CoordinateSystem, Printtim
 
     ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
+        "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension",
+        "Tsyganenko 15 N Model", "Tsyganenko 15 B Model", "Tsyganenko 16 Model"
     ]
-    External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
+    External = ExternalModels[model[1]] if 0 <= model[1] <= 11 else "Unknown External Model"
     if model[1] == 99:
          External = "MHD file"
 
@@ -553,7 +615,11 @@ def READMEMagfield(EventDate, model, IOPT, WindArray, CoordinateSystem, Printtim
     result.append(f"Total computation time: {Printtime} seconds\n\n")
     result.append(f"Input Coordinate System:\n{CoordinateSystem}\n\n")
     result.append(f"Input Variables:\n\n")
-    result.append(f"Data Used: {OnlineData}\n\n")
+    result.append(f"Data Used: {OnlineData}\n")
+    if OnlineData == "Online Space Weather Data Used":
+      result.append("NOAA preliminary data used, these values are not final and may differ from the finalised OMNI database used in the ServerData function. The OMNI database results take precident over the preliminary NOAA values used in LiveData.\n\n")
+    else:
+      result.append("\n")
     result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
     result.append(f"Kp = {kp}\n")
     result.append(f"IOPT = {IOPT}\n\n")
@@ -562,20 +628,26 @@ def READMEMagfield(EventDate, model, IOPT, WindArray, CoordinateSystem, Printtim
     result.append(f"Vy = {WindArray[1]}\n")
     result.append(f"Vz = {WindArray[2]}\n\n")
     result.append(f"IMF [nT]:\n")
-    result.append(f"By = {WindArray[3]}\n")
-    result.append(f"Bz = {WindArray[4]}\n\n")
-    result.append(f"Density = {WindArray[5]} cm^-3\n")
-    result.append(f"Pdyn = {pressure} nPa\n\n")
-    result.append(f"Dst = {WindArray[7]} nT\n\n")
-    result.append(f"G1 = {WindArray[8]}\n")
-    result.append(f"G2 = {WindArray[9]}\n")
-    result.append(f"G3 = {WindArray[10]}\n\n")
-    result.append(f"W1 = {WindArray[11]}\n")
-    result.append(f"W2 = {WindArray[12]}\n")
-    result.append(f"W3 = {WindArray[13]}\n")
-    result.append(f"W4 = {WindArray[14]}\n")
-    result.append(f"W5 = {WindArray[15]}\n")
-    result.append(f"W6 = {WindArray[16]}\n\n")
+    result.append(f"Bx = {WindArray[3]}\n")
+    result.append(f"By = {WindArray[4]}\n")
+    result.append(f"Bz = {WindArray[5]}\n\n")
+    result.append(f"By Average (30mins) = {WindArray[20]}\n")
+    result.append(f"Bz Average (30mins) = {WindArray[21]}\n\n")
+    result.append(f"Density = {WindArray[6]} cm^-3\n")
+    result.append(f"Pdyn = {WindArray[7]} nPa\n\n")
+    result.append(f"Dst = {WindArray[8]} nT\n\n")
+    result.append(f"G1 = {WindArray[9]}\n")
+    result.append(f"G2 = {WindArray[10]}\n")
+    result.append(f"G3 = {WindArray[11]}\n\n")
+    result.append(f"W1 = {WindArray[12]}\n")
+    result.append(f"W2 = {WindArray[13]}\n")
+    result.append(f"W3 = {WindArray[14]}\n")
+    result.append(f"W4 = {WindArray[15]}\n")
+    result.append(f"W5 = {WindArray[16]}\n")
+    result.append(f"W6 = {WindArray[17]}\n\n")
+    result.append(f"N = {WindArray[22]}\n")
+    result.append(f"B = {WindArray[23]}\n\n")
+    result.append(f"SYM-H = {WindArray[24]}\n\n")
     result.append(f"Magnetic Field Models:\n")
     result.append(f"Internal Model = {Internal}\n")
     result.append(f"External Model = {External}\n\n")
@@ -612,25 +684,30 @@ def READMETrace(Data, EventDate, model, IntModel, AntiCheck, IOPT, WindArray, Ma
   
       ExternalModels = [
           "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89",
-          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension"
+          "Tsyganenko 96", "Tsyganenko 01", "Tsyganenko 01 Storm", "Tsyganenko 04", "Tsyganenko 89 Boberg Extension",
+          "Tsyganenko 15 N Model", "Tsyganenko 15 B Model", "Tsyganenko 16 Model"
       ]
-      External = ExternalModels[model[1]] if 0 <= model[1] <= 8 else "Unknown External Model"
+      External = ExternalModels[model[1]] if 0 <= model[1] <= 11 else "Unknown External Model"
       if model[1] == 99:
-         External = "MHD file"
+           External = "MHD file"
   
       PauseModels = [
-          "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model",
+          "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model","Lin 2010 Model"
           "Tsyganenko 96 Magnetopause Model", "Tsyganenko 01 Magnetopause Model",
-          "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model"
+          "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model",
       ]
-      PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 7 else "Unknown Magnetopause Model"
+      PauseModel = PauseModels[Magnetopause] if 0 <= Magnetopause <= 8 else "Unknown Magnetopause Model"
   
       today = date.today()
       result.append(f"\n")
       result.append(f"Date of OTSO computation: {today}\n")
       result.append(f"Total computation time: {Printtime} seconds\n\n")
       result.append(f"Input Variables:\n\n")
-      result.append(f"Data Used: {OnlineData}\n\n")
+      result.append(f"Data Used: {OnlineData}\n")
+      if OnlineData == "Online Space Weather Data Used":
+        result.append("NOAA preliminary data used, these values are not final and may differ from the finalised OMNI database used in the ServerData function. The OMNI database results take precident over the preliminary NOAA values used in LiveData.\n\n")
+      else:
+        result.append("\n")
       result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
       result.append(f"Kp = {kp}\n")
       result.append(f"IOPT = {IOPT}\n\n")
@@ -639,20 +716,26 @@ def READMETrace(Data, EventDate, model, IntModel, AntiCheck, IOPT, WindArray, Ma
       result.append(f"Vy = {WindArray[1]}\n")
       result.append(f"Vz = {WindArray[2]}\n\n")
       result.append(f"IMF [nT]:\n")
-      result.append(f"By = {WindArray[3]}\n")
-      result.append(f"Bz = {WindArray[4]}\n\n")
-      result.append(f"Density = {WindArray[5]} cm^-3\n")
-      result.append(f"Pdyn = {pressure} nPa\n\n")
-      result.append(f"Dst = {WindArray[7]} nT\n\n")
-      result.append(f"G1 = {WindArray[8]}\n")
-      result.append(f"G2 = {WindArray[9]}\n")
-      result.append(f"G3 = {WindArray[10]}\n\n")
-      result.append(f"W1 = {WindArray[11]}\n")
-      result.append(f"W2 = {WindArray[12]}\n")
-      result.append(f"W3 = {WindArray[13]}\n")
-      result.append(f"W4 = {WindArray[14]}\n")
-      result.append(f"W5 = {WindArray[15]}\n")
-      result.append(f"W6 = {WindArray[16]}\n\n")
+      result.append(f"Bx = {WindArray[3]}\n")
+      result.append(f"By = {WindArray[4]}\n")
+      result.append(f"Bz = {WindArray[5]}\n\n")
+      result.append(f"By Average (30mins) = {WindArray[20]}\n")
+      result.append(f"Bz Average (30mins) = {WindArray[21]}\n\n")
+      result.append(f"Density = {WindArray[6]} cm^-3\n")
+      result.append(f"Pdyn = {WindArray[7]} nPa\n\n")
+      result.append(f"Dst = {WindArray[8]} nT\n\n")
+      result.append(f"G1 = {WindArray[9]}\n")
+      result.append(f"G2 = {WindArray[10]}\n")
+      result.append(f"G3 = {WindArray[11]}\n\n")
+      result.append(f"W1 = {WindArray[12]}\n")
+      result.append(f"W2 = {WindArray[13]}\n")
+      result.append(f"W3 = {WindArray[14]}\n")
+      result.append(f"W4 = {WindArray[15]}\n")
+      result.append(f"W5 = {WindArray[16]}\n")
+      result.append(f"W6 = {WindArray[17]}\n\n")
+      result.append(f"N = {WindArray[22]}\n")
+      result.append(f"B = {WindArray[23]}\n\n")
+      result.append(f"SYM-H = {WindArray[24]}\n\n")
       result.append(f"Magnetic Field Models:\n")
       result.append(f"Internal Model = {Internal}\n")
       result.append(f"External Model = {External}\n\n")

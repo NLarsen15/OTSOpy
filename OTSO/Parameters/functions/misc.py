@@ -11,11 +11,6 @@ def ParamCheck(Alt, Year, Internal, EndParams):
         print("ERROR: Inputted minimum altitude is larger than starting altitude. Value must be less than or equal to the starting altitude. Please check inputs. \nOTSO program will now terminate.")
         exit()
 
-       if Internal == 1:
-         if Year<1900 or Year>2030:
-          print("ERROR: IGRF 14 model currently only works for dates between 1900 to 2030. Please select a date within this range to use the IGRF model")
-          exit()
-
 def DataCheck(ServerData, LiveData, EventDate):
        current_date = datetime.utcnow()
        if (ServerData == 1 or LiveData == 1) and EventDate > current_date:
@@ -97,19 +92,15 @@ def day_of_year_to_date(doy, year):
     else:
         days_in_months = days_in_months_non_leap
 
-    # Initialize variables to accumulate days and find the month
     accumulated_days = 0
     month = 0
 
-    # Find the month and day corresponding to the day of the year (DOY)
     for i in range(12):
         accumulated_days += days_in_months[i]
         if doy <= accumulated_days:
             month = i + 1
             day = doy - (accumulated_days - days_in_months[i])
             break
-
-    # Return the month and day as a tuple
     return (month, day)
 
 def DateCheck(Date):
@@ -139,11 +130,10 @@ def remove_folder(folder_path):
         print(f"Error: {e}")
 
 def remove_files():
-    file_list = ["Dst_data.txt","Kp_data.txt","Magnetic_data.csv","Magnetic_data.json","space_data.csv","space_data.json"]
-    directory1 = os.path.dirname(os.path.dirname(__file__))
-    directory = os.path.join(directory1, "functions")
+    file_list = ["Dst_data.txt", "Kp_data.txt", "Magnetic_data.csv", "Magnetic_data.json", "space_data.csv", "space_data.json"]
+    script_dir = os.path.dirname(__file__)
     for file_name in file_list:
-        file_path = os.path.join(directory, file_name)
+        file_path = os.path.join(script_dir, file_name)
         try:
             os.remove(file_path)
         except FileNotFoundError:

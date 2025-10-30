@@ -8,16 +8,18 @@ import sys
 import queue
 import numpy as np
 import tempfile
+from tqdm import tqdm
+
 
 def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose):
 
     FlightInputArray = flight_inputs.FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,internalmag,externalmag,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,MHDfile,MHDcoordsys,inputcoord)
 
@@ -60,13 +62,20 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
     start = time.time()
     if Verbose:
         print("OTSO Flight Computation Started")
-        sys.stdout.write(f"\r{0:.2f}% complete")
 
     results = []
     resultsfinal = []
     processed = 0
     totalp = 0
     total_stations = len(Station_Array)
+
+    # Initialize progress bar if tqdm is available and Verbose is True
+    progress_bar = None
+    if Verbose and tqdm is not None:
+        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" location", position=0)
+    elif Verbose:
+        # Fallback to simple counter if tqdm is not available
+        print(f"Processing flight paths for {total_stations} stations...")
 
     try:
         if not mp.get_start_method(allow_none=True):
@@ -95,21 +104,34 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
                     countint = ProcessQueue.get(timeout=0.001)
                     result_collector.append(countint)
                     processed += 1
-                    totalp = totalp + sum(result_collector)
-                    result_collector = []
                 except queue.Empty:
                     break
     
-            percent_complete = (totalp / total_stations) * 100
+            # Update totalp with the sum of items processed by cores
+            if result_collector:
+                totalp = totalp + sum(result_collector)
+            
+            # Update progress
             if Verbose:
-                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-                sys.stdout.flush()
+                if progress_bar is not None:
+                    # Update batch progress bar
+                    progress_bar.update(len(result_collector) if result_collector else 0)
+                    #progress_bar.set_description(f"Flight batches ({totalp} points total)")
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (processed / total_stations) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% batches complete ({totalp} points processed)")
+                    sys.stdout.flush()
 
     
         except queue.Empty:
             pass
       
-        time.sleep(0.01)
+        time.sleep(0.1)  # Update every 100ms for smoother progress display
+
+    # Close progress bar if it was created
+    if progress_bar is not None:
+        progress_bar.close()
 
     for b in ChildProcesses:
         b.join()
@@ -139,7 +161,7 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
     
     datareadme = readme_generators.READMEFlightData(DateArray,WindArray,KpList)
     
-    if livedata == 1:
+    if livedata == "ON" or livedata == 1:
         misc.remove_files()
 
     return [merged_df,readme,datareadme]

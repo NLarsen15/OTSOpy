@@ -12,10 +12,11 @@ import gc
 import csv
 from collections import defaultdict
 import tempfile
+from tqdm import tqdm
 
 def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,anti,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
@@ -27,8 +28,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
     Anum = 1
     PlanetInputArray = planet_inputs.PlanetInputs(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,Anum,anti,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            gyropercent,magnetopause,corenum, azimuth,zenith, asymptotic,asymlevels,unit,
@@ -136,7 +137,6 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
     if Verbose:
         print("OTSO Planet Computation Started")
-        sys.stdout.write(f"\r{0:.2f}% complete")
 
     try:
         if not mp.get_start_method(allow_none=True):
@@ -156,6 +156,14 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
         
     for a in ChildProcesses:
         a.start()
+
+    # Initialize progress bar if tqdm is available and Verbose is True
+    progress_bar = None
+    if Verbose and tqdm is not None:
+        progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" location")
+    elif Verbose:
+        # Fallback to simple counter if tqdm is not available
+        print(f"Processing {totalprocesses} grid points...")
  
     while processed < totalprocesses:
         try:
@@ -165,23 +173,36 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                     countint = ProcessQueue.get(timeout=0.001)
                     result_collector.append(countint)
                     processed += 1
-                    totalp = totalp + sum(result_collector)
-                    result_collector = []
                 except queue.Empty:
                     break
     
+            # Update totalp with the sum of items processed by cores
+            if result_collector:
+                totalp = totalp + sum(result_collector)
             
             gc.collect()
-            percent_complete = (totalp / totalprocesses) * 100
+            # Update progress
             if Verbose:
-                sys.stdout.write(f"\r{percent_complete:.2f}% complete ({processed}/{totalprocesses} points)")
-                sys.stdout.flush()
+                if progress_bar is not None:
+                    # Update progress bar with the actual number of items processed
+                    progress_bar.update(sum(result_collector) if result_collector else 0)
+                    # Update the description to show current progress
+                    progress_bar.set_description(f"OTSO Running ({totalp}/{totalprocesses})")
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (totalp / totalprocesses) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% complete ({totalp}/{totalprocesses} points)")
+                    sys.stdout.flush()
 
     
         except queue.Empty:
             pass
         
-        time.sleep(1)
+        time.sleep(0.5)
+
+    # Close progress bar if it was created
+    if progress_bar is not None:
+        progress_bar.close()
 
     for b in ChildProcesses:
         b.join()
@@ -219,7 +240,7 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                                             LiveData, asymptotic, asymlevels, unit, serverdata, kp,
                                             custom_coords_provided=(array_of_lats_and_longs is not None))
 
-    if LiveData == 1:
+    if livedata == "ON" or livedata == 1:
         misc.remove_files()
 
     return [planet, readme]

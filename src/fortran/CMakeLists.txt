@@ -54,6 +54,9 @@ set(FORTRAN_SOURCES
     "MHDModule.f95"
     "MHDBfield.f95"
     "GridModule.f95"
+    "TSY15_B.f"
+    "TSY15_N.f"
+    "TA16_RBF.f"
 )
 
 # Generate the .pyf file using F2PY

@@ -23,14 +23,14 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, EndLoop, sphere
+    real(8) :: Wind(25), Re, Lat, Long, GyroPercent, EndLoop, sphere
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
-    integer(4) :: I, Limit, bool, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
+    integer(4) :: I, Limit, bool_val, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
     character(len=50) :: FileName
     character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
-    real(8) :: gOTSO(105), hOTSO(105)
+    real(8) :: gOTSO(136), hOTSO(136)
 
     real(8), intent(out) :: Rigidities(3)
 
@@ -60,10 +60,8 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     FailCheck = 0
     spheresize = sphere
 
-    if (mode(1) == 4) then
     Ginput = gOTSO
     Hinput = hOTSO
-    end if
 
     Rigidity(1) = StartRigidity
     Rigidity(2) = EndRigidity
@@ -160,7 +158,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     !call FinalStepCheck()
     
     IF (Position(1) < End(1) ) THEN
-        bool = -1
+        bool_val = -1
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -174,7 +172,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     IF (End(2) == 0) THEN
         
     ELSE IF (DistanceTraveled/1000.0 > End(2) * Re) THEN
-        bool = 0
+        bool_val = 0
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -188,7 +186,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     IF (End(3) == 0) THEN
         
     ELSE IF (TimeElapsed > End(3)) THEN
-        bool = 0
+        bool_val = 0
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -203,7 +201,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         forbiddencount = 0
-        bool = 1
+        bool_val = 1
         RL = R
         !print *, R, " ", "Escaped"
         IF (Limit == 0) THEN
@@ -369,17 +367,17 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, Rigidities(3)
+    real(8) :: Wind(25), Re, Lat, Long, GyroPercent, Rigidities(3)
     real(8) :: Geofile(3), sphere
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber
-    integer(4) :: I, Limit, bool, Pause, stepNum
+    integer(4) :: I, Limit, bool_val, Pause, stepNum
     character(len=50) :: FileName
     character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
     character(len=100) :: ConeArray(1, length)
     character(len=100) :: temp_array(1, length)
     character(len=100) :: temp_string
     integer(4) :: length, old_size
-    real(8) :: gOTSO(105), hOTSO(105)
+    real(8) :: gOTSO(136), hOTSO(136)
 
     intent(out) :: ConeArray, Rigidities
 
@@ -404,10 +402,8 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     MaxGyroPercent = GyroPercent
     spheresize = sphere
 
-    if (mode(1) == 4) then
     Ginput = gOTSO
     Hinput = hOTSO
-    end if
 
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
     
@@ -449,7 +445,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     call FinalStepCheck()
     
     IF (Position(1) < End(1) ) THEN
-        bool = -1
+        bool_val = -1
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -463,7 +459,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     IF (End(2) == 0) THEN
         
     ELSE IF (DistanceTraveled/1000.0 > End(2) * Re) THEN
-        bool = 0
+        bool_val = 0
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -477,7 +473,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     IF (End(3) == 0) THEN
         
     ELSE IF (TimeElapsed > End(3)) THEN
-        bool = 0
+        bool_val = 0
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -492,7 +488,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
         call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         forbiddencount = 0
-        bool = 1
+        bool_val = 1
         !print *, R, lat, Long !(Prints the outputs to the command module while running (Can lead to delays with multi-core proccessing))
         RL = R
         FailCheck = 0
@@ -506,7 +502,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
 
     end do
     
-    write(temp_string, '(F7.3, 1X, I5, 1X, F7.3, 1X, F7.3)') R, bool, Lat, Long
+    write(temp_string, '(F7.3, 1X, I5, 1X, F7.3, 1X, F7.3)') R, bool_val, Lat, Long
 
     ConeArray(1, old_size + 1) = temp_string
     old_size = old_size + 1
@@ -545,7 +541,7 @@ end subroutine cone
 ! **********************************************************************************************************************
 subroutine trajectory(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    gOTSO, hOTSO,MHDCoordSys,sphere, inputcoord, bool, Lat, Long)
+    gOTSO, hOTSO,MHDCoordSys,sphere, inputcoord, bool_val, Lat, Long)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -559,7 +555,7 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(19), Re, GyroPercent, sphere
+real(8) :: Wind(25), Re, GyroPercent, sphere
 real(8) :: Xnew(3), XnewConverted(3)
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
@@ -567,8 +563,8 @@ character(len=50) :: FileName
 character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
 
 real(8), intent(out) :: Lat, Long
-integer(4), intent(out) :: bool
-real(8) :: gOTSO(105), hOTSO(105)
+integer(4), intent(out) :: bool_val
+real(8) :: gOTSO(136), hOTSO(136)
 
 IF (mode(2) == 99) THEN
     CoordINMHD = MHDCoordSys
@@ -586,10 +582,10 @@ SubResult = 0
 MaxGyroPercent = GyroPercent
 spheresize = sphere
 
-if (mode(1) == 4) then
+
 Ginput = gOTSO
 Hinput = hOTSO
-end if
+
 
 IF (PositionIN(5) < 0) THEN
     print *, "ERROR: Please enter an azimuth angle between 0 and 360 degrees"
@@ -642,7 +638,7 @@ end if
 IF (Position(1) < End(1) ) THEN
     !print *, "This is Forbidden", "      Encountered Earth"
     call AsymptoticDirection(Lat, Long, CoordSystem)
-    bool = -1
+    bool_val = -1
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -657,7 +653,7 @@ ELSE IF ( DistanceTraveled/1000.0 > End(2)*Re) THEN
     !print *, "This is Forbidden", "      Exceeded Travel Distance Without Escape"
     !print *, DistanceTraveled
     call AsymptoticDirection(Lat, Long, CoordSystem)
-    bool = 0
+    bool_val = 0
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -672,7 +668,7 @@ ELSE IF ( TimeElapsed > End(3)) THEN
     !print *, "This is Forbidden", "      Exceeded Maximum Time"
     !print *, TimeElapsed
     call AsymptoticDirection(Lat, Long, CoordSystem)
-    bool = 0
+    bool_val = 0
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -685,7 +681,7 @@ END IF
 IF (Result == 1)  THEN
     !print *, "This is Allowed", "      Successfully Escaped"
     call AsymptoticDirection(Lat, Long, CoordSystem)
-    bool = 1
+    bool_val = 1
     !print *, "Escape Position (Altitude [km], Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -726,14 +722,14 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     implicit none
     
     real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
-    real(8) :: Wind(19), Re, Lat, Long, GyroPercent, sphere
+    real(8) :: Wind(25), Re, Lat, Long, GyroPercent, sphere
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
     integer(8) :: mode(2), IntMode, Anti, AtomicNumber,EndLoop
-    integer(4) :: I, Limit, bool, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
+    integer(4) :: I, Limit, bool_val, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
     character(len=50) :: FileName
     character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
-    real(8) :: gOTSO(105), hOTSO(105)
+    real(8) :: gOTSO(136), hOTSO(136)
 
     real(8), intent(out) :: Rigidities(3)
 
@@ -767,10 +763,9 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
     CoordSystem = "GEO"
 
-    if (mode(1) == 4) then
+
     Ginput = gOTSO
     Hinput = hOTSO
-    end if
 
     RigidityScan = 0.50
     RigidityStep = 0.50
@@ -860,7 +855,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     !call FinalStepCheck()
     
     IF (Position(1) < End(1) ) THEN
-        bool = -1
+        bool_val = -1
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -874,7 +869,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     IF (End(2) == 0) THEN
         
     ELSE IF (DistanceTraveled/1000.0 > End(2) * Re) THEN
-        bool = 0
+        bool_val = 0
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -888,7 +883,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     IF (End(3) == 0) THEN
 
     ELSE IF (TimeElapsed > End(3)) THEN
-        bool = 0
+        bool_val = 0
         Limit = 1
         forbiddencount = forbiddencount + 1
         NeverFail = 1
@@ -903,7 +898,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
         forbiddencount = 0
-        bool = 1
+        bool_val = 1
         RL = R
         !print *, R, " ", "Escaped"
         IF (Limit == 0) THEN
@@ -1063,13 +1058,13 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(19), Re, Lat, Long, GyroPercent
+real(8) :: Wind(25), Re, Lat, Long, GyroPercent
 real(8) :: Xnew(3), XnewConverted(3), sphere
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
 character(len=50) :: FileName
 character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
-real(8) :: gOTSO(105), hOTSO(105)
+real(8) :: gOTSO(136), hOTSO(136)
 
 Re = 6371.2
 Limit = 0
@@ -1079,10 +1074,10 @@ SubResult = 0
 MaxGyroPercent = GyroPercent
 spheresize = sphere
 
-if (mode(1) == 4) then
+
 Ginput = gOTSO
 Hinput = hOTSO
-end if
+
 
 IF (mode(2) == 99) THEN
     CoordINMHD = MHDCoordSys
@@ -1248,11 +1243,11 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
     USE Interpolation
     implicit none
     
-    real(8) :: Pin(3), Pout(3), Wind(19), Date(6)
+    real(8) :: Pin(3), Pout(3), Wind(25), Date(6)
     character(len = 3) :: CoordIN, MHDCoordSys
     integer(4) :: I
     integer(8) :: mode(2)
-    real(8) :: gOTSO(105), hOTSO(105)
+    real(8) :: gOTSO(136), hOTSO(136)
 
     real(8), intent(out) :: Bfield(3) 
 
@@ -1263,10 +1258,10 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
         first_region_check = .false.
     END IF
 
-    if (mode(1) == 4) then
+
        Ginput = gOTSO
        Hinput = hOTSO
-    end if
+
 
     year = INT(Date(1))
     day = INT(Date(2))
@@ -1292,14 +1287,22 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
 !            a new coordinate system.
 !
 ! **********************************************************************************************************************
-subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, CoordIN, CoordOUT, Pout)
+subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, CoordIN, CoordOUT, &
+    gOTSO, hOTSO, Pout)
+    USE CUSTOMGAUSS
+    USE GEOPACK1
+    USE GEOPACK2
     implicit none
     
     real(8) :: sec, Pin(3), secondTotal
     character(len = 3) :: CoordIN, CoordOUT 
     integer(8) :: year, day, hour, minute, secondINT
-
+    real(8) :: gOTSO(136), hOTSO(136)
     real(8), intent(out) :: Pout(3)
+
+
+    Ginput = gOTSO
+    Hinput = hOTSO
     
     year = INT(year)
     day = INT(day)
@@ -1308,7 +1311,7 @@ subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, Coor
     secondINT = INT(secondINT)
     secondTotal = real(secondTotal)
 
-    call RECALC_08(year, day, hour, minute, secondINT, -500, 0, 0)
+    call RECALC_08(year, day, hour, minute, secondINT, -500.0, 0.0, 0.0)
     
     call CoordinateTransform(CoordIN, CoordOUT, year, day, secondTotal, Pin, Pout)
     
@@ -1335,13 +1338,13 @@ USE Interpolation
 implicit none
 
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(19), Re, GyroPercent, Pin(3), Pout(3)
+real(8) :: Wind(25), Re, GyroPercent, Pin(3), Pout(3)
 real(8) :: Xnew(3), XnewConverted(3), Bfield(3), sphere
 integer(8) :: mode(2), IntMode, Anti, AtomicNumber
 integer(4) :: I, Limit, Pause
 character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
 character(len=50) :: FileName
-real(8) :: gOTSO(105), hOTSO(105)
+real(8) :: gOTSO(136), hOTSO(136)
 
 Re = 6371.2
 Limit = 0
@@ -1351,10 +1354,10 @@ SubResult = 0
 MaxGyroPercent = GyroPercent
 spheresize = sphere
 
-if (mode(1) == 4) then
+
    Ginput = gOTSO
    Hinput = hOTSO
-end if
+
 
 IF (mode(2) == 99) THEN
     CoordINMHD = MHDCoordSys
@@ -1541,3 +1544,41 @@ end do
 end subroutine MHDstartupSorted
 
 
+subroutine gse2gswTSY15(date, position_gse, Wind, gOTSO, hOTSO, position_gsw)
+    USE GEOPACK1
+    USE GEOPACK2
+    USE CUSTOMGAUSS
+    implicit none
+    
+    real(8) :: sec, Pin(3), secondTotal
+    real(4) :: Wind(3)
+    real(8) :: XGSW, YGSW, ZGSW, XGSE, YGSE, ZGSE
+    real(8) :: date(6), position_gse(3)
+    real(8) :: gOTSO(136), hOTSO(136)
+    integer(8) :: year, day, hour, minute, secondINT
+    real(8), intent(out) :: position_gsw(3)
+    
+    year = INT(Date(1))
+    day = INT(Date(2))
+    hour = INT(Date(3))
+    minute = INT(Date(4))
+    secondINT = INT(Date(5))
+    secondTotal = real(Date(6))
+
+    Ginput = gOTSO
+    Hinput = hOTSO
+    
+    XGSE = position_gse(1)
+    YGSE = position_gse(2)
+    ZGSE = position_gse(3)
+
+    call RECALC_08(year, day, hour, minute, secondINT, Wind(1), Wind(2), Wind(3))
+    
+    call GSWGSE_08(XGSW,YGSW,ZGSW,XGSE,YGSE,ZGSE,-1)
+
+    position_gsw(1) = XGSW
+    position_gsw(2) = YGSW      
+    position_gsw(3) = ZGSW
+
+
+end subroutine gse2gswTSY15

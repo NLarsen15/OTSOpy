@@ -253,6 +253,132 @@ end interface
 
     return
   end function functionKobel
+
+  function functionLin() !Lin et al 2010 Model
+  IMPLICIT NONE
+
+  integer(4) :: functionLin
+  real(8) :: GSEPosition(3)
+
+  DOUBLE PRECISION :: X, Y, Z, r_pos, theta, phi, r_mp, Bz
+  DOUBLE PRECISION :: r0, Psum, tilt
+  DOUBLE PRECISION :: b0, b1, b2, b3, b, inner, f_theta_phi
+  DOUBLE PRECISION :: cn, cs, dn, ds, en, es, theta_n, theta_s
+  DOUBLE PRECISION :: phi_n, phi_s, cos_yn, cos_ys, y_n, y_s, Qn, Qs, Q
+  DOUBLE PRECISION :: pi, TestResult, Result
+  
+  ! Lin et al. (2010) coefficients
+  DOUBLE PRECISION, PARAMETER :: a0=12.544, a1=-0.194, a2=0.305, a3=0.0573, a4=2.178
+  DOUBLE PRECISION, PARAMETER :: a5=0.0571, a6=-0.999, a7=16.473, a8=0.00152, a9=0.382
+  DOUBLE PRECISION, PARAMETER :: a10=0.0431, a11=-0.00763, a12=-0.210, a13=0.0405
+  DOUBLE PRECISION, PARAMETER :: a14=-4.430, a15=-0.636, a16=-2.600, a17=0.832
+  DOUBLE PRECISION, PARAMETER :: a18=-5.328, a19=1.103, a20=-0.907, a21=1.450
+
+  pi = 4.0d0*ATAN(1.0d0)
+
+  TestResult = -1
+  Result = 0
+
+  call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, Position, GSEPosition)
+
+  X = GSEPosition(1)
+  Y = GSEPosition(2)
+  Z = GSEPosition(3)
+
+  Bz = IMF(3)
+  r_pos = SQRT(X**2 + Y**2 + Z**2)
+  IF (r_pos == 0.0d0) THEN
+     !PRINT *, 'Error: Position cannot be the origin.'
+     STOP
+  END IF
+
+  theta = ACOS(X / r_pos)            ! Polar angle from +X axis
+  phi = ATAN2(Y, Z)
+  IF (phi .LT. 0.0d0) phi = phi + 2.0d0*pi
+  tilt  = PSI                        ! Convert degrees to radians
+
+  Psum  = (Pdyn*10**9) + Magpressure
+
+
+  ! --- Subsolar stand-off distance r0 ---
+  r0 = a0 * Psum**a1 * (1.0d0 + a2*(EXP(a3*Bz)-1.0d0)/(EXP(a4*Bz)+1.0d0))
+
+  ! --- b parameter ---
+  b0 = a6 + a7*(EXP(a8*Bz)-1.0d0)/(EXP(a9*Bz)+1.0d0)
+  b1 = a10
+  b2 = a11 + a12*tilt
+  b3 = a13
+  b  = b0 + b1*COS(phi) + b2*SIN(phi) + b3*SIN(phi)**2
+
+
+  inner = COS(theta/2.0d0) + a5*SIN(2.0d0*theta)*(1.0d0-EXP(-theta))
+  IF (inner < 1.0d-1) inner = 1.0d-1   ! clamp to 0.1 (avoid huge tail values)
+  f_theta_phi = inner**b
+
+
+  ! --- Q terms for north/south ---
+  cn = a14*Psum**a15
+  cs = cn
+  dn = a16 + a17*tilt + a18*tilt**2
+  ds = a16 - a17*tilt + a18*tilt**2
+  en = a21
+  es = a21
+  theta_n = a19 + a20*tilt
+  theta_s = a19 - a20*tilt
+  phi_n = pi/2.0d0
+  phi_s = 3.0d0*pi/2.0d0
+
+  cos_yn = COS(theta)*COS(theta_n) + SIN(theta)*SIN(theta_n)*COS(phi - phi_n)
+  cos_ys = COS(theta)*COS(theta_s) + SIN(theta)*SIN(theta_s)*COS(phi - phi_s)
+  y_n = ACOS(MIN(MAX(cos_yn,-1.0d0),1.0d0))
+  y_s = ACOS(MIN(MAX(cos_ys,-1.0d0),1.0d0))
+
+  Qn = cn*EXP(dn*(y_n**en))
+  Qs = cs*EXP(ds*(y_s**es))
+  Q  = Qn + Qs
+
+  ! --- Final magnetopause radius ---
+  r_mp = r0*f_theta_phi + Q
+
+  ! --- Debug prints ---
+  !PRINT *, 'Lin Model Debug:'
+  !PRINT *, '  Position (GSE): X =', X, ' Y =', Y, ' Z =', Z
+  !PRINT *, '  Distance from origin:', r_pos
+  !PRINT *, '  Magnetopause radius:', r_mp
+
+  ! --- Check if position is outside ---
+  if (r_pos > r_mp) THEN
+     TestResult = 1
+     !PRINT *, '  Status: OUTSIDE magnetosphere (r_pos > r_mp)'
+     IF (FinalStep == 0) THEN
+         FinalStep = 1
+         TestResult = -1
+     END IF
+  ELSE
+     TestResult = -1
+     !PRINT *, '  Status: INSIDE magnetosphere (r_pos <= r_mp)'
+  END IF
+
+  ! --- Additional check for particles beyond -60 Re in X ---
+  IF (X < -60.0d0) THEN
+     TestResult = 1
+     !PRINT *, '  Status: OUTSIDE magnetosphere (X < -60 Re)'
+     IF (FinalStep == 0) THEN
+         FinalStep = 1
+         TestResult = -1
+     END IF
+  END IF
+
+  IF (TestResult < 0) THEN
+      functionLin = 0
+      !PRINT *, '  Final result: INSIDE (returning 0)'
+  ELSE IF (TestResult >= 0) THEN
+      functionLin = 1
+      !PRINT *, '  Final result: OUTSIDE (returning 1)'
+  END IF
+
+  return
+  end function functionLin
  
   function functionTSY() ! Magnetopause models used within the Tsyganenko models
     integer(4) :: functionTSY
@@ -315,6 +441,12 @@ end interface
     Pause = 6
   ELSE IF (model(2) == 7) THEN
     Pause = 7
+  ELSE IF (model(2) == 9) THEN
+    Pause = 8
+  ELSE IF (model(2) == 10) THEN
+    Pause = 9
+  ELSE IF (model(2) == 11) THEN
+    Pause = 10
   END IF
 
   IF (Pause == 0) THEN
@@ -333,6 +465,12 @@ end interface
     PausePointer => functionTSY  ! TSYGANENKO models
   ELSE IF (Pause == 7) THEN
     PausePointer => functionTSY  ! TSYGANENKO models
+  ELSE IF (Pause == 8) THEN
+    PausePointer => functionLin  ! Lin et al 2010 model
+  ELSE IF (Pause == 9) THEN
+    PausePointer => functionLin  ! Lin et al 2010 model
+  ELSE IF (Pause == 10) THEN
+    PausePointer => functionLin  ! Lin et al 2010 model
   END IF
 
   IF (Pause == 99) THEN

@@ -37,10 +37,10 @@
 C
       IMPLICIT NONE
       REAL*8 year, ierr
-      REAL*8 Gnew(105),Hnew(105)
+      REAL*8 Gnew(136),Hnew(136)
       INTEGER *4 N
        
-       DO N=1,105
+       DO N=1,136
               Gnew(N)=G(N)
               Hnew(N)=H(N)
        ENDDO

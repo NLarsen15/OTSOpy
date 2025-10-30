@@ -1,5 +1,6 @@
 include OTSO/Parameters/functions/*.so
 include OTSO/Parameters/functions/*.pyd
 include OTSO/Parameters/functions/StationList.csv
+include OTSO/Parameters/functions/igrf_coefficients.csv
 include OTSO/Parameters/functions/Parameters.par
 include OTSO/Parameters/functions/libs/*

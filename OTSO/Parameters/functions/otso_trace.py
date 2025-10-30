@@ -8,19 +8,20 @@ import sys
 import queue
 import random
 import numpy as np
+from tqdm import tqdm
 
 
 def OTSO_trace(startaltitude,Coordsys,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
            latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,spheresize,inputcoord,Verbose):
 
     Anum = 1
     TraceInputArray = trace_inputs.TraceInputs(startaltitude,Coordsys,
-           serverdata,livedata,vx,vy,vz,by,bz,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
            latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile,MHDcoordsys,inputcoord)
@@ -74,7 +75,6 @@ def OTSO_trace(startaltitude,Coordsys,
 
     if Verbose:
         print("OTSO Trace Computation Started")
-        sys.stdout.write(f"\r{0:.2f}% complete")
 
 # Set the process creation method to 'forkserver'
     try:
@@ -97,6 +97,14 @@ def OTSO_trace(startaltitude,Coordsys,
     for a in ChildProcesses:
         a.start()
 
+    # Initialize progress bar if tqdm is available and Verbose is True
+    progress_bar = None
+    if Verbose and tqdm is not None:
+        progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" trace")
+    elif Verbose:
+        # Fallback to simple counter if tqdm is not available
+        print(f"Processing {totalprocesses} grid points...")
+
     results = {}
     processed = 0
     while processed < totalprocesses:
@@ -115,11 +123,15 @@ def OTSO_trace(startaltitude,Coordsys,
             for x in result_collector:
                 results.update(x)
     
-            # Calculate and print the progress
-            percent_complete = (processed / totalprocesses) * 100
+            # Update progress
             if Verbose:
-                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-                sys.stdout.flush()
+                if progress_bar is not None:
+                    progress_bar.update(len(result_collector))
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (processed / totalprocesses) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                    sys.stdout.flush()
     
         except queue.Empty:
             # Queue is empty, but processes are still running, so we continue checking
@@ -127,6 +139,10 @@ def OTSO_trace(startaltitude,Coordsys,
         
         # Wait for 5 seconds before the next iteration
         time.sleep(0.0001)
+
+    # Close progress bar if it was created
+    if progress_bar is not None:
+        progress_bar.close()
 
     for b in ChildProcesses:
         b.join()
@@ -148,7 +164,7 @@ def OTSO_trace(startaltitude,Coordsys,
                                              MaxStepPercent*100, EndParams, 
                                              LiveData, serverdata, kp)
 
-    if LiveData == 1:
+    if livedata == "ON" or livedata == 1:
         misc.remove_files()
 
     return [sorted_results,readme]

@@ -1,4 +1,4 @@
-import sys, os
+﻿import sys, os
 import subprocess
 from setuptools import setup, find_packages
 from setuptools.command.install import install
@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.0.19',
+    version='1.1.0',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
@@ -25,6 +25,7 @@ setup(
                 'OTSO.addstation=OTSO:addstation',
                 'OTSO.removestation=OTSO:removestation',
                 'OTSO.liststations=OTSO:liststations',
+                'OTSO.IGRFupdate=OTSO:IGRFupdate',
             ],
     },
     classifiers=[
@@ -35,6 +36,7 @@ setup(
     python_requires='>=3.12, <3.13',
     install_requires=[
         'psutil==7.0.0',     # Common dependency
+        'tqdm',              # Progress bar library
     ],
     extras_require={
         ':python_version>="3.10"': [
