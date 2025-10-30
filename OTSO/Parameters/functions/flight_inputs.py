@@ -241,7 +241,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
        if ServerData == 0 and LiveData == 0:
           if vx[i] > 0:
                vx[i] = -1*vx[i]
-          WindCreate = solar_wind.Solar_Wind(vx[i], vy[i], vz[i], 0, by[i], bz[i], density[i], pdyn[i], Dst[i], G1[i], G2[i], G3[i], W1[i], W2[i], W3[i], W4[i], W5[i], W6[i], kp[i], 0, 0, 0, 0, 0, External)
+          WindCreate = solar_wind.Solar_Wind(vx[i], vy[i], vz[i], 0, by[i], bz[i], density[i], pdyn[i], Dst[i], G1[i], G2[i], G3[i], W1[i], W2[i], W3[i], W4[i], W5[i], W6[i], kp[i], 0, 0, 0, 0, 0)
           WindArray = WindCreate.GetWind()
           KpList.append(kp[i])
           IOPTinput = misc.IOPTprocess(kp[i])

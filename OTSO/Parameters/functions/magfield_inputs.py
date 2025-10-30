@@ -136,7 +136,7 @@ def MagFieldInputs(Locations,
     if ServerData == 0 and LiveData == 0:
           if vx > 0:
                vx = -1*vx
-          WindCreate = solar_wind.Solar_Wind(vx, vy, vz, bx, by, bz, density, pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, kp, by_avg, bz_avg, n_index, b_index, sym_h_corrected, External)
+          WindCreate = solar_wind.Solar_Wind(vx, vy, vz, bx, by, bz, density, pdyn, Dst, G1, G2, G3, W1, W2, W3, W4, W5, W6, kp, by_avg, bz_avg, n_index, b_index, sym_h_corrected)
           WindArray = WindCreate.GetWind()
 
     MagFieldModel = np.array([Internal,External])
