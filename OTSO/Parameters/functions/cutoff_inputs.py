@@ -39,7 +39,7 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
          Magnetopause = 99
     else:
          print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"", ""Lin"", ""NONE"" ")
-
+         exit()
 
     if intmodel == "4RK":
          IntModel = 1

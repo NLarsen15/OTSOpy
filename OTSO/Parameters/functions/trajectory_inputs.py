@@ -38,6 +38,7 @@ def TrajectoryInputs(Stations,rigidity,customlocations,startaltitude,minaltitude
          Magnetopause = 99
     else:
          print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"", ""Lin"", ""NONE"" ")
+         exit()
 
 
     if intmodel == "4RK":

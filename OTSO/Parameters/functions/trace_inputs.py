@@ -34,7 +34,7 @@ def TraceInputs(startaltitude,Coordsys,
          Magnetopause = 99
     else:
          print("Please enter a valid magnetopause model: ""Sphere"", ""aFormisano"", ""Sibeck"", ""Kobel"", ""Lin"", ""NONE"" ")
-
+         exit()
 
     if serverdata == "ON":
          ServerData = 1
