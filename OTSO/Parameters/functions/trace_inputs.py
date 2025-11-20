@@ -6,8 +6,8 @@ from . import misc, Request, Server
 from .igrf_process import compute_gauss_coefficients, schmidt_normalize
 
 def TraceInputs(startaltitude,Coordsys,
-           serverdata,livedata,vx,vy,vz,bx,by,bz,by_avg,bz_avg,n_index,b_index,sym_h_corrected,density,pdyn,Dst,
-           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,year,
+           serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
+           G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,year,
            month,day,hour,minute,second,internalmag,externalmag,
            gyropercent,magnetopause,corenum,
            latstep,longstep,maxlat,minlat,maxlong,minlong,g,h,MHDfile, MHDcoordsys,inputcoord):
