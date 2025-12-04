@@ -4,7 +4,7 @@ def cone(Stations, customlocations=[], startaltitude=20,minaltitude=20,zenith=0,
            month=1,day=1,hour=12,minute=0,second=0,internalmag="IGRF",externalmag="TSY89",
            intmodel="Boris",startrigidity=20,endrigidity=0,rigiditystep=0.01,
            coordsystem="GEO",gyropercent=15,magnetopause="Kobel",corenum=None,g=None,h=None,MHDfile=None,MHDcoordsys=None,
-           spheresize=25, inputcoord="GDZ", Verbose=True):
+           spheresize=25, inputcoord="GDZ", Verbose=True, AdaptiveExternalModel=False):
     from .Parameters.functions import otso_cone
     import psutil
 
@@ -23,6 +23,6 @@ def cone(Stations, customlocations=[], startaltitude=20,minaltitude=20,zenith=0,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize, inputcoord, Verbose)
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,spheresize, inputcoord, Verbose, AdaptiveExternalModel)
     
     return cone

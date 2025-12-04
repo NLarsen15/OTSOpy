@@ -10,7 +10,7 @@ def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,
-           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,inputcoord):
+           coordsystem,gyropercent,magnetopause,corenum,g,h,MHDfile,MHDcoordsys,inputcoord,AdaptiveExternalModel):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -157,7 +157,7 @@ def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth
               Server.DownloadServerFileLowRes(int(EventDate.year))
          else:
               print("Server data only valid for 1963 to present, please enter a valid date.")
-         BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, ByAvgS, BzAvgS, NIndexS, BIndexS, SymHCorrectedS = Server.GetServerData(EventDate,External)
+         BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, ByAvgS, BzAvgS, NIndexS, BIndexS, SymHCorrectedS, External = Server.GetServerData(EventDate,External,AdaptiveExternalModel)
          IOPTinput = misc.IOPTprocess(KpS)
          WindCreate = solar_wind.Solar_Wind(VS, vy, vz, BxS, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS, ByAvgS, BzAvgS, NIndexS, BIndexS, SymHCorrectedS)
          WindArray = WindCreate.GetWind()

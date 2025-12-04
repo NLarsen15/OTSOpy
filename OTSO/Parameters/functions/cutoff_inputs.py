@@ -11,7 +11,7 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,
-           MHDfile, MHDcoordsys,inputcoord):
+           MHDfile, MHDcoordsys,inputcoord,AdaptiveExternalModel):
     
     EventDate = datetime(year,month,day,hour,minute,second)
     DateCreate = date.Date(EventDate)
@@ -183,7 +183,7 @@ def CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,
               Server.DownloadServerFileLowRes(int(EventDate.year))
          else:
               print("Server data only valid for 1963 to present, please enter a valid date.")
-         BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, ByAvgS, BzAvgS, NIndexS, BIndexS, SymHCorrectedS = Server.GetServerData(EventDate,External)
+         BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, ByAvgS, BzAvgS, NIndexS, BIndexS, SymHCorrectedS, External = Server.GetServerData(EventDate,External,AdaptiveExternalModel)
          IOPTinput = misc.IOPTprocess(KpS)
          kp = KpS
          WindCreate = solar_wind.Solar_Wind(VS, vy, vz, BxS, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS, ByAvgS, BzAvgS, NIndexS, BIndexS, SymHCorrectedS)

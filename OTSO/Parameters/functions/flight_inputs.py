@@ -10,7 +10,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
            coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h,asymptotic,asymlevels,unit,
-           MHDfile, MHDcoordsys,inputcoord):
+           MHDfile, MHDcoordsys,inputcoord,AdaptiveExternalModel):
     
     DateArrayList = []
     for x in dates:
@@ -212,7 +212,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
                Server.DownloadServerFileLowRes(int(x.year))
           else:
                print("Server data only valid for 1963 to present, please enter a valid date.")
-          BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS = Server.GetServerData(x,External)
+          BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS, External = Server.GetServerData(x,External,AdaptiveExternalModel)
           KpList.append(KpS)
           IOPTinput = misc.IOPTprocess(KpS)
           IOPTList.append(IOPTinput)
@@ -227,7 +227,7 @@ def FlightInputs(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,ma
                    print("LIVE DATA NOT SUPPORTED FOR TSY04 OR TA16 MAGNETOSPHERIC MODELS. PLEASE SELECT ANOTHER EXTERNAL MAGNETIC FIELD MODEL.")
                    exit()
                misc.DateCheck(x)
-               DstLive, VxLive, DensityLive, ByLive, BzLive, IOPTLive, G1Live, G2Live, G3Live, KpLive, Bx_avgLive, By_avgLive, Bz_avgLive, NIndexLive, BIndexLive = Request.Get_Data(EventDate)
+               DstLive, VxLive, DensityLive, ByLive, BzLive, IOPTLive, G1Live, G2Live, G3Live, KpLive, Bx_avgLive, By_avgLive, Bz_avgLive, NIndexLive, BIndexLive = Request.Get_Data(x)
                PdynLive = misc.Pdyn_comp(DensityLive,VxLive)
                KpList.append(KpLive)
                IOPTinput = IOPTLive

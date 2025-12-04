@@ -13,14 +13,15 @@ def OTSO_cutoff(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,m
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,spheresize,inputcoord,Verbose):
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,spheresize,inputcoord,Verbose,
+           AdaptiveExternalModel):
 
     CutoffInputArray = cutoff_inputs.CutoffInputs(Stations,customlocations,startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
            serverdata,livedata,vx,vy,vz,bx,by,bz,density,pdyn,Dst,
            G1,G2,G3,W1,W2,W3,W4,W5,W6,kp,by_avg,bz_avg,n_index,b_index,sym_h_corrected,Anum,anti,year,
            month,day,hour,minute,second,internalmag,externalmag,
            intmodel,startrigidity,endrigidity,rigiditystep,rigidityscan,
-           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,inputcoord)
+           coordsystem,gyropercent,magnetopause,corenum,azimuth,zenith,g,h, MHDfile, MHDcoordsys,inputcoord,AdaptiveExternalModel)
 
     RigidityArray = CutoffInputArray[0]
     DateArray = CutoffInputArray[1]

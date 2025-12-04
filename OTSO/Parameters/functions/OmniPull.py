@@ -71,22 +71,25 @@ def download_omni_low_res_data(year):
         print(f"Error downloading {file_name}: {e}")
         return
 
-    url2 = base_url + file_name2
-    
-    try:
-        response2 = requests.get(url2, stream=True, timeout=30)
-        response2.raise_for_status()
+    # Only download next year's file if not processing the current year
+    current_year = datetime.now().year
+    if year < current_year:
+        url2 = base_url + file_name2
+        
+        try:
+            response2 = requests.get(url2, stream=True, timeout=30)
+            response2.raise_for_status()
 
-        with open(file_path2, 'wb') as f:
-            for chunk in response2.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
+            with open(file_path2, 'wb') as f:
+                for chunk in response2.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
 
-        #print(f"Downloaded successfully: {file_path2}")
-        parse_and_convert_to_csv_low_res(file_path2, f'omni_{year+1}_low_res.csv')
+            #print(f"Downloaded successfully: {file_path2}")
+            parse_and_convert_to_csv_low_res(file_path2, f'omni_{year+1}_low_res.csv')
 
-    except requests.exceptions.RequestException as e:
-        print(f"Could not download {file_name2}: {e} (this is normal if the file doesn't exist yet)")
+        except requests.exceptions.RequestException as e:
+            print(f"Could not download {file_name2}: {e} (this is normal if the file doesn't exist yet)")
 
 
 
@@ -496,7 +499,9 @@ def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
         combined_df['V'] = combined_df['V'].abs()
 
     # Fill final Dec 31 values from following year if available
-    if os.path.exists(futurefile):
+    # Only attempt if not the current year (future file won't exist yet)
+    current_year = datetime.now().year
+    if year < current_year and os.path.exists(futurefile):
         future_df = pd.read_csv(futurefile)
         dst_value = future_df.loc[0, 'Dst'] if 'Dst' in future_df.columns else None
         kp_value = future_df.loc[0, 'Kp'] if 'Kp' in future_df.columns else None
