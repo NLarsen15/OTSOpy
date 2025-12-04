@@ -170,7 +170,7 @@ def ConeInputs(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth
          DstLive, VxLive, DensityLive, ByLive, BzLive, IOPTLive, G1Live, G2Live, G3Live, KpLive, By_avgLive, Bx_avgLive, Bz_avgLive, NIndexLive, BIndexLive = Request.Get_Data(EventDate)
          PdynLive = misc.Pdyn_comp(DensityLive,VxLive)
          IOPTinput = IOPTLive
-         kp = KpLive
+         KpS = KpLive
          WindCreate = solar_wind.Solar_Wind(VxLive, vy, vz, Bx_avgLive, ByLive, BzLive, DensityLive, PdynLive, DstLive, G1Live, G2Live, G3Live, W1, W2, W3, W4, W5, W6, KpLive, By_avgLive, Bz_avgLive, NIndexLive, BIndexLive, sym_h_corrected)
          WindArray = WindCreate.GetWind()
 
