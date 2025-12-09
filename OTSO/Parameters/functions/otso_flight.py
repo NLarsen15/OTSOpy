@@ -70,19 +70,14 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
     total_stations = len(Station_Array)
 
     if corenum == 1:
-        # Single core processing - avoid multiprocessing overhead
-        # For single core, all stations are processed in one batch
         num_batches = 1
         
-        # Initialize progress bar if tqdm is available and Verbose is True
         progress_bar = None
         if Verbose and tqdm is not None:
             progress_bar = tqdm(total=num_batches, desc="OTSO Running", unit=" batch", position=0)
         elif Verbose:
-            # Fallback to simple counter if tqdm is not available
             print(f"Processing flight paths for {total_stations} stations...")
 
-        # Create a simple queue-like list for single-core processing
         class SimpleQueue:
             def __init__(self):
                 self.items = []
@@ -93,7 +88,6 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
 
         simple_queue = SimpleQueue()
         
-        # Process all stations directly without multiprocessing
         for Data, Core, Date, I, Wind, flightFile in zip(Positionlists, CoreList, DateArrayLists, IOPTLists, WindLists, flight_list):
             fortran_calls.fortrancallFlight(Data, RigidityArray, Date, Model, IntModel, 
                                           ParticleArray, I, Wind, 
@@ -102,7 +96,6 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
                                           simple_queue, g, h, CoordinateSystem, flightFile, MHDfile, MHDcoordsys,
                                           spheresize, inputcoord)
             
-            # Update progress after each batch
             processed += 1
             if simple_queue.items:
                 totalp = totalp + simple_queue.items[-1]
@@ -111,23 +104,18 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
                 if progress_bar is not None:
                     progress_bar.update(1)
                 else:
-                    # Fallback to percentage if tqdm is not available
                     percent_complete = (processed / num_batches) * 100
                     sys.stdout.write(f"\r{percent_complete:.2f}% batches complete ({totalp} points processed)")
                     sys.stdout.flush()
         
-        # Close progress bar if it was created
         if progress_bar is not None:
             progress_bar.close()
 
     else:
-        # Multi-core processing
-        # Initialize progress bar if tqdm is available and Verbose is True
         progress_bar = None
         if Verbose and tqdm is not None:
             progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" location", position=0)
         elif Verbose:
-            # Fallback to simple counter if tqdm is not available
             print(f"Processing flight paths for {total_stations} stations...")
 
         try:
@@ -160,18 +148,13 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
                     except queue.Empty:
                         break
         
-                # Update totalp with the sum of items processed by cores
                 if result_collector:
                     totalp = totalp + sum(result_collector)
                 
-                # Update progress
                 if Verbose:
                     if progress_bar is not None:
-                        # Update batch progress bar
                         progress_bar.update(len(result_collector) if result_collector else 0)
-                        #progress_bar.set_description(f"Flight batches ({totalp} points total)")
                     else:
-                        # Fallback to percentage if tqdm is not available
                         percent_complete = (processed / total_stations) * 100
                         sys.stdout.write(f"\r{percent_complete:.2f}% batches complete ({totalp} points processed)")
                         sys.stdout.flush()
@@ -180,9 +163,8 @@ def OTSO_flight(latitudes,longitudes,dates,altitudes,cutoff_comp,minaltitude,max
             except queue.Empty:
                 pass
           
-            time.sleep(0.0001)  # Update every 100ms for smoother progress display
+            time.sleep(0.0001)
 
-        # Close progress bar if it was created
         if progress_bar is not None:
             progress_bar.close()
 

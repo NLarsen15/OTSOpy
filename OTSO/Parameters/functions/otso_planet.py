@@ -72,43 +72,33 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     NewCoreNum = misc.CheckCoreNumPlanet(CoreNum)
     FileNamesPlanet = []
 
-    # Generate filenames based on the coordinate pairs
     for coord_pair in combined_coordinates:
-        # Ensure formatting is consistent, handle potential floats
-        FileNamesPlanet.append(f"{coord_pair[0]:.8f}_{coord_pair[1]:.8f}".replace(".", "dot")) # Using more precision and replacing dots
+        FileNamesPlanet.append(f"{coord_pair[0]:.8f}_{coord_pair[1]:.8f}".replace(".", "dot"))
     
     DataPlanet = []
     i = 1
-    # Populate DataPlanet directly from combined_coordinates
     for point, name in zip(combined_coordinates, FileNamesPlanet):
         Core = "Core " + str(i)
-        # point[0] is latitude, point[1] is longitude
         DataPlanet.append([name, point[0], point[1], Alt, Zenith, Azimuth, Core]) 
         i = i + 1
 
-    # --- Fix Start: Cap cores and handle empty input --- 
     if totalprocesses == 0:
         print("\nWarning: No coordinate pairs provided or generated. Skipping planet computation.")
-        # Need to decide what to return. An empty DataFrame and a basic README?
         EventDate = datetime(year,month,day,hour,minute,second)
         readme = readme_generators.READMEPlanet(None, RigidityArray, EventDate, Model, IntModel, 
                                         AntiCheck, IOPT, WindArray, Magnetopause, 0,
                                         maxlat,maxlong,minlat,minlong, latstep, longstep,
                                         MaxStepPercent*100, EndParams, cutoff_comp, Rscan, 
                                         LiveData, asymptotic, asymlevels, unit, serverdata, kp,
-                                        custom_coords_provided=(array_of_lats_and_longs is not None)) # Added flag back temporarily
-        return [pd.DataFrame(), readme] # Return empty dataframe and readme
+                                        custom_coords_provided=(array_of_lats_and_longs is not None))
+        return [pd.DataFrame(), readme]
         
-    # Ensure the number of processes doesn't exceed the number of points
     actual_cores_to_use = min(NewCoreNum, totalprocesses)
-    # --- Fix End --- 
 
     shuffled_list = DataPlanet.copy()
     random.shuffle(shuffled_list)
-    # Use actual_cores_to_use for splitting
-    DataLists = np.array_split(shuffled_list, actual_cores_to_use) 
+    DataLists = np.array_split(shuffled_list, actual_cores_to_use)
 
-    # Adjust core list generation based on actual_cores_to_use
     CoreList = np.arange(1, actual_cores_to_use + 1) 
     start = time.time()
 
@@ -137,19 +127,14 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
         print("OTSO Planet Computation Started")
 
     if actual_cores_to_use == 1:
-        # Single core processing - avoid multiprocessing overhead
-        # When actual_cores_to_use=1, all points processed in batches
         num_batches = len(DataLists)
         
-        # Initialize progress bar if tqdm is available and Verbose is True
         progress_bar = None
         if Verbose and tqdm is not None:
             progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" location")
         elif Verbose:
-            # Fallback to simple counter if tqdm is not available
             print(f"Processing {totalprocesses} grid points...")
 
-        # Create a simple queue-like list for single-core processing
         class SimpleQueue:
             def __init__(self):
                 self.items = []
@@ -160,11 +145,8 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
 
         simple_queue = SimpleQueue()
         
-        # Process all data directly without multiprocessing
-        # When single-core, process each item individually to show progress
         for Data, Core, planetfile in zip(DataLists, CoreList, planet_list):
             for single_item in Data:
-                # Process one coordinate at a time
                 fortran_calls.fortrancallPlanet([single_item], RigidityArray, DateArray, Model, IntModel, 
                                               ParticleArray, IOPT, WindArray, 
                                               Magnetopause, MaxStepPercent, EndParams, 
@@ -172,35 +154,28 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                                               simple_queue, g, h, planetfile, MHDfile, MHDcoordsys,
                                               spheresize, inputcoord)
                 
-                # Update progress after each coordinate
                 if simple_queue.items:
                     batch_count = sum(simple_queue.items)
                     totalp += batch_count
                     processed += batch_count
                     
-                    # Update progress
                     if Verbose:
                         if progress_bar is not None:
-                            # Update progress bar with the actual number of items processed
                             progress_bar.update(batch_count)
                             progress_bar.set_description(f"OTSO Running ({totalp}/{totalprocesses})")
                         else:
-                            # Fallback to percentage if tqdm is not available
                             percent_complete = (totalp / totalprocesses) * 100
                             sys.stdout.write(f"\r{percent_complete:.2f}% complete ({totalp}/{totalprocesses} points)")
                             sys.stdout.flush()
                     
-                    # Clear simple queue for next item
                     simple_queue.items = []
             
             gc.collect()
         
-        # Close progress bar if it was created
         if progress_bar is not None:
             progress_bar.close()
 
     else:
-        # Multi-core processing
         ProcessQueue = mp.Manager().Queue()
 
         try:
@@ -222,12 +197,10 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
         for a in ChildProcesses:
             a.start()
 
-        # Initialize progress bar if tqdm is available and Verbose is True
         progress_bar = None
         if Verbose and tqdm is not None:
             progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" location")
         elif Verbose:
-            # Fallback to simple counter if tqdm is not available
             print(f"Processing {totalprocesses} grid points...")
      
         while processed < totalprocesses:
@@ -241,20 +214,15 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                     except queue.Empty:
                         break
         
-                # Update totalp with the sum of items processed by cores
                 if result_collector:
                     totalp = totalp + sum(result_collector)
                 
                 gc.collect()
-                # Update progress
                 if Verbose:
                     if progress_bar is not None:
-                        # Update progress bar with the actual number of items processed
                         progress_bar.update(sum(result_collector) if result_collector else 0)
-                        # Update the description to show current progress
                         progress_bar.set_description(f"OTSO Running ({totalp}/{totalprocesses})")
                     else:
-                        # Fallback to percentage if tqdm is not available
                         percent_complete = (totalp / totalprocesses) * 100
                         sys.stdout.write(f"\r{percent_complete:.2f}% complete ({totalp}/{totalprocesses} points)")
                         sys.stdout.flush()
@@ -265,7 +233,6 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
             
             time.sleep(0.5)
 
-        # Close progress bar if it was created
         if progress_bar is not None:
             progress_bar.close()
 
@@ -288,16 +255,12 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     
     EventDate = datetime(year,month,day,hour,minute,second)
     
-    # --- Fix: Use the first element of DataPlanet for README context --- 
     if not DataPlanet:
-         # This case should ideally be caught earlier, but handle defensively
          print("\nError: DataPlanet list is empty before final README generation.")
          readme_context = None 
     else:
-        readme_context = DataPlanet[0] # Use the first point's data
-    # --- End Fix --- 
+        readme_context = DataPlanet[0]
 
-    # Pass the representative context to READMEPlanet
     readme = readme_generators.READMEPlanet(readme_context, RigidityArray, EventDate, Model, IntModel, 
                                             AntiCheck, IOPT, WindArray, Magnetopause, Printtime,
                                             maxlat,maxlong,minlat,minlong, latstep, longstep,
@@ -326,18 +289,14 @@ def combine_planet_files(planet_list):
     combined_planet['Longitude'] = pd.to_numeric(combined_planet['Longitude'], errors='coerce')
     combined_planet['Latitude'] = pd.to_numeric(combined_planet['Latitude'], errors='coerce')
     
-    # Duplicate polar points for all longitude values
     unique_longitudes = sorted(combined_planet['Longitude'].unique())
     polar_rows = []
     
-    # Find existing polar points (90° and -90°)
     north_pole_data = combined_planet[combined_planet['Latitude'] == 90.0]
     south_pole_data = combined_planet[combined_planet['Latitude'] == -90.0]
     
-    # Remove existing polar points from the dataframe
     combined_planet = combined_planet[~((combined_planet['Latitude'] == 90.0) | (combined_planet['Latitude'] == -90.0))]
     
-    # Duplicate north pole data for each longitude
     if not north_pole_data.empty:
         for longitude in unique_longitudes:
             for _, row in north_pole_data.iterrows():
@@ -345,7 +304,6 @@ def combine_planet_files(planet_list):
                 new_row['Longitude'] = longitude
                 polar_rows.append(new_row)
     
-    # Duplicate south pole data for each longitude
     if not south_pole_data.empty:
         for longitude in unique_longitudes:
             for _, row in south_pole_data.iterrows():
@@ -353,7 +311,6 @@ def combine_planet_files(planet_list):
                 new_row['Longitude'] = longitude
                 polar_rows.append(new_row)
     
-    # Add the duplicated polar rows back to the dataframe
     if polar_rows:
         polar_df = pd.DataFrame(polar_rows)
         combined_planet = pd.concat([combined_planet, polar_df], ignore_index=True)
@@ -362,7 +319,6 @@ def combine_planet_files(planet_list):
     return planet
 
 def get_unique_filename(filepath):
-    """If the file exists, add a numerical suffix to make it unique."""
     base, ext = os.path.splitext(filepath)
     counter = 1
     new_filepath = filepath

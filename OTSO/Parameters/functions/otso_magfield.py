@@ -48,16 +48,12 @@ def OTSO_magfield(Locations,
     results = []
 
     if CoreNum == 1:
-        # Single core processing - avoid multiprocessing overhead
-        # When CoreNum=1, process all locations in batches
         num_batches = len(LocationsList)
         
-        # Initialize progress bar if tqdm is available and Verbose is True
         progress_bar = None
         if Verbose:
             progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" field calculation")
 
-        # Create a simple queue-like list for single-core processing
         class SimpleQueue:
             def __init__(self):
                 self.items = []
@@ -69,38 +65,31 @@ def OTSO_magfield(Locations,
         simple_queue = SimpleQueue()
         processed = 0
         
-        # Process all locations directly without multiprocessing
         for Data in LocationsList:
             fortran_calls.fortrancallMagfield(Data, DateArray, Model, IOPT, WindArray, CoordinateSystem, simple_queue, g, h,
                                             MHDfile, MHDcoordsys)
             
-            # Update progress after each location batch
             processed += len(Data)
             if Verbose:
                 if progress_bar is not None:
                     progress_bar.update(len(Data))
                 else:
-                    # Fallback to percentage if tqdm is not available
                     percent_complete = (processed / total_stations) * 100
                     sys.stdout.write(f"\r{percent_complete:.2f}% complete")
                     sys.stdout.flush()
         
-        # Get all results
         results = simple_queue.get_all()
         
-        # Close progress bar if it was created
         if progress_bar is not None:
             progress_bar.close()
 
     else:
-        # Multi-core processing
         try:
             if not mp.get_start_method(allow_none=True):
                 mp.set_start_method('spawn')
         except RuntimeError:
             pass
         
-        # Create a shared message queue for the processes to produce/consume data
         ProcessQueue = mp.Manager().Queue()
         for Data in LocationsList:
             Child = mp.Process(target=fortran_calls.fortrancallMagfield,  args=(Data, DateArray, Model, IOPT, WindArray, CoordinateSystem, ProcessQueue,g,h,
@@ -110,42 +99,34 @@ def OTSO_magfield(Locations,
         for a in ChildProcesses:
             a.start()
 
-        # Wait for child processes to complete
         processed = 0
 
-        # Initialize progress bar if tqdm is available and Verbose is True
         progress_bar = None
         if Verbose:
             progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" field calculation")
 
         while processed < total_stations:
           try:
-            # Check if the ProcessQueue has any new results
-            result_df = ProcessQueue.get(timeout=0.001)  # Use timeout to avoid blocking forever
+            result_df = ProcessQueue.get(timeout=0.001)
             results.append(result_df)
             processed += 1
 
-            # Update progress
             if Verbose:
                 if progress_bar is not None:
                     progress_bar.update(1)
                 else:
-                    # Fallback to percentage if tqdm is not available
                     percent_complete = (processed / total_stations) * 100
                     sys.stdout.write(f"\r{percent_complete:.2f}% complete")
                     sys.stdout.flush()
 
           except queue.Empty:
-            # Queue is empty, but processes are still running, so we continue checking
             pass
           
           time.sleep(0.0001)
 
-        # Close progress bar if it was created
         if progress_bar is not None:
             progress_bar.close()
 
-        # Ensure that all processes have completed
         for b in ChildProcesses:
             b.join()
 

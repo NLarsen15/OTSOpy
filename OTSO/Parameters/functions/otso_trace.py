@@ -78,19 +78,14 @@ def OTSO_trace(startaltitude,Coordsys,
     results = {}
 
     if CoreNum == 1:
-        # Single core processing - avoid multiprocessing overhead
-        # When CoreNum=1, all points processed in batches
         num_batches = len(DataLists)
         
-        # Initialize progress bar if tqdm is available and Verbose is True
         progress_bar = None
         if Verbose and tqdm is not None:
             progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" trace")
         elif Verbose:
-            # Fallback to simple counter if tqdm is not available
             print(f"Processing {totalprocesses} grid points...")
 
-        # Create a simple queue-like list for single-core processing
         class SimpleQueue:
             def __init__(self):
                 self.items = []
@@ -102,50 +97,39 @@ def OTSO_trace(startaltitude,Coordsys,
         simple_queue = SimpleQueue()
         processed = 0
         
-        # Process all data directly without multiprocessing
-        # When single-core, process each item individually to show progress
         for Data, Core in zip(DataLists, CoreList):
             for single_item in Data:
-                # Process one coordinate at a time
                 fortran_calls.fortrancallTrace([single_item], Rigidity, DateArray, Model, IntModel, 
                                               ParticleArray, IOPT, WindArray, 
                                               Magnetopause, Coordsys, MaxStepPercent, EndParams,
                                               simple_queue, g, h, MHDfile, MHDcoordsys,
                                               spheresize, inputcoord)
                 
-                # Collect results from the simple queue and update progress
                 num_items = len(simple_queue.items)
                 for x in simple_queue.items:
                     results.update(x)
                     processed += 1
                 
-                # Update progress after each coordinate
                 if Verbose:
                     if progress_bar is not None:
                         progress_bar.update(num_items)
                     else:
-                        # Fallback to percentage if tqdm is not available
                         percent_complete = (processed / totalprocesses) * 100
                         sys.stdout.write(f"\r{percent_complete:.2f}% complete")
                         sys.stdout.flush()
                 
-                # Clear the simple queue for next item
                 simple_queue.items = []
         
-        # Close progress bar if it was created
         if progress_bar is not None:
             progress_bar.close()
 
     else:
-        # Multi-core processing
-        # Set the process creation method to 'forkserver'
         try:
             if not mp.get_start_method(allow_none=True):
                 mp.set_start_method('spawn')
         except RuntimeError:
             pass
 
-        # Create a shared message queue for the processes to produce/consume data
         ProcessQueue = mp.Manager().Queue()
         for Data,Core in zip(DataLists, CoreList):
                 Child = mp.Process(target=fortran_calls.fortrancallTrace,  args=(Data, Rigidity, DateArray, Model, IntModel, 
@@ -158,49 +142,40 @@ def OTSO_trace(startaltitude,Coordsys,
         for a in ChildProcesses:
             a.start()
 
-        # Initialize progress bar if tqdm is available and Verbose is True
         progress_bar = None
         if Verbose and tqdm is not None:
             progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" trace")
         elif Verbose:
-            # Fallback to simple counter if tqdm is not available
             print(f"Processing {totalprocesses} grid points...")
 
         processed = 0
         while processed < totalprocesses:
             try:
-                # Collect all results available in the queue at this moment
                 result_collector = []
                 while True:
                     try:
-                        result_df = ProcessQueue.get_nowait()  # Non-blocking, does not wait
+                        result_df = ProcessQueue.get_nowait()
                         result_collector.append(result_df)
                         processed += 1
                     except queue.Empty:
                         break
         
-                # Append all collected results to the main results list
                 for x in result_collector:
                     results.update(x)
         
-                # Update progress
                 if Verbose:
                     if progress_bar is not None:
                         progress_bar.update(len(result_collector))
                     else:
-                        # Fallback to percentage if tqdm is not available
                         percent_complete = (processed / totalprocesses) * 100
                         sys.stdout.write(f"\r{percent_complete:.2f}% complete")
                         sys.stdout.flush()
         
             except queue.Empty:
-                # Queue is empty, but processes are still running, so we continue checking
                 pass
             
-            # Wait for 5 seconds before the next iteration
             time.sleep(0.0001)
 
-        # Close progress bar if it was created
         if progress_bar is not None:
             progress_bar.close()
 
