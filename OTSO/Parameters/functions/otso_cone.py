@@ -58,68 +58,118 @@ def OTSO_cone(Stations,customlocations,startaltitude,minaltitude,zenith,azimuth,
     if Verbose:
         print("OTSO Cone Computation Started")
 
-
-    try:
-        if not mp.get_start_method(allow_none=True):
-            mp.set_start_method('spawn')
-    except RuntimeError:
-
-        pass
-# Create a shared message queue for the processes to produce/consume data
-    ProcessQueue = mp.Manager().Queue()
-    for Data,Core in zip(Positionlists,CoreList):
-        Child = mp.Process(target=fortran_calls.fortrancallCone,  args=(Data, Core, RigidityArray, DateArray, Model, IntModel, ParticleArray, IOPT, WindArray, 
-                                                                        Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, ProcessQueue,g,h,MHDfile, MHDcoordsys,
-                                                                        spheresize, inputcoord))
-        ChildProcesses.append(Child)
-
-    for a in ChildProcesses:
-        a.start()
-
-# Wait for child processes to complete
-
-    results = []
     total_stations = len(Station_Array)
-    processed = 0
+    results = []
 
-    # Initialize progress bar if tqdm is available and Verbose is True
-    progress_bar = None
-    if Verbose and tqdm is not None:
-        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" cone")
-    elif Verbose:
-        # Fallback to simple counter if tqdm is not available
-        print(f"Processing {total_stations} stations...")
+    if CoreNum == 1:
+        # Single core processing - avoid multiprocessing overhead
+        # When CoreNum=1, all stations are in one batch
+        num_batches = len(Positionlists)
+        
+        # Initialize progress bar if tqdm is available and Verbose is True
+        progress_bar = None
+        if Verbose and tqdm is not None:
+            progress_bar = tqdm(total=num_batches, desc="OTSO Running", unit=" batch")
+        elif Verbose:
+            # Fallback to simple counter if tqdm is not available
+            print(f"Processing {total_stations} stations...")
 
-    while processed < total_stations:
-      try:
-        # Check if the ProcessQueue has any new results
-        result_df = ProcessQueue.get(timeout=0.001)  # Use timeout to avoid blocking forever
-        results.append(result_df)
-        processed += 1
+        # Create a simple queue-like list for single-core processing
+        class SimpleQueue:
+            def __init__(self):
+                self.items = []
+            def put(self, item):
+                self.items.append(item)
+            def get_all(self):
+                return self.items
 
-        # Update progress
-        if Verbose:
-            if progress_bar is not None:
-                progress_bar.update(1)
-            else:
-                # Fallback to percentage if tqdm is not available
-                percent_complete = (processed / total_stations) * 100
-                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-                sys.stdout.flush()
+        simple_queue = SimpleQueue()
+        processed = 0
+        
+        # Process all stations directly without multiprocessing
+        for Data, Core in zip(Positionlists, CoreList):
+            fortran_calls.fortrancallCone(Data, Core, RigidityArray, DateArray, Model, IntModel, ParticleArray, IOPT, WindArray, 
+                                        Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, simple_queue, g, h, MHDfile, MHDcoordsys,
+                                        spheresize, inputcoord)
+            
+            # Update progress after each station
+            processed += 1
+            if Verbose:
+                if progress_bar is not None:
+                    progress_bar.update(1)
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (processed / num_batches) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                    sys.stdout.flush()
+        
+        # Get all results
+        results = simple_queue.get_all()
+        
+        # Close progress bar if it was created
+        if progress_bar is not None:
+            progress_bar.close()
 
-      except queue.Empty:
-        # Queue is empty, but processes are still running, so we continue checking
-        pass
-      
-      time.sleep(0.0001)
+    else:
+        # Multi-core processing
+        try:
+            if not mp.get_start_method(allow_none=True):
+                mp.set_start_method('spawn')
+        except RuntimeError:
+            pass
+        
+        # Create a shared message queue for the processes to produce/consume data
+        ProcessQueue = mp.Manager().Queue()
+        for Data,Core in zip(Positionlists,CoreList):
+            Child = mp.Process(target=fortran_calls.fortrancallCone,  args=(Data, Core, RigidityArray, DateArray, Model, IntModel, ParticleArray, IOPT, WindArray, 
+                                                                            Magnetopause, CoordinateSystem, MaxStepPercent, EndParams, ProcessQueue,g,h,MHDfile, MHDcoordsys,
+                                                                            spheresize, inputcoord))
+            ChildProcesses.append(Child)
 
-    # Close progress bar if it was created
-    if progress_bar is not None:
-        progress_bar.close()
+        for a in ChildProcesses:
+            a.start()
 
-    # Ensure that all processes have completed
-    for b in ChildProcesses:
-        b.join()
+        # Wait for child processes to complete
+        processed = 0
+
+        # Initialize progress bar if tqdm is available and Verbose is True
+        progress_bar = None
+        if Verbose and tqdm is not None:
+            progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" cone")
+        elif Verbose:
+            # Fallback to simple counter if tqdm is not available
+            print(f"Processing {total_stations} stations...")
+
+        while processed < total_stations:
+          try:
+            # Check if the ProcessQueue has any new results
+            result_df = ProcessQueue.get(timeout=0.001)  # Use timeout to avoid blocking forever
+            results.append(result_df)
+            processed += 1
+
+            # Update progress
+            if Verbose:
+                if progress_bar is not None:
+                    progress_bar.update(1)
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (processed / total_stations) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                    sys.stdout.flush()
+
+          except queue.Empty:
+            # Queue is empty, but processes are still running, so we continue checking
+            pass
+          
+          time.sleep(0.0001)
+
+        # Close progress bar if it was created
+        if progress_bar is not None:
+            progress_bar.close()
+
+        # Ensure that all processes have completed
+        for b in ChildProcesses:
+            b.join()
 
     conedf_list = []
     Rigiditylist = []

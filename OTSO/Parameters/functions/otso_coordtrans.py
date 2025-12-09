@@ -42,66 +42,114 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
     if Verbose:
         print("OTSO Coordtrans Computation Started")
 
-
-    try:
-        if not mp.get_start_method(allow_none=True):
-            mp.set_start_method('spawn')
-    except RuntimeError:
-
-        pass
-# Create a shared message queue for the processes to produce/consume data
-    ProcessQueue = mp.Manager().Queue()
-    for Data,Date,g,h in zip(LocationsList,DateArrayList,glist,hlist):
-        Child = mp.Process(target=fortran_calls.fortrancallCoordtrans,  args=(Data, Date, CoordIN, CoordOUT, ProcessQueue, g, h))
-        ChildProcesses.append(Child)
-
-    for a in ChildProcesses:
-        a.start()
-
-# Wait for child processes to complete
-
-    results = []
     total_stations = len(Locations)
-    processed = 0
+    results = []
 
-    # Initialize progress bar if tqdm is available and Verbose is True
-    progress_bar = None
-    if Verbose and tqdm is not None:
-        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" transformation")
-    elif Verbose:
-        # Fallback to simple counter if tqdm is not available
-        print(f"Processing {total_stations} coordinates...")
+    if corenum == 1:
+        # Single core processing - avoid multiprocessing overhead
+        # When corenum=1, process all coordinates in batches
+        num_batches = len(LocationsList)
+        
+        # Initialize progress bar if tqdm is available and Verbose is True
+        progress_bar = None
+        if Verbose and tqdm is not None:
+            progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" transformation")
+        elif Verbose:
+            # Fallback to simple counter if tqdm is not available
+            print(f"Processing {total_stations} coordinates...")
 
-    while processed < total_stations:
-      try:
-        # Check if the ProcessQueue has any new results
-        result_df = ProcessQueue.get(timeout=0.001)  # Use timeout to avoid blocking forever
-        results.append(result_df)
-        processed += 1
+        # Create a simple queue-like list for single-core processing
+        class SimpleQueue:
+            def __init__(self):
+                self.items = []
+            def put(self, item):
+                self.items.append(item)
+            def get_all(self):
+                return self.items
 
-        # Update progress
-        if Verbose:
-            if progress_bar is not None:
-                progress_bar.update(1)
-            else:
-                # Fallback to percentage if tqdm is not available
-                percent_complete = (processed / total_stations) * 100
-                sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-                sys.stdout.flush()
+        simple_queue = SimpleQueue()
+        processed = 0
+        
+        # Process all coordinates directly without multiprocessing
+        for Data, Date, g, h in zip(LocationsList, DateArrayList, glist, hlist):
+            fortran_calls.fortrancallCoordtrans(Data, Date, CoordIN, CoordOUT, simple_queue, g, h)
+            
+            # Update progress after each batch
+            processed += len(Data)
+            if Verbose:
+                if progress_bar is not None:
+                    progress_bar.update(len(Data))
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (processed / total_stations) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                    sys.stdout.flush()
+        
+        # Get all results
+        results = simple_queue.get_all()
+        
+        # Close progress bar if it was created
+        if progress_bar is not None:
+            progress_bar.close()
 
-      except queue.Empty:
-        # Queue is empty, but processes are still running, so we continue checking
-        pass
-      
-      time.sleep(0.0001)
+    else:
+        # Multi-core processing
+        try:
+            if not mp.get_start_method(allow_none=True):
+                mp.set_start_method('spawn')
+        except RuntimeError:
+            pass
+        
+        # Create a shared message queue for the processes to produce/consume data
+        ProcessQueue = mp.Manager().Queue()
+        for Data,Date,g,h in zip(LocationsList,DateArrayList,glist,hlist):
+            Child = mp.Process(target=fortran_calls.fortrancallCoordtrans,  args=(Data, Date, CoordIN, CoordOUT, ProcessQueue, g, h))
+            ChildProcesses.append(Child)
 
-    # Close progress bar if it was created
-    if progress_bar is not None:
-        progress_bar.close()
+        for a in ChildProcesses:
+            a.start()
 
-    # Ensure that all processes have completed
-    for b in ChildProcesses:
-        b.join()
+        # Wait for child processes to complete
+        processed = 0
+
+        # Initialize progress bar if tqdm is available and Verbose is True
+        progress_bar = None
+        if Verbose and tqdm is not None:
+            progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" transformation")
+        elif Verbose:
+            # Fallback to simple counter if tqdm is not available
+            print(f"Processing {total_stations} coordinates...")
+
+        while processed < total_stations:
+          try:
+            # Check if the ProcessQueue has any new results
+            result_df = ProcessQueue.get(timeout=0.001)  # Use timeout to avoid blocking forever
+            results.append(result_df)
+            processed += 1
+
+            # Update progress
+            if Verbose:
+                if progress_bar is not None:
+                    progress_bar.update(1)
+                else:
+                    # Fallback to percentage if tqdm is not available
+                    percent_complete = (processed / total_stations) * 100
+                    sys.stdout.write(f"\r{percent_complete:.2f}% complete")
+                    sys.stdout.flush()
+
+          except queue.Empty:
+            # Queue is empty, but processes are still running, so we continue checking
+            pass
+          
+          time.sleep(0.0001)
+
+        # Close progress bar if it was created
+        if progress_bar is not None:
+            progress_bar.close()
+
+        # Ensure that all processes have completed
+        for b in ChildProcesses:
+            b.join()
 
     combined_df = pd.concat(results, ignore_index=True)
     sorted_df = combined_df.sort_values(by=combined_df.columns[:4].tolist())

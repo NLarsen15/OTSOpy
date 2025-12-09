@@ -128,8 +128,6 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
                 headers = ["Latitude", "Longitude", "Ru", "Rc", "Rl"]
             writer.writerow(headers)
 
-    ProcessQueue = mp.Manager().Queue()
-
     results = []
     resultsfinal = []
     processed = 0
@@ -138,75 +136,142 @@ def OTSO_planet(startaltitude,cutoff_comp,minaltitude,maxdistance,maxtime,
     if Verbose:
         print("OTSO Planet Computation Started")
 
-    try:
-        if not mp.get_start_method(allow_none=True):
-            mp.set_start_method('spawn')
-    except RuntimeError:
-        pass
-
-    ChildProcesses = []
-    for Data, Core, planetfile in zip(DataLists, CoreList, planet_list):
-            Child = mp.Process(target=fortran_calls.fortrancallPlanet,  args=(Data, RigidityArray, DateArray, Model, IntModel, 
-                                                                              ParticleArray, IOPT, WindArray, 
-                                                                              Magnetopause, MaxStepPercent, EndParams, 
-                                                                              Rcomp, Rscan, asymptotic, asymlevels, unit,
-                                                                              ProcessQueue,g,h,planetfile, MHDfile, MHDcoordsys,
-                                                                              spheresize,inputcoord))
-            ChildProcesses.append(Child)
+    if actual_cores_to_use == 1:
+        # Single core processing - avoid multiprocessing overhead
+        # When actual_cores_to_use=1, all points processed in batches
+        num_batches = len(DataLists)
         
-    for a in ChildProcesses:
-        a.start()
+        # Initialize progress bar if tqdm is available and Verbose is True
+        progress_bar = None
+        if Verbose and tqdm is not None:
+            progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" location")
+        elif Verbose:
+            # Fallback to simple counter if tqdm is not available
+            print(f"Processing {totalprocesses} grid points...")
 
-    # Initialize progress bar if tqdm is available and Verbose is True
-    progress_bar = None
-    if Verbose and tqdm is not None:
-        progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" location")
-    elif Verbose:
-        # Fallback to simple counter if tqdm is not available
-        print(f"Processing {totalprocesses} grid points...")
- 
-    while processed < totalprocesses:
-        try:
-            result_collector = []
-            while True:
-                try:
-                    countint = ProcessQueue.get(timeout=0.001)
-                    result_collector.append(countint)
-                    processed += 1
-                except queue.Empty:
-                    break
-    
-            # Update totalp with the sum of items processed by cores
-            if result_collector:
-                totalp = totalp + sum(result_collector)
+        # Create a simple queue-like list for single-core processing
+        class SimpleQueue:
+            def __init__(self):
+                self.items = []
+            def put(self, item):
+                self.items.append(item)
+            def get_all(self):
+                return self.items
+
+        simple_queue = SimpleQueue()
+        
+        # Process all data directly without multiprocessing
+        # When single-core, process each item individually to show progress
+        for Data, Core, planetfile in zip(DataLists, CoreList, planet_list):
+            for single_item in Data:
+                # Process one coordinate at a time
+                fortran_calls.fortrancallPlanet([single_item], RigidityArray, DateArray, Model, IntModel, 
+                                              ParticleArray, IOPT, WindArray, 
+                                              Magnetopause, MaxStepPercent, EndParams, 
+                                              Rcomp, Rscan, asymptotic, asymlevels, unit,
+                                              simple_queue, g, h, planetfile, MHDfile, MHDcoordsys,
+                                              spheresize, inputcoord)
+                
+                # Update progress after each coordinate
+                if simple_queue.items:
+                    batch_count = sum(simple_queue.items)
+                    totalp += batch_count
+                    processed += batch_count
+                    
+                    # Update progress
+                    if Verbose:
+                        if progress_bar is not None:
+                            # Update progress bar with the actual number of items processed
+                            progress_bar.update(batch_count)
+                            progress_bar.set_description(f"OTSO Running ({totalp}/{totalprocesses})")
+                        else:
+                            # Fallback to percentage if tqdm is not available
+                            percent_complete = (totalp / totalprocesses) * 100
+                            sys.stdout.write(f"\r{percent_complete:.2f}% complete ({totalp}/{totalprocesses} points)")
+                            sys.stdout.flush()
+                    
+                    # Clear simple queue for next item
+                    simple_queue.items = []
             
             gc.collect()
-            # Update progress
-            if Verbose:
-                if progress_bar is not None:
-                    # Update progress bar with the actual number of items processed
-                    progress_bar.update(sum(result_collector) if result_collector else 0)
-                    # Update the description to show current progress
-                    progress_bar.set_description(f"OTSO Running ({totalp}/{totalprocesses})")
-                else:
-                    # Fallback to percentage if tqdm is not available
-                    percent_complete = (totalp / totalprocesses) * 100
-                    sys.stdout.write(f"\r{percent_complete:.2f}% complete ({totalp}/{totalprocesses} points)")
-                    sys.stdout.flush()
-
-    
-        except queue.Empty:
-            pass
         
-        time.sleep(0.5)
+        # Close progress bar if it was created
+        if progress_bar is not None:
+            progress_bar.close()
 
-    # Close progress bar if it was created
-    if progress_bar is not None:
-        progress_bar.close()
+    else:
+        # Multi-core processing
+        ProcessQueue = mp.Manager().Queue()
 
-    for b in ChildProcesses:
-        b.join()
-        b.close()
+        try:
+            if not mp.get_start_method(allow_none=True):
+                mp.set_start_method('spawn')
+        except RuntimeError:
+            pass
+
+        ChildProcesses = []
+        for Data, Core, planetfile in zip(DataLists, CoreList, planet_list):
+                Child = mp.Process(target=fortran_calls.fortrancallPlanet,  args=(Data, RigidityArray, DateArray, Model, IntModel, 
+                                                                                  ParticleArray, IOPT, WindArray, 
+                                                                                  Magnetopause, MaxStepPercent, EndParams, 
+                                                                                  Rcomp, Rscan, asymptotic, asymlevels, unit,
+                                                                                  ProcessQueue,g,h,planetfile, MHDfile, MHDcoordsys,
+                                                                                  spheresize,inputcoord))
+                ChildProcesses.append(Child)
+            
+        for a in ChildProcesses:
+            a.start()
+
+        # Initialize progress bar if tqdm is available and Verbose is True
+        progress_bar = None
+        if Verbose and tqdm is not None:
+            progress_bar = tqdm(total=totalprocesses, desc="OTSO Running", unit=" location")
+        elif Verbose:
+            # Fallback to simple counter if tqdm is not available
+            print(f"Processing {totalprocesses} grid points...")
+     
+        while processed < totalprocesses:
+            try:
+                result_collector = []
+                while True:
+                    try:
+                        countint = ProcessQueue.get(timeout=0.001)
+                        result_collector.append(countint)
+                        processed += 1
+                    except queue.Empty:
+                        break
+        
+                # Update totalp with the sum of items processed by cores
+                if result_collector:
+                    totalp = totalp + sum(result_collector)
+                
+                gc.collect()
+                # Update progress
+                if Verbose:
+                    if progress_bar is not None:
+                        # Update progress bar with the actual number of items processed
+                        progress_bar.update(sum(result_collector) if result_collector else 0)
+                        # Update the description to show current progress
+                        progress_bar.set_description(f"OTSO Running ({totalp}/{totalprocesses})")
+                    else:
+                        # Fallback to percentage if tqdm is not available
+                        percent_complete = (totalp / totalprocesses) * 100
+                        sys.stdout.write(f"\r{percent_complete:.2f}% complete ({totalp}/{totalprocesses} points)")
+                        sys.stdout.flush()
+
+        
+            except queue.Empty:
+                pass
+            
+            time.sleep(0.5)
+
+        # Close progress bar if it was created
+        if progress_bar is not None:
+            progress_bar.close()
+
+        for b in ChildProcesses:
+            b.join()
+            b.close()
 
     processed = 0
     
