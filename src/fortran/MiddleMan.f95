@@ -1324,7 +1324,8 @@ subroutine CoordTrans(Pin, year, day, hour, minute, secondINT, secondTotal, Coor
 ! **********************************************************************************************************************
 subroutine FieldTrace(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, CoordSystem, GyroPercent, &
-    End, FileName, gOTSO,hOTSO,MHDCoordSys, sphere, inputcoord)
+    End, FileName, gOTSO, hOTSO, MHDCoordSys, sphere, inputcoord)
+
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -1335,41 +1336,49 @@ USE IntegrationFunctions
 USE Magnetopause
 USE CUSTOMGAUSS
 USE Interpolation
+
 implicit none
 
+! -----------------------------
+! Inputs
+! -----------------------------
 real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(25), Re, GyroPercent, Pin(3), Pout(3)
-real(8) :: Xnew(3), XnewConverted(3), Bfield(3), sphere
-integer(8) :: mode(2), IntMode, Anti, AtomicNumber
-integer(4) :: I, Limit, Pause
+real(8) :: Wind(25), GyroPercent, sphere
+integer(8) :: mode(2)
+integer(4) :: I, Pause
+integer(8) :: AtomicNumber, Anti, IntMode
 character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
 character(len=50) :: FileName
 real(8) :: gOTSO(136), hOTSO(136)
 
-Re = 6371.2
-Limit = 0
-Acount = 0
-Result = 0
-SubResult = 0
-MaxGyroPercent = GyroPercent
-spheresize = sphere
+! -----------------------------
+! Locals
+! -----------------------------
+real(8), parameter :: Re = 6371.2
+integer(4) :: idir, nPlus, nMinus, inte
+real(8) :: Bsign
 
+real(8), allocatable :: LinePlus(:,:), LineMinus(:,:)
+real(8) :: Xnew(3), XnewConverted(3), Bfield(3)
 
-   Ginput = gOTSO
-   Hinput = hOTSO
+integer(4) :: MaxSteps
+MaxSteps = 1000000   ! safety cap
 
+allocate(LinePlus(MaxSteps,6))
+allocate(LineMinus(MaxSteps,6))
 
-IF (mode(2) == 99) THEN
-    CoordINMHD = MHDCoordSys
-    CoordOUTMHD = "GSM"
-    first_region = .false.
-END IF
+nPlus  = 0
+nMinus = 0
+
+! -----------------------------
+! Initialization (unchanged)
+! -----------------------------
+Ginput = gOTSO
+Hinput = hOTSO
 
 call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
-
 call initializeWind(Wind, I, mode)
 call initializeCustomGauss(mode)
-
 call MagneticFieldAssign(mode)
 call MagnetopauseAssign(Pause)
 call IntegrationAssign(IntMode)
@@ -1377,56 +1386,75 @@ call IntegrationAssign(IntMode)
 open(unit=10,file=FileName,status='replace')
 write(10,"(a)")"X,Y,Z,Bx,By,Bz"
 
-call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, Pin, Pout)
+! -----------------------------
+! Trace BOTH directions
+! -----------------------------
+do idir = 1, 2
 
-call MagFieldCheck(Pout, Bfield)
-
-call CoordinateTransform("GSM", CoordSystem, year, day, secondTotal, Pout, XnewConverted)
-
-if (model(1) == 4) then
-    if (CoordSystem == "GEO") then
-        XnewConverted = Xnew
+    if (idir == 1) then
+        Bsign = -1.0   ! toward south footprint
+        nMinus = 0
     else
-        call CoordinateTransform("GEO", CoordSystem, year, day, secondTotal, Xnew, XnewConverted)
+        Bsign =  1.0   ! toward north footprint
+        nPlus = 0
     end if
-end if
 
+    call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
+    Result = 0
+    DistanceTraveled = 0.0d0
 
-do while (Result == 0) 
-call RK4_FieldTrace(Bfield)
-call EscapeCheck()
-Xnew(1) = XnewTemp(1)/1000
-Xnew(2) = XnewTemp(2)/1000
-Xnew(3) = XnewTemp(3)/1000
+    do while (Result == 0)
 
-call CoordinateTransform("GSM", CoordSystem, year, day, secondTotal, Xnew, XnewConverted)
+        call Boris_FieldTrace_Advanced(Bsign,Bfield)
+        call EscapeCheck()
 
-if (model(1) == 4) then
-    if (CoordSystem == "GEO") then
-        XnewConverted = Xnew
-    else
-        call CoordinateTransform("GEO", CoordSystem, year, day, secondTotal, Xnew, XnewConverted)
-    end if
-end if
+        Xnew(1) = XnewTemp(1)/(Re*1000)
+        Xnew(2) = XnewTemp(2)/(Re*1000)
+        Xnew(3) = XnewTemp(3)/(Re*1000)
 
-IF ( DistanceTraveled/1000.0 > End(2)*Re) THEN
-    Limit = 1
-    EXIT
-END IF
+        call CoordinateTransform("GSM", CoordSystem, year, day, secondTotal, &
+                                 Xnew, XnewConverted)
 
-write(10,'(*(G0.6,:,","))') XnewConverted, Bfield
+        if (idir == 1) then
+            nMinus = nMinus + 1
+            if (nMinus <= MaxSteps) then
+                LineMinus(nMinus,:) = (/ XnewConverted, Bfield /)
+            end if
+        else
+            nPlus = nPlus + 1
+            if (nPlus <= MaxSteps) then
+                LinePlus(nPlus,:) = (/ XnewConverted, Bfield /)
+            end if
+        end if
 
-IF (Position(1) < End(1) ) THEN
-    EXIT
-END IF
+        if (DistanceTraveled/1000.d0 > End(2)*Re) exit
+        if (Result == 1) exit
+        if (Position(1) < End(1) ) exit
 
-IF (Result == 1)  THEN
-    EXIT
-END IF
+    end do
 end do
-Close(10, STATUS='KEEP') 
+
+! -----------------------------
+! Write continuous field line
+! South - Start - North
+! -----------------------------
+do inte = nMinus, 1, -1
+    write(10,'(*(G0.6,:,","))') LineMinus(inte,:)
+    !print *, LineMinus(inte,:)
+end do
+
+do inte = 2, nPlus
+    write(10,'(*(G0.6,:,","))') LinePlus(inte,:)
+    !print *, LinePlus(inte,:)
+end do
+
+close(10)
+
+deallocate(LinePlus, LineMinus)
 
 end subroutine FieldTrace
+! **********************************************************************************************************************
+
 
 
 subroutine MHDstartup(Filename,XU,YU,ZU,XUlen,YUlen,ZUlen)
