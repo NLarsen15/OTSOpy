@@ -151,3 +151,32 @@ def IOPTprocess(Kp):
         IOPT = Kp + 1
 
     return IOPT
+
+    def Lshell(Trace):
+        
+    Bx = Trace["Bx_GSM [nT]"]
+    By = Trace["By_GSM [nT]"]
+    Bz = Trace["Bz_GSM [nT]"]
+
+    Bmag = np.sqrt(Bx**2 + By**2 + Bz**2)
+    idx_min = Bmag.idxmin()
+
+    # Check for alt [km] column
+    if "alt [km]" in Trace.columns:
+        # Use altitude at min B, convert to Earth radii
+        alt_km = Trace.loc[idx_min, "alt [km]"]
+        L = (alt_km+6371.0) / 6371.0
+    else:
+        Xmin = Trace.loc[idx_min, "X_GEO [Re]"]
+        Ymin = Trace.loc[idx_min, "Y_GEO [Re]"]
+        Zmin = Trace.loc[idx_min, "Z_GEO [Re]"]
+        L = np.sqrt(Xmin**2 + Ymin**2 + Zmin**2)
+
+    invlat = invariant_latitude_from_L(L)
+
+    return L, invlat
+
+def invariant_latitude_from_L(L):
+    if L <= 1.0:
+        return np.nan
+    return np.degrees(np.arccos(1.0 / np.sqrt(L)))

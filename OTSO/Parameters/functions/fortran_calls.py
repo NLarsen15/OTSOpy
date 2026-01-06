@@ -342,6 +342,8 @@ def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, 
       
       Position = [x[3],x[1],x[2],x[4],x[5]]
 
+      print(Position)
+
       AtomicNum = ParticleArray[0]
       AntiCheck = ParticleArray[1]
 
@@ -350,7 +352,26 @@ def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, 
 
       OTSOLib.fieldtrace(Position, Rigidity, DateArray, model, IntModel, AtomicNum, AntiCheck, IOPT, WindArray, Magnetopause, CoordinateSystem, MaxStepPercent,
                           EndParams, Filename, g, h, MHDCoordSys,spheresize, inputcoord)
-      Trace = pd.read_csv(Filename)
+      import time
+      max_retries = 5
+      retry_delay = 0.2  # seconds
+      attempt = 0
+      while attempt < max_retries:
+        if not os.path.exists(Filename):
+          #print(f"[fortrancallTrace] File not found: {Filename} (attempt {attempt+1}/{max_retries})")
+          time.sleep(retry_delay)
+          attempt += 1
+          continue
+        try:
+          Trace = pd.read_csv(Filename)
+          break
+        except Exception as e:
+          #print(f"[fortrancallTrace] Error reading {Filename} (attempt {attempt+1}/{max_retries}): {e}")
+          time.sleep(retry_delay)
+          attempt += 1
+      else:
+        #print(f"[fortrancallTrace] Failed to read {Filename} after {max_retries} attempts. Skipping this trace.")
+        continue
       coordsystem2 = "GSM"
       columns = Trace.columns
 
@@ -362,9 +383,17 @@ def fortrancallTrace(Data, Rigidity, DateArray, model, IntModel, ParticleArray, 
       Trace.columns = new_columns
 
       Trace.columns = new_columns
-            
-      dataframe_dict = {name: Trace}
-  
+
+      L, invlat = Lshell(Trace)
+      # Round to 4 decimal places and convert to float
+      L = round(float(L), 4)
+      invlat = round(float(invlat), 4)
+      dataframe_dict = {
+        name: {
+          "Trace": Trace,
+          "L_shell": L,
+          "Invariant_Latitude": invlat
+        }}  
       queue.put(dataframe_dict)
       os.remove(Filename)
     
