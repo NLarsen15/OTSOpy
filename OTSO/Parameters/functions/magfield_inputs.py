@@ -33,6 +33,9 @@ def MagFieldInputs(Locations,
     
     if internalmag == "NONE":
          Internal = 0
+         coeffs = compute_gauss_coefficients(DateArray)
+         g = coeffs['G_coefficients']
+         h = coeffs['H_coefficients']
          if g is None or h is None or len(g) == 0 or len(h) == 0: 
             g = [0] * 136
             h = [0] * 136
