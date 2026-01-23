@@ -1,0 +1,38 @@
+﻿2026-01-23T03:30:47.6103666Z ##[group]Run actions/checkout@v4
+2026-01-23T03:30:47.6105260Z with:
+2026-01-23T03:30:47.6105960Z   repository: NLarsen15/OTSOtest
+2026-01-23T03:30:47.6107202Z   token: ***
+2026-01-23T03:30:47.6107878Z   ssh-strict: true
+2026-01-23T03:30:47.6108570Z   ssh-user: git
+2026-01-23T03:30:47.6109277Z   persist-credentials: true
+2026-01-23T03:30:47.6110062Z   clean: true
+2026-01-23T03:30:47.6110789Z   sparse-checkout-cone-mode: true
+2026-01-23T03:30:47.6111653Z   fetch-depth: 1
+2026-01-23T03:30:47.6112337Z   fetch-tags: false
+2026-01-23T03:30:47.6113070Z   show-progress: true
+2026-01-23T03:30:47.6113819Z   lfs: false
+2026-01-23T03:30:47.6114554Z   submodules: false
+2026-01-23T03:30:47.6115415Z   set-safe-directory: true
+2026-01-23T03:30:47.6116505Z ##[endgroup]
+2026-01-23T03:30:49.5546110Z Syncing repository: NLarsen15/OTSOtest
+2026-01-23T03:30:49.5547671Z ##[group]Getting Git version info
+2026-01-23T03:30:49.5548878Z Working directory is 'D:\a\OTSOtest\OTSOtest'
+2026-01-23T03:30:49.5549639Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-01-23T03:30:49.5550040Z git version 2.52.0.windows.1
+2026-01-23T03:30:49.5551425Z ##[endgroup]
+2026-01-23T03:30:49.5557667Z Temporarily overriding HOME='D:\a\_temp\16ec65bb-37a8-4d0f-bd18-7c5d853ddb88' before making global git config changes
+2026-01-23T03:30:49.5558832Z Adding repository directory to the temporary git global config as a safe directory
+2026-01-23T03:30:49.5559866Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\OTSOtest\OTSOtest
+2026-01-23T03:30:49.5561927Z Deleting the contents of 'D:\a\OTSOtest\OTSOtest'
+2026-01-23T03:30:49.5562956Z ##[group]Initializing the repository
+2026-01-23T03:30:49.5563750Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\OTSOtest\OTSOtest
+2026-01-23T03:30:49.5564625Z Initialized empty Git repository in D:/a/OTSOtest/OTSOtest/.git/
+2026-01-23T03:30:49.5570146Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/NLarsen15/OTSOtest
+2026-01-23T03:30:49.5572274Z ##[endgroup]
+2026-01-23T03:30:49.5573163Z ##[group]Disabling automatic garbage collection
+2026-01-23T03:30:49.5574295Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-01-23T03:30:49.5576093Z ##[endgroup]
+2026-01-23T03:30:49.5577070Z ##[group]Setting up auth
+2026-01-23T03:30:49.5578016Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-01-23T03:30:49.5581447Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-01-23T03:30:50.7801809Z ##[error]The operation was canceled.

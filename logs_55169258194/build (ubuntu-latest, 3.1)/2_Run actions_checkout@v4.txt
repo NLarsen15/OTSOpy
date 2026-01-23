@@ -1,0 +1,72 @@
+﻿2026-01-23T03:30:46.5508750Z ##[group]Run actions/checkout@v4
+2026-01-23T03:30:46.5509648Z with:
+2026-01-23T03:30:46.5510087Z   repository: NLarsen15/OTSOtest
+2026-01-23T03:30:46.5510776Z   token: ***
+2026-01-23T03:30:46.5511185Z   ssh-strict: true
+2026-01-23T03:30:46.5511596Z   ssh-user: git
+2026-01-23T03:30:46.5512015Z   persist-credentials: true
+2026-01-23T03:30:46.5512482Z   clean: true
+2026-01-23T03:30:46.5512904Z   sparse-checkout-cone-mode: true
+2026-01-23T03:30:46.5513428Z   fetch-depth: 1
+2026-01-23T03:30:46.5513829Z   fetch-tags: false
+2026-01-23T03:30:46.5514260Z   show-progress: true
+2026-01-23T03:30:46.5515029Z   lfs: false
+2026-01-23T03:30:46.5515447Z   submodules: false
+2026-01-23T03:30:46.5515896Z   set-safe-directory: true
+2026-01-23T03:30:46.5516666Z ##[endgroup]
+2026-01-23T03:30:46.6700008Z Syncing repository: NLarsen15/OTSOtest
+2026-01-23T03:30:46.6702491Z ##[group]Getting Git version info
+2026-01-23T03:30:46.6703411Z Working directory is '/home/runner/work/OTSOtest/OTSOtest'
+2026-01-23T03:30:46.6711530Z [command]/usr/bin/git version
+2026-01-23T03:30:46.6762781Z git version 2.52.0
+2026-01-23T03:30:46.6793291Z ##[endgroup]
+2026-01-23T03:30:46.6808443Z Temporarily overriding HOME='/home/runner/work/_temp/68300030-2509-42dc-a199-be6214c422d5' before making global git config changes
+2026-01-23T03:30:46.6814789Z Adding repository directory to the temporary git global config as a safe directory
+2026-01-23T03:30:46.6827701Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/OTSOtest/OTSOtest
+2026-01-23T03:30:46.6870692Z Deleting the contents of '/home/runner/work/OTSOtest/OTSOtest'
+2026-01-23T03:30:46.6875472Z ##[group]Initializing the repository
+2026-01-23T03:30:46.6880505Z [command]/usr/bin/git init /home/runner/work/OTSOtest/OTSOtest
+2026-01-23T03:30:46.6993971Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-01-23T03:30:46.6997159Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-01-23T03:30:46.6999814Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-01-23T03:30:46.7001163Z hint: call:
+2026-01-23T03:30:46.7001873Z hint:
+2026-01-23T03:30:46.7002829Z hint: 	git config --global init.defaultBranch <name>
+2026-01-23T03:30:46.7004038Z hint:
+2026-01-23T03:30:46.7005488Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-01-23T03:30:46.7007334Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-01-23T03:30:46.7008828Z hint:
+2026-01-23T03:30:46.7009548Z hint: 	git branch -m <name>
+2026-01-23T03:30:46.7010408Z hint:
+2026-01-23T03:30:46.7011527Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-01-23T03:30:46.7015012Z Initialized empty Git repository in /home/runner/work/OTSOtest/OTSOtest/.git/
+2026-01-23T03:30:46.7018599Z [command]/usr/bin/git remote add origin https://github.com/NLarsen15/OTSOtest
+2026-01-23T03:30:46.7058314Z ##[endgroup]
+2026-01-23T03:30:46.7059754Z ##[group]Disabling automatic garbage collection
+2026-01-23T03:30:46.7062622Z [command]/usr/bin/git config --local gc.auto 0
+2026-01-23T03:30:46.7096166Z ##[endgroup]
+2026-01-23T03:30:46.7097576Z ##[group]Setting up auth
+2026-01-23T03:30:46.7103307Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-01-23T03:30:46.7137309Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-01-23T03:30:46.7520248Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-01-23T03:30:46.7555376Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-01-23T03:30:46.7790806Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-01-23T03:30:46.7825764Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-01-23T03:30:46.8070625Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-01-23T03:30:46.8107911Z ##[endgroup]
+2026-01-23T03:30:46.8109565Z ##[group]Fetching the repository
+2026-01-23T03:30:46.8118137Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +41c3b196cc4f707cfc416c1d8d06be166683880e:refs/remotes/origin/main
+2026-01-23T03:30:47.4313799Z From https://github.com/NLarsen15/OTSOtest
+2026-01-23T03:30:47.4317970Z  * [new ref]         41c3b196cc4f707cfc416c1d8d06be166683880e -> origin/main
+2026-01-23T03:30:47.4350573Z ##[endgroup]
+2026-01-23T03:30:47.4352295Z ##[group]Determining the checkout info
+2026-01-23T03:30:47.4355052Z ##[endgroup]
+2026-01-23T03:30:47.4357976Z [command]/usr/bin/git sparse-checkout disable
+2026-01-23T03:30:47.4400922Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-01-23T03:30:47.4432079Z ##[group]Checking out the ref
+2026-01-23T03:30:47.4435943Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-01-23T03:30:47.5559659Z Switched to a new branch 'main'
+2026-01-23T03:30:47.5561936Z branch 'main' set up to track 'origin/main'.
+2026-01-23T03:30:47.5692200Z ##[endgroup]
+2026-01-23T03:30:47.5695515Z [command]/usr/bin/git log -1 --format=%H
+2026-01-23T03:30:47.5697188Z 41c3b196cc4f707cfc416c1d8d06be166683880e

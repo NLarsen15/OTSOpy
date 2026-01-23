@@ -1,0 +1,73 @@
+﻿2026-01-23T03:30:45.0910700Z ##[group]Run actions/checkout@v4
+2026-01-23T03:30:45.0911270Z with:
+2026-01-23T03:30:45.0911560Z   repository: NLarsen15/OTSOtest
+2026-01-23T03:30:45.0912090Z   token: ***
+2026-01-23T03:30:45.0912360Z   ssh-strict: true
+2026-01-23T03:30:45.0912650Z   ssh-user: git
+2026-01-23T03:30:45.0912940Z   persist-credentials: true
+2026-01-23T03:30:45.0913270Z   clean: true
+2026-01-23T03:30:45.0913570Z   sparse-checkout-cone-mode: true
+2026-01-23T03:30:45.0913920Z   fetch-depth: 1
+2026-01-23T03:30:45.0914200Z   fetch-tags: false
+2026-01-23T03:30:45.0914490Z   show-progress: true
+2026-01-23T03:30:45.0914770Z   lfs: false
+2026-01-23T03:30:45.0915050Z   submodules: false
+2026-01-23T03:30:45.0915330Z   set-safe-directory: true
+2026-01-23T03:30:45.0915740Z ##[endgroup]
+2026-01-23T03:30:45.4898910Z Syncing repository: NLarsen15/OTSOtest
+2026-01-23T03:30:45.4901620Z ##[group]Getting Git version info
+2026-01-23T03:30:45.4902240Z Working directory is '/Users/runner/work/OTSOtest/OTSOtest'
+2026-01-23T03:30:45.4902990Z [command]/opt/homebrew/bin/git version
+2026-01-23T03:30:45.5352500Z git version 2.52.0
+2026-01-23T03:30:45.5391380Z ##[endgroup]
+2026-01-23T03:30:45.5404310Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/664d90a8-c00b-42f3-8523-a0b4d7abce6d/.gitconfig'
+2026-01-23T03:30:45.5431290Z Temporarily overriding HOME='/Users/runner/work/_temp/664d90a8-c00b-42f3-8523-a0b4d7abce6d' before making global git config changes
+2026-01-23T03:30:45.5453640Z Adding repository directory to the temporary git global config as a safe directory
+2026-01-23T03:30:45.5457040Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/OTSOtest/OTSOtest
+2026-01-23T03:30:45.5593350Z Deleting the contents of '/Users/runner/work/OTSOtest/OTSOtest'
+2026-01-23T03:30:45.5597620Z ##[group]Initializing the repository
+2026-01-23T03:30:45.5602920Z [command]/opt/homebrew/bin/git init /Users/runner/work/OTSOtest/OTSOtest
+2026-01-23T03:30:45.5817870Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-01-23T03:30:45.5827550Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-01-23T03:30:45.5828570Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-01-23T03:30:45.5829140Z hint: call:
+2026-01-23T03:30:45.5829430Z hint:
+2026-01-23T03:30:45.5829870Z hint: 	git config --global init.defaultBranch <name>
+2026-01-23T03:30:45.5830380Z hint:
+2026-01-23T03:30:45.5830890Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-01-23T03:30:45.5831530Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-01-23T03:30:45.5832070Z hint:
+2026-01-23T03:30:45.5832380Z hint: 	git branch -m <name>
+2026-01-23T03:30:45.5832740Z hint:
+2026-01-23T03:30:45.5833190Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-01-23T03:30:45.5833890Z Initialized empty Git repository in /Users/runner/work/OTSOtest/OTSOtest/.git/
+2026-01-23T03:30:45.5835340Z [command]/opt/homebrew/bin/git remote add origin https://github.com/NLarsen15/OTSOtest
+2026-01-23T03:30:45.5919330Z ##[endgroup]
+2026-01-23T03:30:45.5920360Z ##[group]Disabling automatic garbage collection
+2026-01-23T03:30:45.5920910Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-01-23T03:30:45.6015620Z ##[endgroup]
+2026-01-23T03:30:45.6017950Z ##[group]Setting up auth
+2026-01-23T03:30:45.6020120Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-01-23T03:30:45.6079920Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-01-23T03:30:45.7255430Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-01-23T03:30:45.7341840Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-01-23T03:30:45.8503820Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-01-23T03:30:45.8521170Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-01-23T03:30:45.9694730Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-01-23T03:30:45.9810630Z ##[endgroup]
+2026-01-23T03:30:45.9812330Z ##[group]Fetching the repository
+2026-01-23T03:30:45.9824560Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +41c3b196cc4f707cfc416c1d8d06be166683880e:refs/remotes/origin/main
+2026-01-23T03:30:47.2674460Z From https://github.com/NLarsen15/OTSOtest
+2026-01-23T03:30:47.2776540Z  * [new ref]         41c3b196cc4f707cfc416c1d8d06be166683880e -> origin/main
+2026-01-23T03:30:47.3010660Z ##[endgroup]
+2026-01-23T03:30:47.3040160Z ##[group]Determining the checkout info
+2026-01-23T03:30:47.3056840Z ##[endgroup]
+2026-01-23T03:30:47.3059980Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-01-23T03:30:47.3174700Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-01-23T03:30:47.3211870Z ##[group]Checking out the ref
+2026-01-23T03:30:47.3212940Z [command]/opt/homebrew/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-01-23T03:30:47.5374380Z Switched to a new branch 'main'
+2026-01-23T03:30:47.5392040Z branch 'main' set up to track 'origin/main'.
+2026-01-23T03:30:47.5453500Z ##[endgroup]
+2026-01-23T03:30:47.5661680Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-01-23T03:30:47.5707270Z 41c3b196cc4f707cfc416c1d8d06be166683880e
