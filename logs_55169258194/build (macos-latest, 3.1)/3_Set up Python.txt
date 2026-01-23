@@ -1,0 +1,13 @@
+﻿2026-01-23T03:30:48.7750490Z ##[group]Run actions/setup-python@v5
+2026-01-23T03:30:48.7751830Z with:
+2026-01-23T03:30:48.7752410Z   python-version: 3.1
+2026-01-23T03:30:48.7753090Z   check-latest: false
+2026-01-23T03:30:48.7754110Z   token: ***
+2026-01-23T03:30:48.7754720Z   update-environment: true
+2026-01-23T03:30:48.7755420Z   allow-prereleases: false
+2026-01-23T03:30:48.7756260Z   freethreaded: false
+2026-01-23T03:30:48.7756920Z ##[endgroup]
+2026-01-23T03:30:48.9290390Z ##[group]Installed versions
+2026-01-23T03:30:48.9331360Z Version 3.1 was not found in the local cache
+2026-01-23T03:30:50.0093410Z ##[error]The version '3.1' with architecture 'arm64' was not found for macOS 15.7.3.
+The list of all available versions can be found here: https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json

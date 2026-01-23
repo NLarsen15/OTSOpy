@@ -1,0 +1,16 @@
+﻿2026-01-23T03:30:48.5353369Z ##[group]Run actions/setup-python@v5
+2026-01-23T03:30:48.5354585Z with:
+2026-01-23T03:30:48.5355411Z   python-version: 3.8
+2026-01-23T03:30:48.5356353Z   check-latest: false
+2026-01-23T03:30:48.5357707Z   token: ***
+2026-01-23T03:30:48.5358589Z   update-environment: true
+2026-01-23T03:30:48.5359638Z   allow-prereleases: false
+2026-01-23T03:30:48.5360656Z   freethreaded: false
+2026-01-23T03:30:48.5361802Z ##[endgroup]
+2026-01-23T03:30:48.7151934Z ##[group]Installed versions
+2026-01-23T03:30:48.7484506Z Version 3.8 was not found in the local cache
+2026-01-23T03:30:49.3724748Z Version 3.8 is available for downloading
+2026-01-23T03:30:49.3727326Z Download from "https://github.com/actions/python-versions/releases/download/3.8.18-12303122501/python-3.8.18-linux-24.04-x64.tar.gz"
+2026-01-23T03:30:50.3793589Z Extract downloaded archive
+2026-01-23T03:30:50.3927097Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/86c9e69a-724a-44ff-9a52-22abf5d32cbc -f /home/runner/work/_temp/39b9dd99-ddaf-4ded-a2a1-e4ab891cf4a4
+2026-01-23T03:30:50.5705219Z ##[error]The operation was canceled.

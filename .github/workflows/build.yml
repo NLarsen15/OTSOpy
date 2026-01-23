@@ -1,0 +1,46 @@
+name: Build Fortran Extensions
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.12]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install gfortran (Linux only)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y gfortran
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy pandas ninja meson
+
+    - name: Compile Fortran with f2py
+      run: |
+        cd src/fortran
+        python -m numpy.f2py -c *.f95 *.f *.for -m MiddleMan
+        cd ../..
+        mkdir -p OTSO/Parameters/functions
+        cp src/fortran/MiddleMan.* OTSO/Parameters/functions/
+
+    - name: Upload compiled library
+      uses: actions/upload-artifact@v4
+      with:
+        name: MiddleMan-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: OTSO/Parameters/functions/MiddleMan.*
