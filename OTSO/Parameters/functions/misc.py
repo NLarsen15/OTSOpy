@@ -5,6 +5,7 @@ import glob
 import multiprocessing as mp
 import shutil
 from datetime import datetime,timedelta
+import numpy as np
 
 def ParamCheck(Alt, Year, Internal, EndParams):
        if EndParams[0] > Alt:
@@ -152,7 +153,7 @@ def IOPTprocess(Kp):
 
     return IOPT
 
-    def Lshell(Trace):
+def Lshell(Trace):
         
     Bx = Trace["Bx_GSM [nT]"]
     By = Trace["By_GSM [nT]"]
