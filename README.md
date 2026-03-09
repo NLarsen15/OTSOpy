@@ -28,10 +28,10 @@ This will install OTSO into your current Python environment.
 
 # Troubleshooting
 
-__LINUX__
+## LINUX
 Sometimes there are errors regarding libgfortran. Make a note of the libgfortran error message and then install the appropriate libgfortran version that is being requested. This should resolve the issue.
 
-__MAC__
+## MAC
 The compiled fortran libraries can be flagged as potential malware. To resolve this you can attempt to compile the libraries yourself or in your settings grant permission for your computer to access the required .so file. 
 
 # Functions
