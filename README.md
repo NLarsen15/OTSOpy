@@ -6,7 +6,7 @@ Python package version of the OTSO tool used for trajectory computations of char
 OTSO is designed to be open-source; all suggestions for improvement are welcome, and please report any bugs you find. I welcome any help provided by the community in the development of OTSO.
 
 __Supported Python Versions:__ 3.10, 3.11, 3.12, 3.13, and 3.14 
-(I will endevour to keep OTSO support as up to date as possible)
+(I will endeavour to keep OTSO support as up to date as possible)
 
 # Installation
 
