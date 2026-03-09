@@ -39,6 +39,8 @@ c-------------------------------------------------------------------------------
       EXTERNAL TAIL15_SHIELDED_15N,SRC_SHIELDED_15N,PRC_SHIELDED_15N
       DIMENSION PARMOD(10), PARAMETERS(-10:30), A(24)
 C
+
+
       PDPM =PARMOD(1) 
       BYIMF=PARMOD(2) 
       BZIMF=PARMOD(3)
@@ -52,6 +54,8 @@ C
       PARAMETERS(-3) = BZIMF
       PARAMETERS(-4) = BYIMF
       PARAMETERS(-5) = XIND 
+
+
 C
       A(1) =1.D0
       A(2) =    1.07720     +0.800154  *XIND -0.392647 *XIND**2
@@ -175,6 +179,8 @@ C
        BYPEN=A(11)*BYIMF
        BZPEN=A(11)*BZIMF
 C
+C     DEBUG: Print penetrated IMF components
+C
 C----------------------------------------------------------------------------
 C
        BX=CFX+TX+SX+PX+R1RX+R1AX
@@ -269,9 +275,9 @@ C
        CALL PRC_UNSH_NM_15N (PRCEPS,PRCSCL,X,Y,Z,HXPRC1,HYPRC1,HZPRC1)
        CALL PRC_SHLD_NM_15N (X,Y,Z,BZIMF,PRCEPS,PRCSCL,
      *                       FXPRC1,FYPRC1,FZPRC1)
-       BNMX=HXPRC1+FXPRC1
-       BNMY=HYPRC1+FYPRC1
-       BNMZ=HZPRC1+FZPRC1
+       BNORMX=HXPRC1+FXPRC1
+       BNORMY=HYPRC1+FYPRC1
+       BNORMZ=HZPRC1+FZPRC1
 C
        CALL PRC_UNSH_DD_15N (PRCEPS,PRCSCL,X,Y,Z,HXPRC2,HYPRC2,HZPRC2)
        CALL PRC_SHLD_DD_15N(X,Y,Z,BZIMF,PRCEPS,PRCSCL,
@@ -287,9 +293,9 @@ C
        BSYMY=HYPRCS+FYPRCS
        BSYMZ=HZPRCS+FZPRCS
 C
-       BX=-BNMX*CPRC+BDDX*SPRC+BSYMX
-       BY=-BNMY*CPRC+BDDY*SPRC+BSYMY
-       BZ=-BNMZ*CPRC+BDDZ*SPRC+BSYMZ
+       BX=-BNORMX*CPRC+BDDX*SPRC+BSYMX
+       BY=-BNORMY*CPRC+BDDY*SPRC+BSYMY
+       BZ=-BNORMZ*CPRC+BDDZ*SPRC+BSYMZ
 
        RETURN
        END

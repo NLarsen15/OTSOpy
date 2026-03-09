@@ -40,10 +40,10 @@ contains
 subroutine initializeWind(X,D,model)
 real(8) :: X(25), Vmax
 integer(4) :: D
-integer(8) :: model(2)
+integer(4) :: model(4)
 
-KpIndex = X(18)
-DSTBob = X(19)
+KpIndex = X(19)
+DSTBob = X(20)
 
 PI = 4.D0*DATAN(1.D0)
 

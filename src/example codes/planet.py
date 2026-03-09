@@ -1,11 +1,17 @@
-import OTSO
+from OTSO import planet
 
 if __name__ == '__main__':
     
+    # Example using grouped parameters
+    planet_results = planet(
+        cutoff_comp="Vertical",
+        grid_params={"latstep": 10, "lonstep": 15},
+        computation_params={"corenum": 6},
+        datetime_params={"year": 2000},
+        rigidity_params={"rigiditystep": 0.1},
+        integration_params={"totalbetacheck": False}
+    )
 
-    planet = OTSO.planet(corenum=1, cutoff_comp="Vertical", year=2000, rigiditystep=0.1)
-
-    print(planet[0]) # dataframe containing cutoff results for planet grid
-    print(planet[1]) # text output of input variable information
-
+    print(planet_results[0]) # dataframe containing cutoff results for planet grid
+    print(planet_results[1]) # text output of input variable information
 

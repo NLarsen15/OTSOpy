@@ -27,8 +27,8 @@ real(8) :: a0MAG, a1MAG, a2MAG, a3MAG, loop
 real(8) :: v0MAG, v1MAG, v2MAG, v3MAG, Verr, LOWVerr, Max
 
 ! Verr defines the maximum error allowed per Runge-Kutta step (smaller values = more accuracy, but slower computation time)
-Verr = 0.00001
-LOWVerr = 0.0000001
+Verr = BetaError/100
+LOWVerr = BetaError/10000
 
 if (h == 0) then
     h = 1E-6
@@ -80,21 +80,23 @@ v1(3) = v0(3) + h1*a0(3)
 
 v1MAG = ((v1(1)**2.0 + v1(2)**2.0 + v1(3)**2.0))**(0.5)
 
-IF (v1MAG > c) THEN
-    h = h*0.5
-!    loop = loop + 1
-!    print *, "Faster than Light"
-!    print *, "Loop ", loop 
-    GOTO 10
-END IF
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF (v1MAG > c) THEN
+        h = h*0.5
+!        loop = loop + 1
+!        print *, "Faster than Light"
+!        print *, "Loop ", loop 
+        GOTO 10
+    END IF
 
-!IF ((v1MAG - v0MAG)/v0MAG > Verr) THEN
-!    h = h*0.5
-!    loop = loop + 1
-!    print *, "Beta Fail"
-!    print *, "Loop ", loop 
-!    GOTO 10
-!END IF
+    !IF ((v1MAG - v0MAG)/v0MAG > Verr) THEN
+    !    h = h*0.5
+    !    loop = loop + 1
+    !    print *, "Beta Fail"
+    !    print *, "Loop ", loop 
+    !    GOTO 10
+    !END IF
+END IF
 
 x1GSM(1) = x1(1)/6371200.0
 x1GSM(2) = x1(2)/6371200.0
@@ -128,21 +130,23 @@ v2(3) = v0(3) + h1*a1(3)
 
 v2MAG = ((v2(1)**2.0 + v2(2)**2.0 + v2(3)**2.0))**(0.5)
 
-IF ((v2MAG) > c) THEN
-    h = h*0.5
-!    loop = loop + 1
-!    print *, "Faster than Light"
-!    print *, "Loop ", loop 
-    GOTO 10
-END IF
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF ((v2MAG) > c) THEN
+        h = h*0.5
+!        loop = loop + 1
+!        print *, "Faster than Light"
+!        print *, "Loop ", loop 
+        GOTO 10
+    END IF
 
-!IF ((v2MAG - v1MAG)/v1MAG > Verr) THEN
-!    h = h*0.5
-!    loop = loop + 1
-!    print *, "Beta Fail"
-!    print *, "Loop ", loop 
-!    GOTO 10
-!END IF
+    !IF ((v2MAG - v1MAG)/v1MAG > Verr) THEN
+    !    h = h*0.5
+    !    loop = loop + 1
+    !    print *, "Beta Fail"
+    !    print *, "Loop ", loop 
+    !    GOTO 10
+    !END IF
+END IF
 
 x2GSM(1) = x2(1)/6371200.0
 x2GSM(2) = x2(2)/6371200.0
@@ -176,21 +180,25 @@ v3(3) = v0(3) + h*a2(3)
 
 v3MAG = ((v3(1)**2.0 + v3(2)**2.0 + v3(3)**2.0))**(0.5)
 
-IF ((v3MAG) > c) THEN
-    h = h*0.5
-!    loop = loop + 1
-!    print *, "Faster than Light"
-!    print *, "Loop ", loop 
-    GOTO 10
-END IF
 
-!IF ((v3MAG - v2MAG)/v2MAG > Verr) THEN
-!h = h*0.5
-!    loop = loop + 1
-!    print *, "Beta Fail"
-!    print *, "Loop ", loop 
-!    GOTO 10
-!END IF
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF ((v3MAG) > c) THEN
+        h = h*0.5
+!        loop = loop + 1
+!        print *, "Faster than Light"
+!        print *, "Loop ", loop 
+        GOTO 10
+    END IF
+
+    ! Adaptive step for Verr
+    !IF ((v3MAG - v2MAG)/v2MAG > Verr) THEN
+    !    h = h*0.5
+    !    loop = loop + 1
+    !    print *, "Beta Fail"
+    !    print *, "Loop ", loop 
+    !    GOTO 10
+    !END IF
+END IF
 
 x3GSM(1) = x3(1)/6371200.0
 x3GSM(2) = x3(2)/6371200.0
@@ -225,12 +233,14 @@ Vnew(3) = v0(3) + ( h * ( ( a0(3) + 2*a1(3) + 2*a2(3) + a3(3))/ 6.0 ) )
 
 Vend = ((Vnew(1)**2.0 + Vnew(2)**2.0 + Vnew(3)**2.0))**(0.5)
 
-IF ((Vend - v0MAG)/v0MAG > Verr) THEN
-    h = h*0.5
-!    loop = loop + 1
-!    print *, "Beta Fail"
-!    print *, "Loop ", loop 
-    GOTO 10
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF ((Vend - v0MAG)/v0MAG > Verr) THEN
+        h = h*0.5
+!        loop = loop + 1
+!        print *, "Beta Fail"
+!        print *, "Loop ", loop 
+        GOTO 10
+    END IF
 END IF
 
 XnewTemp(1) = Xnew(1)/6371200.0
@@ -241,6 +251,10 @@ call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, XnewTemp, XnewGDZ
 
 if (model(1) == 4) then
     call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, XnewTemp, XnewGDZ)
+end if
+
+if (trapdistcheck .and. .not. mindistcheck) then
+    call mindistexamine(XnewTemp,XnewGDZ)
 end if
 
 Vabs = ((Velocity(1)**2.0 + Velocity(2)**2.0 + Velocity(3)**2.0))**(0.5)
@@ -264,10 +278,14 @@ Position(3) = XnewGDZ(3)
 
 call NewMax(Max)
 
-!h = h*1.1
-
+IF (adaptivestep .eqv. .TRUE.) THEN
 IF ((Vend - v0MAG)/v0MAG < LOWVerr) THEN
     h = h*1.1
+END IF
+END IF
+
+IF (adaptivestep .eqv. .FALSE.) THEN
+    h = Max
 END IF
 
 IF (h > Max) THEN
@@ -296,8 +314,8 @@ real(8) :: Bfield(3), v_plus(3), v_minus(3), v_prime(3), x0(3), v0(3), XGSM(3), 
 real(8) :: tb(3), sb(3), crossed1(3), crossed2(3), scaler, lam, x_half_GSM(3), x_half_GSM_Temp(3)
 real(8) :: Xnew(3), Vnew(3), XnewGDZ(3), vabs1, vabs2, Max, LOWVerr, Verr, h1
    
-Verr = 0.00001
-LOWVerr = 0.0000001
+Verr = BetaError/100
+LOWVerr = BetaError/10000
 
 if (h == 0) then
     h = 1E-6
@@ -381,6 +399,9 @@ if (model(1) == 4) then
     call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, XnewTemp, XnewGDZ)
 end if
 
+if (trapdistcheck .and. .not. mindistcheck) then
+    call mindistexamine(XnewTemp,XnewGDZ)
+end if
 
 call TimeCheck(Vabs1)
 DistanceTraveled = DistanceTraveled + (h * Vabs1)
@@ -389,15 +410,19 @@ Vabs2 = ((Vnew(1)**2.0 + Vnew(2)**2.0 + Vnew(3)**2.0))**(0.5)
 
 secondTotal = secondTotal + h
     
-IF ((Vabs2 - Vabs1)/Vabs1 > Verr) THEN
-    secondTotal = secondTotal - h
-    DistanceTraveled = DistanceTraveled - (h * Vabs1)
-    h = h*0.5
-    GOTO 10
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF ((Vabs2 - Vabs1)/Vabs1 > Verr) THEN
+        secondTotal = secondTotal - h
+        DistanceTraveled = DistanceTraveled - (h * Vabs1)
+        h = h*0.5
+        GOTO 10
+    END IF
 END IF
 
+IF (adaptivestep .eqv. .TRUE.) THEN
 IF ((Vabs2 - Vabs1)/Vabs1 < LOWVerr) THEN
     h = h*1.1
+END IF
 END IF
 
 call OldVariables(Position,Velocity)
@@ -415,6 +440,10 @@ Position(2) = XnewGDZ(2)
 Position(3) = XnewGDZ(3)
     
 call NewMax(Max)
+
+IF (adaptivestep .eqv. .FALSE.) THEN
+    h = Max
+END IF
     
 IF (h > Max) THEN
     h = Max
@@ -447,8 +476,8 @@ real(8) :: LOWVerr, Verr, h1, sigma, LamNPrime, oneoverlamda
 real(8) :: tauDot, UprimeDot, LamndaN1, tnew(3), tnewDot, sfinal
 real(8) :: Fcalc1, Fcalc2(3), Fcalc3(3), Fcalc4(3), Fcalc5(3)
     
-Verr = 0.00001
-LOWVerr = 0.0000001
+Verr = BetaError/100
+LOWVerr = BetaError/10000
     
 if (h == 0) then
     h = 1E-6
@@ -571,6 +600,10 @@ if (model(1) == 4) then
     call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, XnewTemp, XnewGDZ)
 end if
 
+if (trapdistcheck .and. .not. mindistcheck) then
+    call mindistexamine(XnewTemp,XnewGDZ)
+end if
+
 call TimeCheck(Vabs1)
 DistanceTraveled = DistanceTraveled + (h * Vabs1)
     
@@ -578,15 +611,19 @@ Vabs2 = ((Vnew(1)**2.0 + Vnew(2)**2.0 + Vnew(3)**2.0))**(0.5)
 
 secondTotal = secondTotal + h
     
-IF ((Vabs2 - Vabs1)/Vabs1 > Verr) THEN
-    secondTotal = secondTotal - h
-    DistanceTraveled = DistanceTraveled - (h * Vabs1)
-    h = h*0.5
-    GOTO 10
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF ((Vabs2 - Vabs1)/Vabs1 > Verr) THEN
+        secondTotal = secondTotal - h
+        DistanceTraveled = DistanceTraveled - (h * Vabs1)
+        h = h*0.5
+        GOTO 10
+    END IF
 END IF
 
+IF (adaptivestep .eqv. .TRUE.) THEN
 IF ((Vabs2 - Vabs1)/Vabs1 < LOWVerr) THEN
     h = h*1.1
+END IF
 END IF
 
 call OldVariables(Position,Velocity)
@@ -604,6 +641,10 @@ Position(2) = XnewGDZ(2)
 Position(3) = XnewGDZ(3)
     
 call NewMax(Max)
+
+IF (adaptivestep .eqv. .FALSE.) THEN
+    h = Max
+END IF
     
 IF (h > Max) THEN
     h = Max
@@ -637,8 +678,8 @@ real(8) :: tauDot, tnew(3), tnewDot, sfinal, UnNew(3), UnNewDot
 real(8) :: Uminus(3), Uplus(3), UminusDot, finalcalc1(3)
 real(8) :: Fcalc1, Fcalc2(3), Fcalc3(3), Fcalc4(3), Fcalc5(3)
     
-Verr = 0.00001
-LOWVerr = 0.0000001
+Verr = BetaError/100
+LOWVerr = BetaError/10000
 
 if (h == 0) then
     h = 1E-6
@@ -745,6 +786,10 @@ if (model(1) == 4) then
     call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, XnewTemp, XnewGDZ)
 end if
 
+if (trapdistcheck .and. .not. mindistcheck) then
+    call mindistexamine(XnewTemp,XnewGDZ)
+end if
+
 call TimeCheck(Vabs1)
 DistanceTraveled = DistanceTraveled + (h * Vabs1)
     
@@ -752,22 +797,25 @@ Vabs2 = ((Vnew(1)**2.0 + Vnew(2)**2.0 + Vnew(3)**2.0))**(0.5)
 
 secondTotal = secondTotal + h
 
-IF (Vabs2 > c) THEN
-    secondTotal = secondTotal - h
-    DistanceTraveled = DistanceTraveled - (h * Vabs1)
-    h = h*0.5
-    GOTO 10
-END IF
-    
-IF ((Vabs2 - Vabs1)/Vabs1 > Verr) THEN
-    secondTotal = secondTotal - h
-    DistanceTraveled = DistanceTraveled - (h * Vabs1)
-    h = h*0.5
-    GOTO 10
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF (Vabs2 > c) THEN
+        secondTotal = secondTotal - h
+        DistanceTraveled = DistanceTraveled - (h * Vabs1)
+        h = h*0.5
+        GOTO 10
+    END IF
+    IF ((Vabs2 - Vabs1)/Vabs1 > Verr) THEN
+        secondTotal = secondTotal - h
+        DistanceTraveled = DistanceTraveled - (h * Vabs1)
+        h = h*0.5
+        GOTO 10
+    END IF
 END IF
 
+IF (adaptivestep .eqv. .TRUE.) THEN
 IF ((Vabs2 - Vabs1)/Vabs1 < LOWVerr) THEN
     h = h*1.1
+END IF
 END IF
 
 call OldVariables(Position,Velocity)
@@ -785,6 +833,10 @@ Position(2) = XnewGDZ(2)
 Position(3) = XnewGDZ(3)
     
 call NewMax(Max)
+
+IF (adaptivestep .eqv. .FALSE.) THEN
+    h = Max
+END IF
     
 IF (h > Max) THEN
     h = Max
@@ -1259,3 +1311,45 @@ subroutine Boris_FieldTrace_Advanced(Bsign, Bfield)
     !print *, "========================================="
 
     end subroutine Boris_FieldTrace_Advanced
+
+    subroutine mindistexamine(X,XGDZ)
+    USE Particle
+    implicit none
+    real(8) :: X(3), XGDZ(3), radial
+
+    radial = (X(1)**2.0 + X(2)**2.0 + X(3)**2.0)**(0.5)
+
+    if (radial >= mintrapdist) then
+        mindistcheck = .true.
+        MDP(1) = XGDZ(1)
+        MDP(2) = XGDZ(2)
+        MDP(3) = XGDZ(3)
+    end if
+
+    end subroutine mindistexamine
+
+    subroutine BetaCheck(BetaCheckResult)
+    USE Particle
+    implicit none
+    real(8) :: CurrentError
+    logical, intent(out) :: BetaCheckResult
+
+    CurrentBeta = ( (Velocity(1)**2.0 + Velocity(2)**2.0 + Velocity(3)**2.0)**(0.5) ) / c
+    CurrentError = abs((CurrentBeta - OriginalBeta)/OriginalBeta)*100
+    BetaCheckResult = .TRUE.
+
+    IF (CurrentError > BetaError*100) THEN
+        !print *, "Beta changed by more than ", BetaError*100, " percent from original value. Original Beta: ", OriginalBeta, " Current Beta: ", CurrentBeta
+        BetaCheckResult = .FALSE.
+        IF (adaptivestep .eqv. .TRUE.) THEN
+            MaxGyroPercent = MaxGyroPercent / 1.25
+            !print *, "Reducing step size to ", h, " seconds"
+        END IF
+
+        IF (adaptivestep .eqv. .FALSE.) THEN
+            print *, "ERROR: Beta change exceeded allowed error in fixed step mode."
+            print *, "We recommend enabling adaptive step size or stricter error controls."
+            stop
+        END IF
+    END IF
+    end subroutine BetaCheck

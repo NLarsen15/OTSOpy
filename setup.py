@@ -1,7 +1,4 @@
-﻿import sys, os
-import subprocess
-from setuptools import setup, find_packages
-from setuptools.command.install import install
+﻿from setuptools import setup, find_packages
 from pathlib import Path
 
 this_directory = Path(__file__).parent
@@ -9,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.1.2',
+    version='1.2.0',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
@@ -21,11 +18,12 @@ setup(
     include_package_data=True,
     entry_points={
             'console_scripts': [
-                'OTSO.clean=OTSO:clean',
-                'OTSO.addstation=OTSO:addstation',
-                'OTSO.removestation=OTSO:removestation',
-                'OTSO.liststations=OTSO:liststations',
-                'OTSO.IGRFupdate=OTSO:IGRFupdate',
+                'OTSO.clean=OTSO.otso_cli:clean',
+                'OTSO.addstation=OTSO.otso_cli:addstation',
+                'OTSO.removestation=OTSO.otso_cli:removestation',
+                'OTSO.liststations=OTSO.otso_cli:liststations',
+                'OTSO.IGRFupdate=OTSO.otso_cli:IGRFupdate',
+                'OTSO.serverdownload=OTSO.otso_cli:serverdownload',
             ],
     },
     classifiers=[
@@ -33,16 +31,54 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.12, <3.13',
+    python_requires='>=3.10, <3.15',
     install_requires=[
-        'psutil==7.0.0',     # Common dependency
-        'tqdm',              # Progress bar library
+        'python-dateutil',   # Common dependency across all versions
+        'six',              # Common dependency across all versions
+        'tzdata',           # Common dependency across all versions
+        'psutil',
+        'tqdm',
+        'requests'
     ],
     extras_require={
-        ':python_version>="3.10"': [
-            'numpy>=2.2.0, <2.3.0',
-            'pandas>=2.2.0, <2.3.0',
-            'requests==2.32.3',
+        # Python 3.10 requirements
+        ':python_version=="3.10"': [
+            'meson',
+            'numpy>=2.2.6, <2.3.0',
+            'packaging',
+            'pandas',
+            'pytz',
+        ],
+        # Python 3.11 requirements
+        ':python_version=="3.11"': [
+            'meson',
+            'numpy>=2.4.2, <2.5.0',
+            'packaging',
+            'pandas',
+        ],
+        # Python 3.12 requirements
+        ':python_version=="3.12"': [
+            'meson',
+            'numpy>=2.4.2, <2.5.0',
+            'packaging',
+            'pandas',
+            'setuptools>=82.0.0',
+            'wheel>=0.46.3',
+        ],
+        # Python 3.13 requirements (same as 3.12 for now)
+        ':python_version=="3.13"': [
+            'meson',
+            'numpy>=2.4.2, <2.5.0',
+            'packaging',
+            'pandas',
+            'setuptools>=82.0.0',
+            'wheel>=0.46.3',
+        ],
+        # Python 3.14 requirements
+        ':python_version=="3.14"': [
+            'meson',
+            'numpy>=2.4.2, <2.5.0',
+            'pandas',
         ],
     },
     )

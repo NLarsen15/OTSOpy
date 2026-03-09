@@ -8,8 +8,9 @@
 !
 ! **********************************************************************************************************************
 subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, &
-    AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, Rcomputation, &
-    scanchoice, gOTSO, hOTSO, MHDCoordSys, sphere, inputcoord, Rigidities)
+    AtomicNumber, Anti, I, Wind, Pause, CoordSystem, GyroPercent, End, Rcomputation, &
+    scanchoice, gOTSO, hOTSO, MHDCoordSys, sphere, inputcoord, trapdist, &
+    adapt, Berr, totalbetacheck,Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -22,13 +23,16 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     USE Interpolation
     implicit none
     
-    real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
+    real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(4)
     real(8) :: Wind(25), Re, Lat, Long, GyroPercent, EndLoop, sphere
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
-    integer(8) :: mode(2), IntMode, Anti, AtomicNumber
+    integer(8) :: IntMode, Anti, AtomicNumber
+    integer(4) :: mode(4)
+    real(8) :: trapdist
+    real(8) :: Berr
+    logical :: adapt, BetaCheckResult, totalbetacheck
     integer(4) :: I, Limit, bool_val, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
-    character(len=50) :: FileName
     character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
     real(8) :: gOTSO(136), hOTSO(136)
 
@@ -40,6 +44,16 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         first_region = .false.
         first_region_check = .true.
     END IF
+
+    if (trapdist > 0.0) then
+        trapdistcheck = .true.
+        mintrapdist = trapdist
+    else
+        trapdistcheck = .false.
+    end if
+
+    adaptivestep = adapt
+    BetaError = Berr
     
     R = real(StartRigidity, kind = selected_real_kind(15,307))
     Re = 6371.2
@@ -48,11 +62,9 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     Result = 0
     stepNum = 0
     loop = 1
-    forbiddencount = 0
     NeverFail = 0
     Step = RigidityStep
     SubResult = 0
-    MaxGyroPercent = GyroPercent
     sumrl = 0
     sumref = 0
     sumru = 0
@@ -112,13 +124,11 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
 
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
 
-    !open(unit=10,file=FileName,status='replace')
-    !write(10,"(a)")"Zenith,Azimuth,Ru,Rc,Rl"
-
     do while (loop <= EndLoop)
    
     100 do while (R > EndRigidity)
     Subresult = 0
+    MaxGyroPercent = GyroPercent
 
     IF (mode(2) == 99) THEN
         first_region_check = .true.
@@ -136,8 +146,8 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
 
     R = real(R, kind = selected_real_kind(10,307))
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
-    
-    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode, inputcoord)
+
+    150 call CreateParticle(PositionIN, R, Date, AtomicNumber,Anti, mode, inputcoord)
     
     call initializeWind(Wind, I, mode)
     call initializeCustomGauss(mode)
@@ -152,15 +162,23 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     do while (Result == 0)
     
     call IntegrationPointer()
+    if (totalbetacheck) then
+        call BetaCheck(BetaCheckResult)
+    if (BetaCheckResult .eqv. .FALSE.) then
+    !print *, "Beta Check Failed - Recomputing Particle at Rigidity: ", R
+    GOTO 150
+    end if
+    end if
 
     call EscapeCheck()
+
+    steps = steps + 1
 
     !call FinalStepCheck()
     
     IF (Position(1) < End(1) ) THEN
         bool_val = -1
         Limit = 1
-        forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
         call AsymptoticDirection(Lat, Long, CoordSystem)
@@ -172,23 +190,70 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     IF (End(2) == 0) THEN
         
     ELSE IF (DistanceTraveled/1000.0 > End(2) * Re) THEN
-        bool_val = 0
-        Limit = 1
-        forbiddencount = forbiddencount + 1
-        NeverFail = 1
-        FailCheck = 1
-        call AsymptoticDirection(Lat, Long, CoordSystem)
-        call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
-        !print *, R, " ", "Trapped"
-        EXIT
+
+        if (trapdistcheck .and. mindistcheck) then
+            Position(1) = MDP(1)
+            Position(2) = MDP(2)
+            Position(3) = MDP(3)
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            bool_val = 1
+            RL = R
+            !print *, R, " ", "Escaped"
+            IF (Limit == 0) THEN
+                RU = R
+            ELSE IF (Limit == 1) THEN
+                Acount = Acount + 1
+            END IF
+            EXIT
+        else
+            bool_val = 0
+            Limit = 1
+            NeverFail = 1
+            FailCheck = 1
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            !print *, R, " ", "Trapped"
+            EXIT
+        END IF
     END IF
 
+    IF (End(4) == 0) THEN
+
+    ELSE IF (REAL(steps) >= End(4)) THEN
+
+        if (trapdistcheck .and. mindistcheck) then
+            Position(1) = MDP(1)
+            Position(2) = MDP(2)
+            Position(3) = MDP(3)
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            bool_val = 1
+            RL = R
+            !print *, R, " ", "Escaped"
+            IF (Limit == 0) THEN
+                RU = R
+            ELSE IF (Limit == 1) THEN
+                Acount = Acount + 1
+            END IF
+            EXIT
+        else
+            bool_val = 0
+            Limit = 1
+            NeverFail = 1
+            FailCheck = 1
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            !print *, R, " ", "Trapped"
+            EXIT
+        END IF
+    END IF
+    
     IF (End(3) == 0) THEN
         
     ELSE IF (TimeElapsed > End(3)) THEN
         bool_val = 0
         Limit = 1
-        forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
         call AsymptoticDirection(Lat, Long, CoordSystem)
@@ -200,7 +265,6 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     IF (Result == 1) THEN
         call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
-        forbiddencount = 0
         bool_val = 1
         RL = R
         !print *, R, " ", "Escaped"
@@ -254,7 +318,6 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         Limit = 0
         Acount = 0
         Result = 0
-        forbiddencount = 0
         SubResult = 0
         stepNum = 0
         IF(NeverFail == 1) THEN
@@ -281,8 +344,6 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         RigidityStep = Rigidity(3)
     END IF
 
-    !write(10,'(*(G0.6,:""))')PositionIN(4), ",", PositionIN(5), ",", Ru, ",", Ref, ",", Rl 
-
     loop = loop + 1
     IF (Rcomputation .NE. 2) THEN
         PositionIN(4) = Zenith(loop)
@@ -294,11 +355,11 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     Acount = 0
     Result = 0
     stepNum = 0
-    forbiddencount = 0
     NeverFail = 0
     SubResult = 0
     LastCheck = 0
     FailCheck = 0
+    steps = 0
 
     end do
 
@@ -334,10 +395,6 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
         first_region_check = .true.
     END IF
 
-    !write(10,'(*(G0.6,:""))')"Ru:", RU, ",  Rc:", Ref, ",  Rl:", RL 
-
-    Close(10, STATUS='KEEP') 
-
 end subroutine cutoff
 
 ! **********************************************************************************************************************
@@ -352,8 +409,9 @@ end subroutine cutoff
 !
 ! **********************************************************************************************************************
 subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode, IntMode, & 
-    AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    length, gOTSO, hOTSO, MHDCoordSys,sphere, inputcoord, ConeArray, Rigidities)
+    AtomicNumber, Anti, I, Wind, Pause, CoordSystem, GyroPercent, End, &
+    length, gOTSO, hOTSO, MHDCoordSys,sphere, inputcoord, trapdist, &
+    adapt, Berr,  totalbetacheck, ConeArray, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -366,18 +424,21 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     USE Interpolation
     implicit none
     
-    real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityStep, Date(6), End(3)
+    real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityStep, Date(6), end(4)
     real(8) :: Wind(25), Re, Lat, Long, GyroPercent, Rigidities(3)
     real(8) :: Geofile(3), sphere
-    integer(8) :: mode(2), IntMode, Anti, AtomicNumber
+    integer(8) :: IntMode, Anti, AtomicNumber
+    integer(4) :: mode(4)
     integer(4) :: I, Limit, bool_val, Pause, stepNum
-    character(len=50) :: FileName
     character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
     character(len=100) :: ConeArray(1, length)
     character(len=100) :: temp_array(1, length)
     character(len=100) :: temp_string
     integer(4) :: length, old_size
     real(8) :: gOTSO(136), hOTSO(136)
+    real(8) :: trapdist
+    real(8) :: Berr
+    logical :: adapt, totalbetacheck, BetaCheckResult
 
     intent(out) :: ConeArray, Rigidities
 
@@ -387,6 +448,16 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
         first_region = .false.
         first_region_check = .true.
     END IF
+
+    if (trapdist > 0.0) then
+        trapdistcheck = .true.
+        mintrapdist = trapdist
+    else
+        trapdistcheck = .false.
+    end if
+
+    adaptivestep = adapt
+    BetaError = Berr
     
     R = real(StartRigidity, kind = selected_real_kind(15,307))
     Re = 6371.2
@@ -395,7 +466,6 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     Acount = 0
     Result = 0
     stepNum = 0
-    forbiddencount = 0
     NeverFail = 0
     Step = RigidityStep
     SubResult = 0
@@ -419,6 +489,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
 
     do while (R > EndRigidity)
     Subresult = 0
+    MaxGyroPercent = GyroPercent
 
     IF (mode(2) == 99) THEN
         first_region_check = .true.
@@ -427,7 +498,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     R = real(R, kind = selected_real_kind(10,307))
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
 
-    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode, inputcoord)
+    150 call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode, inputcoord)
     call initializeWind(Wind, I, mode)
     call initializeCustomGauss(mode)
     call MagneticFieldAssign(mode)
@@ -440,14 +511,23 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     
     call IntegrationPointer()
 
+    call IntegrationPointer()
+    if (totalbetacheck) then
+        call BetaCheck(BetaCheckResult)
+    if (BetaCheckResult .eqv. .FALSE.) then
+    GOTO 150
+    end if
+    end if
+
     call EscapeCheck()
 
     call FinalStepCheck()
+
+    steps = steps + 1
     
     IF (Position(1) < End(1) ) THEN
         bool_val = -1
         Limit = 1
-        forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
         call AsymptoticDirection(Lat, Long, CoordSystem)
@@ -459,23 +539,71 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     IF (End(2) == 0) THEN
         
     ELSE IF (DistanceTraveled/1000.0 > End(2) * Re) THEN
-        bool_val = 0
-        Limit = 1
-        forbiddencount = forbiddencount + 1
-        NeverFail = 1
-        FailCheck = 1
-        call AsymptoticDirection(Lat, Long, CoordSystem)
-        call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
-        !print *, R, lat, Long, "Forbidden",  "      Exceeded Travel Distance Without Escape" !(Prints the outputs to the command module while running (Can lead to delays with multi-core proccessing))
-        EXIT
+
+        if (trapdistcheck .and. mindistcheck) then
+            Position(1) = MDP(1)
+            Position(2) = MDP(2)
+            Position(3) = MDP(3)
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            bool_val = 1
+            RL = R
+            !print *, R, " ", "Escaped"
+            IF (Limit == 0) THEN
+                RU = R
+            ELSE IF (Limit == 1) THEN
+                Acount = Acount + 1
+            END IF
+            EXIT
+        else
+            bool_val = 0
+            Limit = 1
+            NeverFail = 1
+            FailCheck = 1
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            !print *, R, lat, Long, "Forbidden",  "      Exceeded Travel Distance Without Escape" !(Prints the outputs to the command module while running (Can lead to delays with multi-core proccessing))
+            EXIT
+        END IF
     END IF
+
+    IF (End(4) == 0) THEN
+
+    ELSE IF (REAL(steps) >= End(4)) THEN
+
+        if (trapdistcheck .and. mindistcheck) then
+            Position(1) = MDP(1)
+            Position(2) = MDP(2)
+            Position(3) = MDP(3)
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            bool_val = 1
+            RL = R
+            !print *, R, " ", "Escaped"
+            IF (Limit == 0) THEN
+                RU = R
+            ELSE IF (Limit == 1) THEN
+                Acount = Acount + 1
+            END IF
+            EXIT
+        else
+            bool_val = 0
+            Limit = 1
+            NeverFail = 1
+            FailCheck = 1
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            !print *, R, " ", "Trapped"
+            EXIT
+        END IF
+    END IF
+    
 
     IF (End(3) == 0) THEN
         
     ELSE IF (TimeElapsed > End(3)) THEN
         bool_val = 0
         Limit = 1
-        forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
         call AsymptoticDirection(Lat, Long, CoordSystem)
@@ -487,7 +615,6 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     IF (Result == 1) THEN
         call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
-        forbiddencount = 0
         bool_val = 1
         !print *, R, lat, Long !(Prints the outputs to the command module while running (Can lead to delays with multi-core proccessing))
         RL = R
@@ -540,8 +667,9 @@ end subroutine cone
 !
 ! **********************************************************************************************************************
 subroutine trajectory(PositionIN, Rigidity, Date, mode, IntMode, & 
-    AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, End, &
-    gOTSO, hOTSO,MHDCoordSys,sphere, inputcoord, bool_val, Lat, Long)
+    AtomicNumber, Anti, I, Wind, Pause, CoordSystem, GyroPercent, End, &
+    gOTSO, hOTSO,MHDCoordSys,sphere, inputcoord, trapdist, adapt, Berr, &
+     totalbetacheck, bool_val, Lat, Long)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -554,13 +682,16 @@ USE CUSTOMGAUSS
 USE Interpolation
 implicit none
 
-real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
+real(8) :: PositionIN(5), Rigidity, Date(6), end(4)
 real(8) :: Wind(25), Re, GyroPercent, sphere
 real(8) :: Xnew(3), XnewConverted(3)
-integer(8) :: mode(2), IntMode, Anti, AtomicNumber
+integer(8) :: IntMode, Anti, AtomicNumber
+integer(4) :: mode(4)
 integer(4) :: I, Limit, Pause
-character(len=50) :: FileName
 character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
+real(8) :: trapdist
+real(8) :: Berr
+logical :: adapt, totalbetacheck, BetaCheckResult
 
 real(8), intent(out) :: Lat, Long
 integer(4), intent(out) :: bool_val
@@ -573,6 +704,15 @@ IF (mode(2) == 99) THEN
     first_region_check = .true.
 END IF
 
+if (trapdist > 0.0) then
+    trapdistcheck = .true.
+    mintrapdist = trapdist
+else
+    trapdistcheck = .false.
+end if
+
+adaptivestep = adapt
+BetaError = Berr
 
 Re = 6371.2
 Limit = 0
@@ -597,7 +737,7 @@ ELSE IF (PositionIN(5) > 360) THEN
     stop
 END IF
 
-call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
+150 call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
 
 call initializeWind(Wind, I, mode)
 call initializeCustomGauss(mode)
@@ -608,17 +748,26 @@ call IntegrationAssign(IntMode)
 
 call FirstTimeStep()
 
-!open(unit=10,file=FileName,status='replace')
-!write(10,"(a)")"X,Y,Z"
-
 IF (Rigidity == 0) THEN
   Result = 1
 END IF
 
 do while (Result == 0)
 call IntegrationPointer
+
+call IntegrationPointer()
+if (totalbetacheck) then
+    call BetaCheck(BetaCheckResult)
+if (BetaCheckResult .eqv. .FALSE.) then
+GOTO 150
+end if
+end if
+
 call EscapeCheck()
 call FinalStepCheck()
+
+steps = steps + 1
+
 Xnew(1) = XnewTemp(1)/1000
 Xnew(2) = XnewTemp(2)/1000
 Xnew(3) = XnewTemp(3)/1000
@@ -650,16 +799,64 @@ END IF
 IF (End(2) == 0) THEN
     
 ELSE IF ( DistanceTraveled/1000.0 > End(2)*Re) THEN
-    !print *, "This is Forbidden", "      Exceeded Travel Distance Without Escape"
-    !print *, DistanceTraveled
-    call AsymptoticDirection(Lat, Long, CoordSystem)
-    bool_val = 0
-    !print *, "Final Position (Latitude, Longitude)"
-    !print *, Position
-    !print *, "Asymptotic Directions (Latitude, Longitude)"
-    !print *, Lat, Long
-    Limit = 1
-    EXIT
+    if (trapdistcheck .and. mindistcheck) then
+        Position(1) = MDP(1)
+        Position(2) = MDP(2)
+        Position(3) = MDP(3)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
+        !call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        bool_val = 1
+        RL = R
+        !print *, R, " ", "Escaped"
+        IF (Limit == 0) THEN
+            RU = R
+        ELSE IF (Limit == 1) THEN
+            Acount = Acount + 1
+        END IF
+        EXIT
+    else
+        !print *, "This is Forbidden", "      Exceeded Travel Distance Without Escape"
+        !print *, DistanceTraveled
+        call AsymptoticDirection(Lat, Long, CoordSystem)
+        bool_val = 0
+        !print *, "Final Position (Latitude, Longitude)"
+        !print *, Position
+        !print *, "Asymptotic Directions (Latitude, Longitude)"
+        !print *, Lat, Long
+        Limit = 1
+        EXIT
+    END IF
+END IF
+
+IF (End(4) == 0) THEN
+
+ELSE IF (REAL(steps) >= End(4)) THEN
+
+    if (trapdistcheck .and. mindistcheck) then
+        Position(1) = MDP(1)
+        Position(2) = MDP(2)
+        Position(3) = MDP(3)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
+        !call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        bool_val = 1
+        RL = R
+        !print *, R, " ", "Escaped"
+        IF (Limit == 0) THEN
+            RU = R
+        ELSE IF (Limit == 1) THEN
+            Acount = Acount + 1
+        END IF
+        EXIT
+    else
+        bool_val = 0
+        Limit = 1
+        NeverFail = 1
+        FailCheck = 1
+        call AsymptoticDirection(Lat, Long, CoordSystem)
+        !call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        !print *, R, " ", "Trapped"
+        EXIT
+    END IF
 END IF
 
 IF (End(3) == 0) THEN
@@ -707,8 +904,8 @@ end subroutine trajectory
 !
 ! **********************************************************************************************************************
 subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti, I, Wind, Pause, &
-     FileName, GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys, sphere, &
-     inputcoord, Rigidities)
+     GyroPercent, End, Rcomputation, scanchoice, gOTSO, hOTSO,MHDCoordSys, sphere, &
+     inputcoord, trapdist, adapt, Berr, totalbetacheck, Rigidities)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -721,13 +918,16 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     USE Interpolation
     implicit none
     
-    real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), End(3)
+    real(8) :: PositionIN(5), StartRigidity, EndRigidity, RigidityScan, RigidityStep, Date(6), end(4)
     real(8) :: Wind(25), Re, Lat, Long, GyroPercent, sphere
     real(8) :: Geofile(3), RuMemory(9), RlMemory(9), RefMemory(9), Rigidity(3)
     real(8) :: Zenith(9), Azimuth(9), sumrl, sumru, sumref
-    integer(8) :: mode(2), IntMode, Anti, AtomicNumber,EndLoop
+    integer(8) :: IntMode, Anti, AtomicNumber,EndLoop
+    integer(4) :: mode(4)
+    real(8) :: trapdist
+    real(8) :: Berr
+    logical :: adapt, totalbetacheck, BetaCheckResult
     integer(4) :: I, Limit, bool_val, Pause, stepNum, loop, Rcomputation, scanchoice, scan, LastCheck
-    character(len=50) :: FileName
     character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
     real(8) :: gOTSO(136), hOTSO(136)
 
@@ -739,7 +939,16 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         first_region = .false.
         first_region_check = .true.
     END IF
-    
+
+    if (trapdist > 0.0) then
+        trapdistcheck = .true.
+        mintrapdist = trapdist
+    else
+        trapdistcheck = .false.
+    end if
+
+    adaptivestep = adapt
+    BetaError = Berr
 
     R = real(Rigidity(1), kind = selected_real_kind(15,307))
     StartRigidity = real(Rigidity(1), kind = selected_real_kind(15,307))
@@ -749,7 +958,6 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     Result = 0
     stepNum = 0
     loop = 1
-    forbiddencount = 0
     NeverFail = 0
     Step = RigidityStep
     SubResult = 0
@@ -814,6 +1022,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
     100 do while (R > EndRigidity)
     Subresult = 0
+    MaxGyroPercent = GyroPercent
 
     IF (mode(2) == 99) THEN
         first_region_check = .true.
@@ -834,7 +1043,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     R = real(R, kind = selected_real_kind(10,307))
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
     
-    call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode, inputcoord)
+    150 call CreateParticle(PositionIN, R, Date, AtomicNumber, Anti, mode, inputcoord)
     
     call initializeWind(Wind, I, mode)
     call initializeCustomGauss(mode)
@@ -850,14 +1059,23 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     
     call IntegrationPointer()
 
+    call IntegrationPointer()
+    if (totalbetacheck) then
+        call BetaCheck(BetaCheckResult)
+    if (BetaCheckResult .eqv. .FALSE.) then
+    GOTO 150
+    end if
+    end if
+
     call EscapeCheck()
 
     !call FinalStepCheck()
+
+    steps = steps + 1
     
     IF (Position(1) < End(1) ) THEN
         bool_val = -1
         Limit = 1
-        forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
         call AsymptoticDirection(Lat, Long, CoordSystem)
@@ -869,15 +1087,63 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     IF (End(2) == 0) THEN
         
     ELSE IF (DistanceTraveled/1000.0 > End(2) * Re) THEN
-        bool_val = 0
-        Limit = 1
-        forbiddencount = forbiddencount + 1
-        NeverFail = 1
-        FailCheck = 1
-        call AsymptoticDirection(Lat, Long, CoordSystem)
-        call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
-        !print *, R, " ", "Trapped"
-        EXIT
+
+        if (trapdistcheck .and. mindistcheck) then
+            Position(1) = MDP(1)
+            Position(2) = MDP(2)
+            Position(3) = MDP(3)
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            bool_val = 1
+            RL = R
+            !print *, R, " ", "Escaped"
+            IF (Limit == 0) THEN
+                RU = R
+            ELSE IF (Limit == 1) THEN
+                Acount = Acount + 1
+            END IF
+            EXIT
+        else
+            bool_val = 0
+            Limit = 1
+            NeverFail = 1
+            FailCheck = 1
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            !print *, R, " ", "Trapped"
+            EXIT
+        END IF
+    END IF
+
+    IF (End(4) == 0) THEN
+
+    ELSE IF (REAL(steps) >= End(4)) THEN
+
+        if (trapdistcheck .and. mindistcheck) then
+            Position(1) = MDP(1)
+            Position(2) = MDP(2)
+            Position(3) = MDP(3)
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            bool_val = 1
+            RL = R
+            !print *, R, " ", "Escaped"
+            IF (Limit == 0) THEN
+                RU = R
+            ELSE IF (Limit == 1) THEN
+                Acount = Acount + 1
+            END IF
+            EXIT
+        else
+            bool_val = 0
+            Limit = 1
+            NeverFail = 1
+            FailCheck = 1
+            call AsymptoticDirection(Lat, Long, CoordSystem)
+            call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+            !print *, R, " ", "Trapped"
+            EXIT
+        END IF
     END IF
 
     IF (End(3) == 0) THEN
@@ -885,7 +1151,6 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     ELSE IF (TimeElapsed > End(3)) THEN
         bool_val = 0
         Limit = 1
-        forbiddencount = forbiddencount + 1
         NeverFail = 1
         FailCheck = 1
         call AsymptoticDirection(Lat, Long, CoordSystem)
@@ -897,10 +1162,13 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     IF (Result == 1) THEN
         call AsymptoticDirection(Lat, Long, CoordSystem)
         call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
-        forbiddencount = 0
         bool_val = 1
         RL = R
         !print *, R, " ", "Escaped"
+        !print *, "Final Position (Latitude, Longitude)"
+        !print *, Position
+        !print *, "Asymptotic Directions (Latitude, Longitude)"
+        !print *, Lat, Long
         IF (Limit == 0) THEN
             RU = R
         ELSE IF (Limit == 1) THEN
@@ -951,7 +1219,6 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         Limit = 0
         Acount = 0
         Result = 0
-        forbiddencount = 0
         SubResult = 0
         stepNum = 0
         IF(NeverFail == 1) THEN
@@ -978,8 +1245,6 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         RigidityStep = Rigidity(3)
     END IF
 
-    !write(10,'(*(G0.6,:""))')PositionIN(4), ",", PositionIN(5), ",", Ru, ",", Ref, ",", Rl 
-
     loop = loop + 1
     IF (Rcomputation .NE. 2) THEN
         PositionIN(4) = Zenith(loop)
@@ -991,7 +1256,6 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     Acount = 0
     Result = 0
     stepNum = 0
-    forbiddencount = 0
     NeverFail = 0
     SubResult = 0
     LastCheck = 0
@@ -1018,15 +1282,10 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
         Ref = sumref
     END IF
 
-    !print *, "Ru:", RU
-    !print *, "Rl:", RL
-    !print *, "Rc:", Ref
 
     Rigidities(1) = RU
     Rigidities(2) = Ref
-    Rigidities(3) = RL
-
-    !write(10,'(*(G0.6,:""))')"Ru:", RU, ",  Rc:", Ref, ",  Rl:", RL 
+    Rigidities(3) = RL 
         
 end subroutine planet
 
@@ -1044,7 +1303,8 @@ end subroutine planet
 ! **********************************************************************************************************************
 subroutine trajectory_full(PositionIN, Rigidity, Date, mode, IntMode, & 
     AtomicNumber, Anti, I, Wind, Pause, FileName, CoordSystem, GyroPercent, &
-    End, gOTSO, hOTSO, MHDCoordSys,sphere, inputcoord)
+    End, gOTSO, hOTSO, MHDCoordSys,sphere, inputcoord, trapdist, adapt, Berr, &
+     totalbetacheck,bool_val, Lat, Long)
 USE Particle
 USE GEOPACK1
 USE GEOPACK2
@@ -1057,14 +1317,21 @@ USE CUSTOMGAUSS
 USE Interpolation
 implicit none
 
-real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
-real(8) :: Wind(25), Re, Lat, Long, GyroPercent
+real(8) :: PositionIN(5), Rigidity, Date(6), end(4)
+real(8) :: Wind(25), Re, GyroPercent
 real(8) :: Xnew(3), XnewConverted(3), sphere
-integer(8) :: mode(2), IntMode, Anti, AtomicNumber
+integer(8) :: IntMode, Anti, AtomicNumber
+integer(4) :: mode(4)
 integer(4) :: I, Limit, Pause
 character(len=50) :: FileName
 character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
 real(8) :: gOTSO(136), hOTSO(136)
+real(8) :: trapdist
+real(8) :: Berr
+logical :: adapt, totalbetacheck, BetaCheckResult
+
+real(8), intent(out) :: Lat, Long
+integer(4), intent(out) :: bool_val
 
 Re = 6371.2
 Limit = 0
@@ -1074,6 +1341,8 @@ SubResult = 0
 MaxGyroPercent = GyroPercent
 spheresize = sphere
 
+adaptivestep = adapt
+BetaError = Berr
 
 Ginput = gOTSO
 Hinput = hOTSO
@@ -1086,6 +1355,13 @@ IF (mode(2) == 99) THEN
     first_region_check = .true.
 END IF
 
+if (trapdist > 0.0) then
+    trapdistcheck = .true.
+    mintrapdist = trapdist
+else
+    trapdistcheck = .false.
+end if
+
 IF (PositionIN(5) < 0) THEN
     print *, "ERROR: Please enter an azimuth angle between 0 and 360 degrees"
     print *, "N = 0, E = 90, S = 180, and W = 270 (degrees)"
@@ -1096,7 +1372,7 @@ ELSE IF (PositionIN(5) > 360) THEN
     stop
 END IF
 
-call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
+150 call CreateParticle(PositionIN, Rigidity, Date, AtomicNumber, Anti, mode, inputcoord)
 
 call initializeWind(Wind, I, mode)
 call initializeCustomGauss(mode)
@@ -1112,8 +1388,18 @@ write(10,"(a)")"X,Y,Z"
 
 do while (Result == 0) 
 call IntegrationPointer
+call IntegrationPointer()
+if (totalbetacheck) then
+    call BetaCheck(BetaCheckResult)
+if (BetaCheckResult .eqv. .FALSE.) then
+Close(10, STATUS='KEEP') 
+GOTO 150
+end if
+end if
 call EscapeCheck()
 call FinalStepCheck()
+steps = steps + 1
+
 Xnew(1) = XnewTemp(1)/1000
 Xnew(2) = XnewTemp(2)/1000
 Xnew(3) = XnewTemp(3)/1000
@@ -1133,6 +1419,7 @@ write(10,'(*(G0.6,:,","))') XnewConverted/Re
 IF (Position(1) < End(1) ) THEN
     !print *, "This is Forbidden", "      Encountered Earth"
     call AsymptoticDirection(Lat, Long, CoordSystem)
+    bool_val = -1
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -1144,15 +1431,65 @@ END IF
 IF (End(2) == 0) THEN
     
 ELSE IF ( DistanceTraveled/1000.0 > End(2)*Re) THEN
-    !print *, "This is Forbidden", "      Exceeded Travel Distance Without Escape"
-    !print *, DistanceTraveled
-    call AsymptoticDirection(Lat, Long, CoordSystem)
-    !print *, "Final Position (Latitude, Longitude)"
-    !print *, Position
-    !print *, "Asymptotic Directions (Latitude, Longitude)"
-    !print *, Lat, Long
-    Limit = 1
-    EXIT
+
+    if (trapdistcheck .and. mindistcheck) then
+        Position(1) = MDP(1)
+        Position(2) = MDP(2)
+        Position(3) = MDP(3)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
+        !call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        bool_val = 1
+        RL = R
+        !print *, R, " ", "Escaped"
+        IF (Limit == 0) THEN
+            RU = R
+        ELSE IF (Limit == 1) THEN
+            Acount = Acount + 1
+        END IF
+        EXIT
+    else
+        !print *, "This is Forbidden", "      Exceeded Travel Distance Without Escape"
+        !print *, DistanceTraveled
+        call AsymptoticDirection(Lat, Long, CoordSystem)
+        bool_val = 0
+        !print *, "Final Position (Latitude, Longitude)"
+        !print *, Position
+        !print *, "Asymptotic Directions (Latitude, Longitude)"
+        !print *, Lat, Long
+        Limit = 1
+        EXIT
+    END IF
+END IF
+
+IF (End(4) == 0) THEN
+
+ELSE IF (REAL(steps) >= End(4)) THEN
+
+    if (trapdistcheck .and. mindistcheck) then
+        Position(1) = MDP(1)
+        Position(2) = MDP(2)
+        Position(3) = MDP(3)
+        call AsymptoticDirection(Lat, Long, CoordSystem)
+        !call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        bool_val = 1
+        RL = R
+        !print *, R, " ", "Escaped"
+        IF (Limit == 0) THEN
+            RU = R
+        ELSE IF (Limit == 1) THEN
+            Acount = Acount + 1
+        END IF
+        EXIT
+    else
+        bool_val = 0
+        Limit = 1
+        NeverFail = 1
+        FailCheck = 1
+        call AsymptoticDirection(Lat, Long, CoordSystem)
+        !call CoordinateTransform("GDZ", CoordSystem, year, day, secondTotal, Position, GEOfile)
+        !print *, R, " ", "Trapped"
+        EXIT
+    END IF
 END IF
 
 IF (End(3) == 0) THEN
@@ -1161,6 +1498,7 @@ ELSE IF ( TimeElapsed > End(3)) THEN
     !print *, "This is Forbidden", "      Exceeded Maximum Time"
     !print *, TimeElapsed
     call AsymptoticDirection(Lat, Long, CoordSystem)
+    bool_val = 0
     !print *, "Final Position (Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -1173,6 +1511,7 @@ END IF
 IF (Result == 1)  THEN
     !print *, "This is Allowed", "      Successfully Escaped"
     call AsymptoticDirection(Lat, Long, CoordSystem)
+    bool_val = 1
     !print *, "Escape Position (Altitude [km], Latitude, Longitude)"
     !print *, Position
     !print *, "Asymptotic Directions (Latitude, Longitude)"
@@ -1232,7 +1571,7 @@ subroutine GETTSY04DATAWINDOWS(OMNIYEAR, length)
 !            magnetosphere. Output is in GSM coordinates.
 !
 ! **********************************************************************************************************************
-subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOTSO, Bfield)
+subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN, CoordOUT, MHDCoordSys, gOTSO, hOTSO, Bfield)
     USE Particle
     USE SolarWind
     USE MagneticFieldFunctions
@@ -1243,10 +1582,10 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
     USE Interpolation
     implicit none
     
-    real(8) :: Pin(3), Pout(3), Wind(25), Date(6)
-    character(len = 3) :: CoordIN, MHDCoordSys
+    real(8) :: Pin(3), Pout(3), Wind(25), Date(6), Bfieldtemp(3)
+    character(len = 3) :: CoordIN, MHDCoordSys, CoordOUT
     integer(4) :: I
-    integer(8) :: mode(2)
+    integer(4) :: mode(4)
     real(8) :: gOTSO(136), hOTSO(136)
 
     real(8), intent(out) :: Bfield(3) 
@@ -1259,8 +1598,8 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
     END IF
 
 
-       Ginput = gOTSO
-       Hinput = hOTSO
+    Ginput = gOTSO
+    Hinput = hOTSO
 
 
     year = INT(Date(1))
@@ -1274,10 +1613,20 @@ subroutine MagStrength(Pin, Date, mode, I, Wind, CoordIN,MHDCoordSys, gOTSO, hOT
     call initializeCustomGauss(mode)
 
     call MagneticFieldAssign(mode)
-    
-    call CoordinateTransform(CoordIN, "GSM", year, day, secondTotal, Pin, Pout)
 
-    call MagFieldCheck(Pout, Bfield)
+    if (mode(1) == 4) then
+        call CoordinateTransform(CoordIN, "GEO", year, day, secondTotal, Pin, Pout)
+    else
+        call CoordinateTransform(CoordIN, "GSM", year, day, secondTotal, Pin, Pout)
+    end if
+
+    call MagFieldCheck(Pout, Bfieldtemp)
+
+    if (mode(1) == 4) then
+        call CoordinateTransformVec("GEO", CoordOUT, year, day, secondTotal, Bfieldtemp, Bfield)
+    else
+        call CoordinateTransformVec("GSM", CoordOUT, year, day, secondTotal, Bfieldtemp, Bfield)
+    end if
     
     end subroutine MagStrength
 
@@ -1342,9 +1691,9 @@ implicit none
 ! -----------------------------
 ! Inputs
 ! -----------------------------
-real(8) :: PositionIN(5), Rigidity, Date(6), End(3)
+real(8) :: PositionIN(5), Rigidity, Date(6), end(4)
 real(8) :: Wind(25), GyroPercent, sphere
-integer(8) :: mode(2)
+integer(4) :: mode(4)
 integer(4) :: I, Pause
 integer(8) :: AtomicNumber, Anti, IntMode
 character(len=3) :: CoordSystem, MHDCoordSys, inputcoord
@@ -1434,10 +1783,7 @@ do idir = 1, 2
     end do
 end do
 
-! -----------------------------
-! Write continuous field line
-! South - Start - North
-! -----------------------------
+
 do inte = nMinus, 1, -1
     write(10,'(*(G0.6,:,","))') LineMinus(inte,:)
     !print *, LineMinus(inte,:)

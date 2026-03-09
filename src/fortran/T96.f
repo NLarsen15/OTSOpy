@@ -5,22 +5,26 @@ c
       SUBROUTINE T96_01 (IOPT,PARMOD,PS,X,Y,Z,BX,BY,BZ)
 C
 c     RELEASE DATE OF THIS VERSION:   JUNE 22, 1996.
-C     LAST UPDATE: MAY 01, 2006:  IN THE S/R DIPOLE, SPS AND CPS WERE ADDED IN THE SAVE STATEMENT
+C     LAST UPDATE: MAY 01, 2006:  IN THE S/R DIPOLE, SPS AND CPS WERE
+C     ADDED IN THE SAVE STATEMENT
 
 C----------------------------------------------------------------------
 C
-C  WITH TWO CORRECTIONS, SUGGESTED BY T.SOTIRELIS' COMMENTS (APR.7, 1997)
+C  WITH TWO CORRECTIONS, SUGGESTED BY T.SOTIRELIS' COMMENTS 
+C  (APR.7, 1997)
 C
 C  (1) A "STRAY "  CLOSING PARENTHESIS WAS REMOVED IN THE S/R   R2_BIRK
 C  (2) A 0/0 PROBLEM ON THE Z-AXIS WAS SIDESTEPPED (LINES 44-46 OF THE
 c       DOUBLE PRECISION FUNCTION XKSI)
 c--------------------------------------------------------------------
-C DATA-BASED MODEL CALIBRATED BY (1) SOLAR WIND PRESSURE PDYN (NANOPASCALS),
+C DATA-BASED MODEL CALIBRATED BY (1) SOLAR WIND PRESSURE PDYN 
+C (NANOPASCALS),
 C           (2) DST (NANOTESLA),  (3) BYIMF, AND (4) BZIMF (NANOTESLA).
 c THESE INPUT PARAMETERS SHOULD BE PLACED IN THE FIRST 4 ELEMENTS
 c OF THE ARRAY PARMOD(10).
 C
-C   THE REST OF THE INPUT VARIABLES ARE: THE GEODIPOLE TILT ANGLE PS (RADIANS),
+C   THE REST OF THE INPUT VARIABLES ARE: THE GEODIPOLE TILT ANGLE 
+C   PS (RADIANS),
 C AND   X,Y,Z -  GSM POSITION (RE)
 C
 c   IOPT  IS JUST A DUMMY INPUT PARAMETER, NECESSARY TO MAKE THIS SUBROUTINE
@@ -49,7 +53,7 @@ C           MAGNETIC FIELD OF DISK-SHAPED CURRENT SHEETS, J.GEOPHYS.RES.,
 C           V.99, P. 199, 1994.
 C
 c----------------------------------------------------------------------
-      USE MAGNETOPAUSE
+C      USE MAGNETOPAUSE    ! COMMENTED OUT - MODULE NOT FOUND
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 PDYN,DST,BYIMF,BZIMF,PS,X,Y,Z,BX,BY,BZ,QX,QY,QZ,PARMOD(10),
      *   A(9)
@@ -208,10 +212,10 @@ C
        IMPLICIT REAL*8 (A-H,O-Z)
        REAL*8 ps,x,y,z,bx,by,bz
        DIMENSION A1(12),A2(12)
-      DATA A1 /.24777,-27.003,-.46815,7.0637,-1.5918,-.90317E-01,57.522,
-     * 13.757,2.0100,10.458,4.5798,2.1695/
-      DATA A2/-.65385,-18.061,-.40457,-5.0995,1.2846,.78231E-01,39.592,
-     * 13.291,1.9970,10.062,4.5140,2.1558/
+      DATA A1 /.24777,-27.003,-.46815,7.0637,-1.5918,-.90317E-01,
+     * 57.522,13.757,2.0100,10.458,4.5798,2.1695/
+      DATA A2/-.65385,-18.061,-.40457,-5.0995,1.2846,.78231E-01,
+     * 39.592,13.291,1.9970,10.062,4.5140,2.1558/
 C
           CPS=DCOS(PS)
           SPS=DSIN(PS)
@@ -373,7 +377,7 @@ C
 
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 C
-      DOUBLE PRECISION FUNCTION BES(X,K)
+      REAL*8 FUNCTION BES(X,K)
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 X
       INTEGER*4 K
@@ -439,7 +443,7 @@ C
       END
 c-------------------------------------------------------------------
 c
-       DOUBLE PRECISION FUNCTION BES0(X)
+       REAL*8 FUNCTION BES0(X)
 C
         IMPLICIT REAL*8 (A-H,O-Z)
         REAL*8 X
@@ -464,7 +468,7 @@ C
 c
 c--------------------------------------------------------------------------
 c
-       DOUBLE PRECISION FUNCTION BES1(X)
+       REAL*8 FUNCTION BES1(X)
 C
         IMPLICIT REAL*8 (A-H,O-Z)
         REAL*8 X
@@ -2497,7 +2501,7 @@ C
 C
 C^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-      DOUBLE PRECISION FUNCTION XKSI(X,Y,Z)
+      REAL*8 FUNCTION XKSI(X,Y,Z)
 C
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 X,Y,Z
@@ -2578,7 +2582,7 @@ C-----------------------------------------------------------------------
 C
 C************************************************************************
 C
-         DOUBLE PRECISION FUNCTION TKSI(XKSI,XKS0,DXKSI)
+         REAL*8 FUNCTION TKSI(XKSI,XKS0,DXKSI)
          IMPLICIT REAL*8 (A-H,O-Z)
          REAL*8 XKSI,XKS0,DXKSI
          SAVE M,TDZ3

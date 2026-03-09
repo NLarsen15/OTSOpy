@@ -180,10 +180,17 @@ end interface
     real(8) :: Ak, Bk(7), Fk(7), rho2, kpar, sink, cosk
     real(8) :: x1rot, y1rot, z1rot, rhorot
     real(8) :: GSMPosition(3), x1, y1, z1, TestResult, DIP
+    integer(4) :: IOPTtemp
 
     TestResult = -1
     Result = 0
     dip = PSI
+
+    if (IOPT > 7) then
+      IOPTtemp = 7
+    else
+      IOPTtemp = IOPT
+    end if
 
     Ak = -0.0545
     Bk(1) = 11.7
@@ -225,7 +232,7 @@ end interface
         END IF
     end if
 
-    kpar = DIP/Fk(IOPT)
+    kpar = DIP/Fk(IOPTtemp)
     sink = SIN(kpar)
     cosk = COS(kpar)
 
@@ -237,7 +244,7 @@ end interface
 
     
 
-    IF (x1rot > Ak*rhorot + Bk(IOPT)) THEN
+    IF (x1rot > Ak*rhorot + Bk(IOPTtemp)) THEN
         TestResult = 1
         IF (FinalStep == 0) THEN
           FinalStep = 1

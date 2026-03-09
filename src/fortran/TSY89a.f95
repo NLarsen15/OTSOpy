@@ -1,0 +1,389 @@
+
+      SUBROUTINE T89a(IOPT,PARMOD,PS,DST,KP,model,X,Y,Z,BX,BY,BZ)
+!          (double precision version)
+!
+!   COMPUTES GSM COMPONENTS OF THE MAGNETIC FIELD PRODUCED BY EXTRA-
+!  TERRESTRIAL CURRENT SYSTEMS IN THE GEOMAGNETOSPHERE. THE MODEL IS
+!   VALID UP TO GEOCENTRIC DISTANCES OF 70 RE AND IS BASED ON THE MER-
+!   GED IMP-A,C,D,E,F,G,H,I,J (1966-1974), HEOS-1 AND -2 (1969-1974),
+!   AND ISEE-1 AND -2  SPACECRAFT DATA SET.
+!
+!----INPUT PARAMETERS: IOPT - SPECIFIES THE GROUND DISTURBANCE LEVEL:
+!
+!   IOPT= 1       2        3        4        5        6      7
+!                  CORRESPOND TO:
+!    KP= 0,0+  1-,1,1+  2-,2,2+  3-,3,3+  4-,4,4+  5-,5,5+  > =6-
+!
+!    PS - GEODIPOLE TILT ANGLE IN RADIANS
+!    X, Y, Z  - GSM COORDINATES OF THE POINT IN EARTH RADII
+!
+!----OUTPUT PARAMETERS: BX,BY,BZ - GSM COMPONENTS OF THE MODEL MAGNETIC
+!                        FIELD IN NANOTESLAS
+!
+      IMPLICIT REAL*8 (A-H,O-Z)
+      REAL*8 PARMOD,PS,X,Y,Z,BX,BY,BZ,DST,Kp
+      INTEGER*4 IOPT
+      INTEGER*4 model(4)
+      DIMENSION PARAM(30,6),A(30),PARMOD(9)
+      LOGICAL PARAMS_LOADED
+      DATA A02,XLW2,YN,RPI,RT/25.D0,170.D0,30.D0,0.31830989D0,30.D0/
+      DATA XD,XLD2/0.D0,40.D0/
+!
+!   The last 2 quantities define variation of tail sheet thickness along X
+!
+      DATA SXC,XLWC2/4.D0,50.D0/
+!
+!   The two quantities belong to the function WC which confines tail closure
+!    current in X- and Y- direction
+!
+      DATA DXL/20.D0/
+
+      DATA PARAM/-98.72D0,-10014.D0,15.03D0, &
+     76.62D0,-10237.D0, &
+     1.813D0,31.10D0,-0.07464D0,-0.07764D0,0.003303D0, &
+     -1.129D0,0.001663D0,0.000988D0,18.21D0,-0.03018D0, &
+     -0.03829D0,-0.1283D0,-0.001973D0,0.000717D0,24.74D0, &
+     8.161D0,2.08D0,-0.8799D0,9.084D0,3.838D0, &
+     13.55D0,26.94D0,5.745D0,4.0000D0,20.000D0, &
+     -35.64D0,-12800.D0,14.37D0,124.50D0,-13543.D0, &
+     2.316D0,35.64D0,-0.0741D0,-0.1081D0,0.003924D0, &
+     -1.451D0,0.00202D0,0.00111D0,21.37D0,-0.04567D0, &
+     -0.05382D0,-0.1457D0,-0.002742D0,0.001244D0,22.33D0, &
+     8.119D0,1.664D0,0.9324D0,9.238D0,2.426D0, &
+     13.81D0,28.83D0,6.052D0,4.0000D0,20.000D0, &
+     -77.45D0,-14588.D0,64.85D0,123.90D0,-16229.D0, &
+     2.641D0,42.46D0,-0.07611D0,-0.1579D0,0.004078D0, &
+     -1.391D0,0.00153D0,0.000727D0,21.86D0,-0.04199D0, &
+     -0.06523D0,-0.6412D0,-0.000948D0,0.002276D0,20.90D0, &
+     6.283D0,1.541D0,4.183D0,9.609D0,6.591D0, &
+     15.08D0,30.57D0,7.435D0,4.0000D0,20.000D0, &
+     -70.12D0,-16125.D0,90.71D0,38.08D0,-19630.D0, &
+     3.181D0,47.50D0,-0.1327D0,-0.1864D0,0.01382D0, &
+     -1.488D0,0.002962D0,0.000897D0,22.74D0,-0.04095D0, &
+     -0.09223D0,-1.059D0,-0.001766D0,0.003034D0,18.64D0, &
+     6.266D0,0.9351D0,5.389D0,8.573D0,5.935D0, &
+     15.63D0,31.47D0,8.103D0,4.0000D0,20.000D0, &
+     -162.50D0,-15806.D0,160.60D0,5.888D0,-27534.D0, &
+     3.607D0,51.10D0,-0.1006D0,-0.1927D0,0.03353D0, &
+     -1.392D0,0.001594D0,0.002439D0,22.41D0,-0.04925D0, &
+     -0.1153D0,-1.399D0,0.000716D0,0.002696D0,18.31D0, &
+     6.196D0,0.7677D0,5.072D0,10.06D0,6.668D0, &
+     16.11D0,30.04D0,8.260D0,4.0000D0,20.000D0, &
+     -128.40D0,-16184.D0,149.10D0,215.50D0,-36435.D0, &
+     4.090D0,49.09D0,-0.0231D0,-0.1359D0,0.01989D0, &
+     -2.298D0,0.004911D0,0.003421D0,21.79D0,-0.05447D0, &
+     -0.1149D0,-0.2214D0,-0.01355D0,0.001185D0,19.48D0, &
+     5.831D0,0.3325D0,6.472D0,10.47D0,9.081D0, &
+     15.85D0,25.27D0,7.976D0,4.0000D0,20.000D0/
+
+       DATA IOP/1000/
+
+       SAVE
+
+       IF (Kp.GT.5) THEN
+       IOPT = 6
+       END IF
+
+       IF (IOP.NE.IOPT) THEN
+
+       IOP=IOPT
+       DO 1 I=1,30
+       A(I)=PARAM(I,IOPT)
+1      END DO
+      
+
+       DYC=A(30)
+       DYC2=DYC**2
+       DX=A(20)
+       HA02=0.5D0*A02
+       RDX2M=-1.D0/DX**2
+       RDX2=-RDX2M
+       RDYC2=1.D0/DYC2
+       HLWC2M=-0.5D0*XLWC2
+       DRDYC2=-2.D0*RDYC2
+       DRDYC3=2.D0*RDYC2*DSQRT(RDYC2)
+       HXLW2M=-0.5D0*XLW2
+
+       ADR=A(21) !ARC
+       D0=A(22)
+       DD=A(23) !GAMMARC
+       RC=A(24)
+       G=A(25)
+       AT=A(26)
+       DT=D0 !Dy
+       DEL=0.01
+       P=A(27)
+       Q=0.0
+       SX=A(28)
+       GAM=A(29)
+       HXLD2M=-0.5D0*XLD2
+       ADSL=0.D0
+       XGHS=0.D0
+       H=0.D0
+       HS=0.D0
+       GAMH=0.D0
+       W1=-0.5D0/DX
+       DBLDEL=2.D0*DEL
+       W2=W1*2.D0
+       W4=-1.D0/3.D0
+       W3=W4/DX
+       W5=-0.5D0
+       W6=-3.D0
+       AK1=A(1)
+       AK2=A(2)
+       AK3=A(3)
+       AK4=A(4)
+
+       AK6=A(6)
+       AK7=A(7)
+       AK8=A(8)
+       AK9=A(9)
+       AK10=A(10)
+       AK11=A(11)
+       AK12=A(12)
+       AK13=A(13)
+       AK14=A(14)
+       AK15=A(15)
+       AK16=A(16)
+       AK17=A(17)
+       SXA=0.D0
+       SYA=0.D0
+       SZA=0.D0
+       AK610=AK6*W1+AK10*W5
+       AK711=AK7*W2-AK11
+       AK812=AK8*W2+AK12*W6
+       AK913=AK9*W3+AK13*W4
+       RDXL=1.D0/DXL
+       HRDXL=0.5D0*RDXL
+       A6H=AK6*0.5D0
+       A9T=AK9/3.D0
+       YNP=RPI/YN*0.5D0
+       YND=2.D0*YN
+
+       ENDIF
+
+       AK5= A(5)
+       PredictedDst = -(0.13)*(kp**(3.38))-9.93
+
+       IF (model(3) == 1) THEN
+       IF (model(4) == 1) THEN
+       IF (Kp > 5) THEN
+       AK5= -10220+(408.5*DST)
+       END IF
+       END IF
+       
+       IF (model(4) == 2) THEN
+       AK5= -10220+(408.5*DST)
+       END IF
+
+       IF (model(4) == 3) THEN
+       PredictedDst = -(0.13)*(kp**(3.38))-9.93
+       IF (DST .LT. PredictedDst) THEN
+       AK5= -10220+(408.5*DST)
+       END IF
+       END IF
+       END IF
+
+       SPS = DSIN(PS)
+       CPS = DCOS(PS)
+
+       X2=X*X
+       Y2=Y*Y
+       Z2=Z*Z
+       TPS=SPS/CPS
+       HTP=TPS*0.5D0
+       GSP=G*SPS
+       XSM=X*CPS-Z*SPS
+       ZSM=X*SPS+Z*CPS
+!
+!   CALCULATE THE FUNCTION ZS DEFINING THE SHAPE OF THE TAIL CURRENT SHEET
+!    AND ITS SPATIAL DERIVATIVES:
+!
+       XRC=XSM+RC
+       XRC16=XRC**2+16.D0
+       SXRC=DSQRT(XRC16)
+       Y4=Y2*Y2
+       Y410=Y4+1.D4
+       SY4=SPS/Y410
+       GSY4=G*SY4
+       ZS1=HTP*(XRC-SXRC)
+       DZSX=-ZS1/SXRC
+       ZS=ZS1-GSY4*Y4
+       D2ZSGY=-SY4/Y410*4.D4*Y2*Y
+       DZSY=G*D2ZSGY
+!
+!   CALCULATE THE COMPONENTS OF THE RING CURRENT CONTRIBUTION:
+!
+       XSM2=XSM**2
+       DSQT=DSQRT(XSM2+A02)
+       FA0=0.5D0*(1.D0+XSM/DSQT)
+       DDR=D0+DD*FA0
+       DFA0=HA02/DSQT**3
+       ZR=ZSM-ZS
+       TR=DSQRT(ZR**2+DDR**2)
+       RTR=1.D0/TR
+       RO2=XSM2+Y2
+       ADRT=ADR+TR
+       ADRT2=ADRT**2
+       FK=1.D0/(ADRT2+RO2)
+       DSFC=DSQRT(FK)
+       FC=FK**2*DSFC
+       FACXY=3.0D0*ADRT*FC*RTR
+       XZR=XSM*ZR
+       YZR=Y*ZR
+       DBXDP=FACXY*XZR
+       DER25=FACXY*YZR
+       XZYZ=XSM*DZSX+Y*DZSY
+       FAQ=ZR*XZYZ-DDR*DD*DFA0*XSM
+       DBZDP=FC*(2.D0*ADRT2-RO2)+FACXY*FAQ
+       DER15=DBXDP*CPS+DBZDP*SPS
+       DER35=DBZDP*CPS-DBXDP*SPS
+!
+!  CALCULATE THE TAIL CURRENT SHEET CONTRIBUTION:
+!
+       DELY2=DEL*Y2
+       D=DT+DELY2
+       IF (DABS(GAM).LT.1.D-6) GOTO 8
+       XXD=XSM-XD
+       RQD=1.D0/(XXD**2+XLD2)
+       RQDS=DSQRT(RQD)
+       H=0.5D0*(1.D0+XXD*RQDS)
+       HS=-HXLD2M*RQD*RQDS
+       GAMH=GAM*H
+       D=D+GAMH
+       XGHS=XSM*GAM*HS
+       ADSL=-D*XGHS
+   8   D2=D**2
+       T=DSQRT(ZR**2+D2)
+       XSMX=XSM-SX
+       RDSQ2=1.D0/(XSMX**2+XLW2)
+       RDSQ=DSQRT(RDSQ2)
+       V=0.5D0*(1.D0-XSMX*RDSQ)
+       DVX=HXLW2M*RDSQ*RDSQ2
+       OM=DSQRT(DSQRT(XSM2+16.D0)-XSM)
+       OMS=-OM/(OM*OM+XSM)*0.5D0
+       RDY=1.D0/(P+Q*OM)
+       OMSV=OMS*V
+       RDY2=RDY**2
+       FY=1.D0/(1.D0+Y2*RDY2)
+       W=V*FY
+       YFY1=2.D0*FY*Y2*RDY2
+       FYPR=YFY1*RDY
+       FYDY=FYPR*FY
+       DWX=DVX*FY+FYDY*Q*OMSV
+       YDWY=-V*YFY1*FY
+       DDY=DBLDEL*Y
+       ATT=AT+T
+       S1=DSQRT(ATT**2+RO2)
+       F5=1.D0/S1
+       F7=1.D0/(S1+ATT)
+       F1=F5*F7
+       F3=F5**3
+       F9=ATT*F3
+       FS=ZR*XZYZ-D*Y*DDY+ADSL
+       XDWX=XSM*DWX+YDWY
+       RTT=1.D0/T
+       WT=W*RTT
+       BRRZ1=WT*F1
+       BRRZ2=WT*F3
+       DBXC1=BRRZ1*XZR
+       DBXC2=BRRZ2*XZR
+
+       TLT2=PS**2
+
+       DER21=BRRZ1*YZR
+       DER22=BRRZ2*YZR
+       DER216=DER21*TLT2
+       DER217=DER22*TLT2
+       WTFS=WT*FS
+       DBZC1=W*F5+XDWX*F7+WTFS*F1
+       DBZC2=W*F9+XDWX*F1+WTFS*F3
+       DER11=DBXC1*CPS+DBZC1*SPS
+       DER12=DBXC2*CPS+DBZC2*SPS
+       DER31=DBZC1*CPS-DBXC1*SPS
+       DER32=DBZC2*CPS-DBXC2*SPS
+       DER116=DER11*TLT2
+       DER117=DER12*TLT2
+       DER316=DER31*TLT2
+       DER317=DER32*TLT2
+!
+!  CALCULATE CONTRIBUTION FROM THE CLOSURE CURRENTS
+!
+       ZPL=Z+RT
+       ZMN=Z-RT
+       ROGSM2=X2+Y2
+       SPL=DSQRT(ZPL**2+ROGSM2)
+       SMN=DSQRT(ZMN**2+ROGSM2)
+       XSXC=X-SXC
+       RQC2=1.D0/(XSXC**2+XLWC2)
+       RQC=DSQRT(RQC2)
+       FYC=1.D0/(1.D0+Y2*RDYC2)
+       WC=0.5D0*(1.D0-XSXC*RQC)*FYC
+       DWCX=HLWC2M*RQC2*RQC*FYC
+       DWCY=DRDYC2*WC*FYC*Y
+       SZRP=1.D0/(SPL+ZPL)
+       SZRM=1.D0/(SMN-ZMN)
+       XYWC=X*DWCX+Y*DWCY
+       WCSP=WC/SPL
+       WCSM=WC/SMN
+       FXYP=WCSP*SZRP
+       FXYM=WCSM*SZRM
+       FXPL=X*FXYP
+       FXMN=-X*FXYM
+       FYPL=Y*FXYP
+       FYMN=-Y*FXYM
+       FZPL=WCSP+XYWC*SZRP
+       FZMN=WCSM+XYWC*SZRM
+       DER13=FXPL+FXMN
+       DER14=(FXPL-FXMN)*SPS
+       DER23=FYPL+FYMN
+       DER24=(FYPL-FYMN)*SPS
+       DER33=FZPL+FZMN
+       DER34=(FZPL-FZMN)*SPS
+!
+!   NOW CALCULATE CONTRIBUTION FROM CHAPMAN-FERRARO SOURCES + ALL OTHER
+!
+       EX=DEXP(X/DX)
+       EC=EX*CPS
+       ES=EX*SPS
+       ECZ=EC*Z
+       ESZ=ES*Z
+       ESZY2=ESZ*Y2
+       ESZZ2=ESZ*Z2
+       ECZ2=ECZ*Z
+       ESY=ES*Y
+!
+!  FINALLY, CALCULATE NET EXTERNAL MAGNETIC FIELD COMPONENTS,
+!    BUT FIRST OF ALL THOSE FOR C.-F. FIELD:
+!
+       SX1=AK6*ECZ+AK7*ES+AK8*ESY*Y+AK9*ESZ*Z
+       SY1=AK10*ECZ*Y+AK11*ESY+AK12*ESY*Y2+AK13*ESY*Z2
+       SZ1=AK14*EC+AK15*EC*Y2+AK610*ECZ2+AK711*ESZ+AK812*ESZY2+AK913*ESZZ2
+       BXCL=AK3*DER13+AK4*DER14
+       BYCL=AK3*DER23+AK4*DER24
+       BZCL=AK3*DER33+AK4*DER34
+       BXT=AK1*DER11+AK2*DER12+BXCL +AK16*DER116+AK17*DER117
+       BYT=AK1*DER21+AK2*DER22+BYCL +AK16*DER216+AK17*DER217
+       BZT=AK1*DER31+AK2*DER32+BZCL +AK16*DER316+AK17*DER317
+       BX=BXT+AK5*DER15+SX1+SXA
+       BY=BYT+AK5*DER25+SY1+SYA
+       BZ=BZT+AK5*DER35+SZ1+SZA
+
+       !print *, BX
+       !print *, BY
+       !print *, BZ
+       
+       ! Check for NaN values
+       if(BX /= BX) THEN 
+              BX = 0.0
+       end if
+       if(BY /= BY) THEN 
+              BY = 0.0
+       end if
+       if(BZ /= BZ) THEN 
+              BZ = 0.0
+       end if
+       
+  
+       RETURN
+       END SUBROUTINE T89a

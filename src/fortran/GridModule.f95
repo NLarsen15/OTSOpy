@@ -115,23 +115,23 @@ contains
         deallocate(temp)
     end subroutine extract_unique_sorted_z
 
-subroutine find_index(value, sorted_array, n_vals, index)
+subroutine find_index(value, sorted_array, n_vals, result_index)
     implicit none
     real(8), intent(in) :: value
     real(8), intent(in) :: sorted_array(:)
     integer, intent(in) :: n_vals
-    integer, intent(out) :: index
+    integer, intent(out) :: result_index
     integer :: i
 
-    index = -1
+    result_index = -1
     do i = 1, n_vals
         if (abs(value - sorted_array(i)) < 1.0d-8) then
-            index = i
+            result_index = i
             exit
         end if
     end do
 
-    if (index == -1) then
+    if (result_index == -1) then
         print *, 'Value not found in sorted array: ', value
         stop
     end if

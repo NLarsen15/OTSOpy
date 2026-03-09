@@ -25,7 +25,8 @@ USE Particle
 USE SolarWind
 implicit none
 real(8) :: V(3), StartPosition(5), Date(6), Rigidity, Norm(3), VelocityGEO(3)
-integer(8) :: Anti, Atomic, mode(2)
+integer(8) :: Anti, Atomic
+integer(4) :: mode(4)
 real(8) :: LocalVector(3), RotatedVelocity(3), GEOVelocity(3), Re, w
 real(8) :: tempposition(3), temppositionGDZ(3), GEOSPHposition(3)
 character(len=3) :: inputcoord
@@ -36,9 +37,12 @@ call Reset()
 
 call initialize()
 
-Position(1) = StartPosition(1)
-Position(2) = StartPosition(2)
-Position(3) = StartPosition(3)
+call CoordinateTransform(inputcoord, "GDZ", year, day, secondTotal, StartPosition, Position)
+
+!Position(1) = StartPosition(1)
+!Position(2) = StartPosition(2)
+!Position(3) = StartPosition(3)
+
 R = Rigidity
 year = INT(Date(1))
 day = INT(Date(2))
@@ -115,6 +119,7 @@ IF (Atomic == 0) THEN ! Electron
  end if
 
  w = (velocity(1)*velocity(1) + velocity(2)*velocity(2) + velocity(3)*velocity(3))**(0.5)
+ OriginalBeta = w / c
  MaxT = Re*1000**(-2.0) / (w/1000)
 
 

@@ -1,16 +1,29 @@
+
 cmake_minimum_required(VERSION 3.10)
 project(FortranToPython LANGUAGES Fortran)
 
-set(CMAKE_Fortran_COMPILER "C:/rtools40/mingw64/bin/gfortran.exe")
-set(CMAKE_C_COMPILER "C:/rtools40/mingw64/bin/gcc.exe")
-set(CMAKE_CXX_COMPILER "C:/rtools40/mingw64/bin/g++.exe")
+# Use system compilers (do not hardcode paths)
 
-# Find Python and NumPy
-find_package(Python REQUIRED COMPONENTS Interpreter Development.Module NumPy)
+# Find Python3 (do not require NumPy component, handle NumPy manually)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+if(NOT Python3_FOUND)
+    message(FATAL_ERROR "Python3 is required to build this project.")
+endif()
+
+# Use manually provided NumPy include dir if available
+if(NOT DEFINED NUMPY_INCLUDE_DIR)
+    if(DEFINED ENV{NUMPY_INCLUDE})
+        set(NUMPY_INCLUDE_DIR $ENV{NUMPY_INCLUDE})
+    else()
+        set(NUMPY_INCLUDE_DIR "")
+    endif()
+endif()
+message(STATUS "NumPy include dir: ${NUMPY_INCLUDE_DIR}")
 
 # Set the Fortran source files
 set(FORTRAN_SOURCES
     "MiddleMan.f95"
+    "TSY89_refit.f95"
     "Acceleration.f95"
     "Asymptotic.f95"
     "Conversion.f95"
@@ -36,7 +49,6 @@ set(FORTRAN_SOURCES
     "Rigidity.f95"
     "SolarWindModule.f95"
     "T96.f"
-    "TSY89DP.f"
     "Tsyg_01.for"
     "Tsyganenko04.f"
     "Tsyganenko87l.f"
@@ -50,7 +62,8 @@ set(FORTRAN_SOURCES
     "init_nouveau.f"
     "onera_desp_lib.f"
     "t01_s.f"
-    "TSY89_BobergExtension.f95"
+    "TSY89a.f95"
+    "TSY89c.f95"
     "MHDModule.f95"
     "MHDBfield.f95"
     "GridModule.f95"

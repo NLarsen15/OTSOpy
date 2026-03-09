@@ -27,7 +27,7 @@ DATA CUSTH/0.D0,0.D0,5737.D0,0.D0,-2047.D0,25.D0,0.D0,-366.D0, &
 contains
 
 subroutine initializeCustomGauss(model)
-integer(8) :: model(2)
+integer(4) :: model(4)
               
 IF (model(1) == 3) THEN
     CUSTGAUSSINT = 1

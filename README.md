@@ -5,7 +5,8 @@ Python package version of the OTSO tool used for trajectory computations of char
 
 OTSO is designed to be open-source; all suggestions for improvement are welcome, and please report any bugs you find. I welcome any help provided by the community in the development of OTSO.
 
-__Disclaimer!__ OTSOpy is currently only available for Python 3.12. This is due to the compiled Fortran libraries being Python version-specific. It is recommended that you set up a new Python environment using Python 3.12. Users may attempt to clone the repository and compile the Fortran code themselves with f2py, following instructions on the original [OTSO](https://github.com/NLarsen15/OTSO) repository. I will attempt to keep OTSOpy compatible with as many Python versions as possible. However, I hope that the open-source nature of the OTSO tool means that the compiled Fortran libraries users make will be shared and merged with this release, relieving me of some of the pressure.
+__Supported Python Versions:__ 3.10, 3.11, 3.12, 3.13, and 3.14 
+(I will endevour to keep OTSO support as up to date as possible)
 
 # Installation
 
@@ -24,6 +25,14 @@ Users may clone the repository and run the setup.py file within the main OTSOpy 
 `pip install .`
 
 This will install OTSO into your current Python environment.
+
+# Troubleshooting
+
+__LINUX__
+Sometimes there are errors regarding libgfortran. Make a note of the libgfortran error message and then install the appropriate libgfortran version that is being requested. This should resolve the issue.
+
+__MAC__
+The compiled fortran libraries can be flagged as potential malware. To resolve this you can attempt to compile the libraries yourself or in your settings grant permission for your computer to access the required .so file. 
 
 # Functions
 
@@ -58,6 +67,10 @@ Performs the cutoff function over a user-defined location grid, allowing for cut
 ## Flight
 Computes the cut-off rigidities along a user-defined path. The function is named Flight as it is primarily been developed for use in aviation tools, but any path can be entered. For example, the function can be applied to geomagnetic latitude surveys using positional data from a ship voyage, or it can be used to compute anisotropy and cut-off values for low-Earth orbit spacecraft. This function allows for changing altitude, location, and date values. 
 
+![ISS](https://raw.githubusercontent.com/NLarsen15/OTSOpy/main/src/images/ISS_cutoffs.png)
+
+*Figure 3: Computed effective vertical cut-off rigidities for the ISS between the 15th and 16th of March 2021. Geomagnetic parameters were extracted directly from OMNI for this period.*
+
 ## Trace
 Traces the magnetic field lines around the globe or for a given location based on the geomagnetic configuration detailed by the user. It is useful for modelling the magnetosphere structure under disturbed conditions and for finding open magnetic field lines.
 
@@ -80,7 +93,11 @@ import OTSO
 if __name__ == '__main__':
     stations_list = ["OULU", "ROME", "ATHN", "CALG"]  # list of neutron monitor stations (using their abbreviations)
 
-    cutoff = OTSO.cutoff(Stations=stations_list, corenum=1, year=2000, month=1, day=1, hour=0)
+    cutoff = OTSO.cutoff(
+        Stations=stations_list,
+        computation_params={"corenum": 1},
+        datetime_params={"year": 2000, "month": 1, "day": 1, "hour": 0}
+    )
 
     print(cutoff[0])  # dataframe output containing Ru, Rc, Rl for all input locations
     print(cutoff[1])  # text output of input variable information
@@ -94,10 +111,10 @@ Rc = effective cut-off rigidity [GV]
 Rl = lower cut-off rigidity [GV]
 
 ```
-      ATHN  CALG  OULU  ROME
-Ru    8.92  1.15  0.72  6.34
-Rc    8.68  1.12  0.67  6.17
-Rl    8.57  1.02  0.62  5.00
+    ATHN  CALG  OULU  ROME
+Ru  8.98  1.14  0.72  6.35
+Rc  8.33  1.07  0.71  6.07
+Rl  6.31  1.02  0.59  5.37
 ```
 
 ## Cone
@@ -107,31 +124,35 @@ import OTSO
 
 if __name__ == '__main__':
 
-    stations_list = ["OULU","ROME","ATHN","CALG"] # list of neutron monitor stations (using their abbreviations)
+    stations_list = ["OULU", "ROME", "ATHN", "CALG"]  # list of neutron monitor stations (using their abbreviations)
 
-    cone = OTSO.cone(Stations=stations_list,corenum=1,year=2000,month=1,day=1,hour=0)
+    cone = OTSO.cone(
+        Stations=stations_list,
+        computation_params={"corenum": 1},
+        datetime_params={"year": 2000, "month": 1, "day": 1, "hour": 0}
+    )
 
-    print(cone[0]) # dataframe output containing asymptotic cones for all input locations
-    print(cone[1]) # dataframe output containing Ru, Rc, Rl for all inputted locations
-    print(cone[2]) # text output of input variable information
+    print(cone[0])  # dataframe output containing asymptotic cones for all input locations
+    print(cone[1])  # dataframe output containing Ru, Rc, Rl for all inputted locations
+    print(cone[2])  # text output of input variable information
 ```
 
 ### Output
 Showing only the cone[0] output containing the asymptotic viewing directions of the input stations. Result layout is: filter;latitude;longitude.
 If the filter value is 1, then the particle of that rigidity has an allowed trajectory. If the filter value is NOT 1, then the particle of that rigidity has a forbidden trajectory.
 ```
-      R [GV]                ATHN              CALG               OULU                ROME
-0     20.000     1;-1.599;89.139  1;21.147;271.981    1;40.892;62.428      1;4.077;71.061
-1     19.990     1;-1.625;89.166  1;21.132;271.980    1;40.879;62.427      1;4.052;71.080
-2     19.980     1;-1.652;89.195  1;21.117;271.978    1;40.867;62.425      1;4.026;71.098
-3     19.970     1;-1.678;89.222  1;21.102;271.976    1;40.854;62.424      1;4.000;71.117
-4     19.960     1;-1.704;89.251  1;21.087;271.975    1;40.842;62.422      1;3.975;71.135
-...      ...                 ...               ...                ...                 ...
-1995   0.050   -1;18.921;202.260  -1;55.778;67.804  -1;43.146;232.544  -1;-23.689;191.552
-1996   0.040  -1;-12.213;230.889  -1;31.434;54.166  -1;28.819;225.953    -1;5.443;168.553
-1997   0.030   -1;15.332;187.614  -1;57.549;27.604  -1;28.198;224.400   -1;22.447;205.148
-1998   0.020   -1;18.778;204.219  -1;50.931;22.612  -1;25.831;217.207   -1;12.262;170.688
-1999   0.010   -1;-6.034;230.324  -1;30.431;41.536  -1;36.856;197.770   -1;24.229;184.606
+      R [GV]                ATHN               CALG               OULU               ROME
+0     20.000     1;-1.635;89.172   1;21.147;271.975    1;40.902;62.437     1;4.052;71.083
+1     19.990     1;-1.661;89.200   1;21.131;271.973    1;40.890;62.435     1;4.027;71.101
+2     19.980     1;-1.687;89.228   1;21.117;271.972    1;40.877;62.434     1;4.001;71.120
+3     19.970     1;-1.713;89.256   1;21.101;271.970    1;40.865;62.432     1;3.975;71.138
+4     19.960     1;-1.739;89.283   1;21.086;271.969    1;40.853;62.431     1;3.950;71.156
+...      ...                 ...                ...                ...                ...
+1995   0.050    -1;5.784;175.702   -1;38.217;16.098  -1;43.597;238.366   -1;3.370;219.840
+1996   0.040   -1;20.165;207.726   -1;20.122;39.597  -1;24.492;229.951  -1;24.971;178.788
+1997   0.030  -1;-32.777;224.618   -1;29.968;12.264  -1;17.566;214.996  -1;17.415;216.472
+1998   0.020    -1;7.967;228.903   -1;33.543;96.634  -1;36.906;180.237  -1;30.685;186.313
+1999   0.010   -1;19.485;224.643  -1;-4.295;338.997  -1;57.813;160.815  -1;26.726;219.327
 ```
 
 ## Trajectory
@@ -141,33 +162,41 @@ import OTSO
 
 if __name__ == '__main__':
 
-    stations_list = ["OULU","ROME","ATHN","CALG"] # list of neutron monitor stations (using their abbreviations)
+    stations_list = ["OULU", "ROME", "ATHN", "CALG"]  # list of neutron monitor stations (using their abbreviations)
 
-    trajectory = OTSO.trajectory(Stations=stations_list,rigidity=5,corenum=1)
+    trajectory = OTSO.trajectory(
+        Stations=stations_list,
+        rigidity_params={"startrigidity": 5},
+        computation_params={"corenum": 1}
+    )
 
-    print(trajectory[0]) # dictionary output containing positional information for all trajectories generated starting
+    print(trajectory[0])  # dictionary output containing positional information for all trajectories generated starting
                          # from input stations
-    print(trajectory[1]) # text output of input variable information
+    print(trajectory[1])  # text output of input variable information
 
 ```
 
 ### Output
-Showing the dataframe produced for the particle originating from Oulu. Other trajectories are within the trajectory[0] dictionary.
+Showing the dataframe produced for the particle originating from Oulu. Other trajectories are within the trajectory[0] dictionary. Additionally the Filter value, letting you know if the trajectory is allowed or not, and the asymptotic latitude and longitude at the end point is included. 
 
 ```
-'OULU':
+{'NMname': 'OULU', 'trajectory':
+
        X_Re [GEO]  Y_Re [GEO]  Z_Re [GEO]
-0      0.383681    0.182761    0.907372
-1      0.383888    0.182861    0.907864
-2      0.384114    0.182973    0.908405
-3      0.384363    0.183098    0.909000
-4      0.384636    0.183238    0.909654
+0      0.383531    0.182689    0.907014
+1      0.383572    0.182709    0.907112
+2      0.383618    0.182731    0.907221
+3      0.383667    0.182756    0.907340
+4      0.383722    0.182784    0.907471
 ..          ...         ...         ...
-218    6.759500    9.079110    5.098440
-219    6.762920    9.085720    5.100750
-220    6.766340    9.092320    5.103050
-221    6.769770    9.098930    5.105360
-222    6.773190    9.105540    5.107660
+445  -28.578000   21.122000   -1.970810
+446  -31.623400   21.590600   -1.878430
+447  -34.974700   22.101100   -1.794190
+448  -38.660200   22.672200   -1.729170
+449  -42.710200   23.328800   -1.698580
+
+[450 rows x 3 columns], 
+'Filter': 1, 'AsymLat': 0.103, 'AsymLong': 170.53}
 ````
 
 ## Planet
@@ -177,28 +206,33 @@ import OTSO
 
 if __name__ == '__main__':
 
-    planet = OTSO.planet(corenum=1, cutoff_comp="Vertical", year=2000, rigiditystep=0.1)
+    planet = OTSO.planet(
+        cutoff_comp="Vertical",
+        computation_params={"corenum": 1},
+        datetime_params={"year": 2000},
+        rigidity_params={"rigiditystep": 0.1}
+    )
 
-    print(planet[0]) # dataframe containing cutoff results for planet grid
-    print(planet[1]) # text output of input variable information
+    print(planet[0])  # dataframe containing cutoff results for planet grid
+    print(planet[1])  # text output of input variable information
 ```
 
 ### Output
 The default output is a 5°x5° grid of the Earth with no asymptotic viewing directions computed.
 
 ```
-      Latitude  Longitude   Rl   Rc   Ru
+      Latitude  Longitude   Ru   Rc   Rl
 0        -90.0        0.0  0.0  0.0  0.0
 1        -90.0        5.0  0.0  0.0  0.0
 2        -90.0       10.0  0.0  0.0  0.0
 3        -90.0       15.0  0.0  0.0  0.0
 4        -90.0       20.0  0.0  0.0  0.0
 ...        ...        ...  ...  ...  ...
-2696      90.0      340.0  0.0  0.0  0.0
-2697      90.0      345.0  0.0  0.0  0.0
-2698      90.0      350.0  0.0  0.0  0.0
-2699      90.0      355.0  0.0  0.0  0.0
-2700      90.0      360.0  0.0  0.0  0.0
+1382      90.0      340.0  0.0  0.0  0.0
+1383      90.0      345.0  0.0  0.0  0.0
+1384      90.0      350.0  0.0  0.0  0.0
+1385      90.0      355.0  0.0  0.0  0.0
+1386      90.0      360.0  0.0  0.0  0.0
 ```
 
 ## Flight
@@ -209,19 +243,24 @@ import datetime
 
 if __name__ == '__main__':
 
-    latitude_list = [10,15,20,25,30] # [Latitudes]
-    longitude_list = [10,15,20,25,30] # [Longitudes]
-    altitude_list = [30,40,50,60,80] # [Altitudes] in km
-    date_list = [datetime.datetime(2000,10,12,8),datetime.datetime(2000,10,12,9),datetime.datetime(2000,10,12,10),
-                 datetime.datetime(2000,10,12,11),datetime.datetime(2000,10,12,12)] # [dates]
+    latitude_list = [10, 15, 20, 25, 30]  # [Latitudes]
+    longitude_list = [10, 15, 20, 25, 30]  # [Longitudes]
+    altitude_list = [30, 40, 50, 60, 80]  # [Altitudes] in km
+    date_list = [datetime.datetime(2000, 10, 12, 8), datetime.datetime(2000, 10, 12, 9), datetime.datetime(2000, 10, 12, 10),
+                 datetime.datetime(2000, 10, 12, 11), datetime.datetime(2000, 10, 12, 12)]  # [dates]
 
+    flight = OTSO.flight(
+        latitudes=latitude_list,
+        longitudes=longitude_list,
+        dates=date_list,
+        altitudes=altitude_list,
+        cutoff_comp="Vertical",
+        computation_params={"corenum": 1}
+    )
     
-    flight = OTSO.flight(latitudes=latitude_list, longitudes=longitude_list,dates=date_list,
-                         altitudes=altitude_list,cutoff_comp="Vertical",corenum=1)
-    
-    print(flight[0]) # dataframe output containing Ru, Rc, Rl along flightpath
-    print(flight[1]) # text output of input variable information
-    print(flight[2]) # dataframe output of input variables
+    print(flight[0])  # dataframe output containing Ru, Rc, Rl along flightpath
+    print(flight[1])  # text output of input variable information
+    print(flight[2])  # dataframe output of input variables
 ```
 
 ### Output
@@ -243,30 +282,37 @@ import OTSO
 
 if __name__ == '__main__':
 
-    trace = OTSO.trace(corenum=1)
+    trace = OTSO.trace(
+        computation_params={"corenum": 1},
+        grid_params={"latstep": -10, "lonstep": 30}
+    )
 
-    print(trace[0]) # dictionary output containing positional information of magnetic field lines generated over
+    print(trace[0])  # dictionary output containing positional information of magnetic field lines generated over
                     # the globe
-    print(trace[1]) # text output of input variable information
+    print(trace[1])  # text output of input variable information
 ```
 
 ### Output
-Example output of one of the field line traces for the location latitude = 10° and longitude = 355°. 
+Example output of one of the field line traces for the location latitude = 60° and longitude = 215°.
+The L shell and Invariant Latitude are also computed from the magnetic field line tracing. 
 
 ```
-'10_355':
-      X_GEO [Re]  Y_GEO [Re]  Z_GEO [Re]  Bx_GSM [nT]  By_GSM [nT]  Bz_GSM [nT]
-0     0.985162   -0.086269    0.174797    -0.000015     0.000003     0.000028
-1     0.985008   -0.086334    0.176358    -0.000015     0.000003     0.000028
-2     0.984845   -0.086397    0.177918    -0.000016     0.000003     0.000028
-3     0.984673   -0.086459    0.179477    -0.000016     0.000003     0.000028
-4     0.984493   -0.086521    0.181035    -0.000016     0.000003     0.000028
-..         ...         ...         ...          ...          ...          ...
-56    0.963476   -0.088020    0.259596    -0.000024     0.000004     0.000023
-57    0.962858   -0.088017    0.261038    -0.000024     0.000004     0.000023
-58    0.962232   -0.088012    0.262478    -0.000025     0.000004     0.000023
-59    0.961599   -0.088007    0.263914    -0.000025     0.000004     0.000023
-60    0.960958   -0.088000    0.265346    -0.000025     0.000004     0.000023
+'60_215': {'Trace':        
+         X_GEO [Re]  Y_GEO [Re]  Z_GEO [Re]  Bx_GSM [nT]  By_GSM [nT]  Bz_GSM [nT]
+0       -0.568632    0.010497   -0.820734    -0.000024    -0.000017    -0.000053
+1       -0.569193    0.010380   -0.821270    -0.000024    -0.000017    -0.000053
+2       -0.569754    0.010263   -0.821806    -0.000024    -0.000017    -0.000053
+3       -0.570316    0.010146   -0.822342    -0.000024    -0.000017    -0.000053
+4       -0.570877    0.010029   -0.822877    -0.000024    -0.000017    -0.000052
+...           ...         ...         ...          ...          ...          ...
+11862   -0.412834   -0.288995    0.866600     0.000047     0.000014    -0.000024
+11863   -0.411355   -0.288183    0.864958     0.000047     0.000015    -0.000024
+11864   -0.410863   -0.287913    0.864410     0.000047     0.000015    -0.000024
+11865   -0.410370   -0.287643    0.863862     0.000047     0.000015    -0.000025
+11866   -0.409878   -0.287372    0.863314     0.000047     0.000015    -0.000025
+
+[11867 rows x 6 columns], 
+'L_shell': 4.1267, 'Invariant_Latitude': 60.5105}
 ```
 
 ## Coordtrans
@@ -277,13 +323,19 @@ import datetime
 
 if __name__ == '__main__':
 
-    lat_lon_alt_list = [[10,10,10]] # [[Latitude,Longitude,Altitude]]
-    date_list = [datetime.datetime(2000,10,12,8)] # [dates]
+    lat_lon_alt_list = [[10, 10, 10]]  # [[Latitude,Longitude,Altitude]]
+    date_list = [datetime.datetime(2000, 10, 12, 8)]  # [dates]
     
-    Coords = OTSO.coordtrans(Locations=lat_lon_alt_list,dates=date_list,CoordIN="GEO",CoordOUT="GSM",corenum=1)
+    Coords = OTSO.coordtrans(
+        Locations=lat_lon_alt_list,
+        dates=date_list,
+        CoordIN="GEO",
+        CoordOUT="GSM",
+        corenum=1  # coordtrans uses individual parameters, not grouped ones
+    )
 
-    print(Coords[0]) # dataframe output of converted coordinates
-    print(Coords[1]) # text output detailing the initial and final conversion coordinate system
+    print(Coords[0])  # dataframe output of converted coordinates
+    print(Coords[1])  # text output detailing the initial and final conversion coordinate system
 ```
 
 ### Output
@@ -291,7 +343,7 @@ Coords[0] output converting the [10,10,10] position from GEO coordinate system t
 
 ```
                   Date X_GEO [Re] Y_GEO [Re] Z_GEO [Re] X_GSM [Re] Y_GSM [Re] Z_GSM [Re]
-0  2000-10-12 08:00:00    1.00157       10.0       10.0   7.508443   6.239805  10.280626
+0  2000-10-12 08:00:00    1.00157       10.0       10.0   7.508443   6.239794  10.280632
 ```
 
 ## Magfield
@@ -301,12 +353,16 @@ import OTSO
 
 if __name__ == '__main__':
 
-    location_list = [[10,10,10]] # [[X,Y,Z]] Earth radii Geocentric coordinates in this instance
+    location_list = [[10, 10, 10]]  # [[X,Y,Z]] Earth radii Geocentric coordinates in this instance
 
-    magfield = OTSO.magfield(Locations=location_list,coordsystem="GEO",corenum=1)
+    magfield = OTSO.magfield(
+        Locations=location_list,
+        coordinate_params={"coordsystem": "GEO"},
+        computation_params={"corenum": 1}
+    )
 
-    print(magfield[0]) # dataframe of returned magnetic field vectors at input locations
-    print(magfield[1]) # text output of input variable information
+    print(magfield[0])  # dataframe of returned magnetic field vectors at input locations
+    print(magfield[1])  # text output of input variable information
 
 ```
 
@@ -315,7 +371,7 @@ magfield[0] output showing the magnetic field vector at the input location in th
 
 ```
    X_GEO [Re]  Y_GEO [Re]  Z_GEO [Re]  GSM_Bx [nT]  GSM_By [nT]  GSM_Bz [nT]
-0        10.0        10.0        10.0    10.735511    -2.413911    11.586166
+0        10.0        10.0        10.0    10.735517    -2.413889    11.586277
 ```
 
 # Acknowledgements

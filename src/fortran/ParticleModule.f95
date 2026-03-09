@@ -8,9 +8,12 @@
 module Particle
 real(8) :: Position(3), Velocity(3), XnewTemp(3)
 real(8) :: M, Q, Z, A, q_0, m_0, E_0, R, lambda, c, OLDsecondTotal, Lasth
-integer(8) :: year, day, hour, minute, secondINT, model(2), Acount, forbiddencount, NeverFail, FailCheck, FinalStep
+integer(8) :: year, day, hour, minute, secondINT, Acount, NeverFail, FailCheck, FinalStep, steps
+integer(4) :: model(4)
 real(8) :: secondTotal, DistanceTraveled, TimeElapsed, h, hOLD, RU, RL, Ref, MaxT, step, Firsth, MaxGyroPercent
 real(8) :: OLDPosition(3), OLDVelocity(3), NEWPosition(3), NEWVelocity(3), HALFPosition(3), HALFVelocity(3)
+real(8) :: MDP(3), mintrapdist, BetaError, OriginalBeta, CurrentBeta
+logical :: mindistcheck, trapdistcheck, adaptivestep
 integer(4) :: Result, MidLoop, test
 SAVE
 contains
@@ -31,6 +34,11 @@ c = 299792458.0
 hOLD = 0.0
 h = 0
 FinalStep = 0
+mindistcheck = .false.
+MDP(1) = 0.0
+MDP(2) = 0.0
+MDP(3) = 0.0
+steps = 0
 
 end subroutine initialize
 
@@ -51,12 +59,16 @@ q_0 = 0
 m_0 = 0
 E_0 = 0
 lambda = 0
-c = 0
 h = 0
 hOLD = 0
 MaxT = 0
 FinalStep = 0
 Subresult = 0
+mindistcheck = .false.
+MDP(1) = 0.0
+MDP(2) = 0.0
+MDP(3) = 0.0
+steps = 0
 
 end subroutine Reset
       
@@ -69,7 +81,7 @@ end subroutine Reset
 !
 ! ***************************************************************************************************************
 subroutine update(mode)
-integer(8) :: mode(2)
+integer(4) :: mode(4)
 
 E_0 = (m_0 * (299792458.0**2)) * (6.242e9)
 lambda = (((R*Z/(E_0 * A))**2) + 1)**(0.5)
@@ -79,7 +91,8 @@ DistanceTraveled = 0.0
 TimeElapsed = 0.0
 model(1) = mode(1)
 model(2) = mode(2)
-          
+model(3) = mode(3)
+model(4) = mode(4)
 end subroutine update
 
 subroutine OldVariables(Position1, Velocity1)

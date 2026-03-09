@@ -147,37 +147,50 @@ end interface
     return
   end function function87L
 
-  function function89(x) ! Tsyganenko 1989
-    real(8) :: function89(3), TSYGSM(3), TSYGSM1(3)
+  function function89a(x) ! Tsyganenko 1989a
+    real(8) :: function89a(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
-  
-    call T89D_DP(IOPT, parmod, PSI, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+
+    call T89a(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
     end if
-    function89 = TSYGSM
+    function89a = TSYGSM
   
     return
-  end function function89
+  end function function89a
 
-  function function89Boberg(x) ! Tsyganenko 1989 Boberg Extension
-    real(8) :: function89Boberg(3), TSYGSM(3), TSYGSM1(3)
+  function function89c(x) ! Tsyganenko 1989c
+    real(8) :: function89c(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
-  
-    call T89DBoberg(IOPT, parmod, PSI, DSTBob, KpIndex, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
 
+    call T89c(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
     end if
-
-    function89Boberg = TSYGSM
+    function89c = TSYGSM
   
     return
-  end function function89Boberg
+  end function function89c
+
+  function function89_refit(x) ! Tsyganenko 1989 refit
+    real(8) :: function89_refit(3), TSYGSM(3), TSYGSM1(3)
+    real(8), intent (in) :: x(3)
+
+    call T89_refit(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    if (model(1) == 4) THEN
+    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
+    else
+    TSYGSM=TSYGSM1
+    end if
+    function89_refit = TSYGSM
+
+    return
+  end function function89_refit
 
   function function96(x) ! Tsyganenko 1996
     real(8) :: function96(3), TSYGSM(3), TSYGSM1(3)
@@ -348,7 +361,7 @@ end interface
 ! ************************************************************************************************************************************
   subroutine MagneticFieldAssign(mode)
   implicit none
-  integer(8) :: mode(2)
+  integer(4) :: mode(4)
 
   call RECALC_08(year, day, hour, minute, secondINT, SW(1), SW(2), SW(3))
   
@@ -373,7 +386,7 @@ end interface
   ELSE IF (mode(2) == 2) THEN
     ExternalMagPointer => function87L  ! TSYGANENKO 87 LONG
   ELSE IF (mode(2) == 3) THEN
-    ExternalMagPointer => function89   ! TSYGANENKO 89
+    ExternalMagPointer => function89a   ! TSYGANENKO 89a
   ELSE IF (mode(2) == 4) THEN
     ExternalMagPointer => function96   ! TSYGANENKO 96
   ELSE IF (mode(2) == 5) THEN
@@ -383,7 +396,7 @@ end interface
   ELSE IF (mode(2) == 7) THEN
     ExternalMagPointer => function04  ! TSYGANENKO 04
   ELSE IF (mode(2) == 8) THEN
-    ExternalMagPointer => function89Boberg ! TSYGANENKO 89 BOBERG EXTENSION
+    ExternalMagPointer => function89c   ! TSYGANENKO 89c
   ELSE IF (mode(2) == 9) THEN
     ExternalMagPointer => function15N  ! TSYGANENKO 15 N-index
   ELSE IF (mode(2) == 10) THEN
@@ -392,6 +405,8 @@ end interface
     ExternalMagPointer => function16  ! TSYGANENKO 16 RBF
   ELSE IF (mode(2) == 99) THEN
     ExternalMagPointer => functionMHD  ! MHD
+  ELSE IF (mode(2) == 100) THEN
+    ExternalMagPointer => function89_refit  ! Tsyganenko 89 refit
   ELSE
     print *, "Please enter valid external magnetic field model"
   END IF
