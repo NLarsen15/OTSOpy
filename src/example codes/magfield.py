@@ -7,7 +7,7 @@ if __name__ == '__main__':
     # Example using grouped parameters
     magfield_results = magfield(
         Locations=location_list,
-        coordinate_params={"coordsystem": "GEO"},
+        coordinate_params={"inputcoord": "GEO"},
         computation_params={"corenum": 1}
     )
 
