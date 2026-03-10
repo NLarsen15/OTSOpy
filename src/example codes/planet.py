@@ -5,7 +5,7 @@ if __name__ == '__main__':
     # Example using grouped parameters
     planet_results = planet(
         cutoff_comp="Vertical",
-        grid_params={"latstep": 10, "lonstep": 15},
+        grid_params={"latstep": -10, "lonstep": 15},
         computation_params={"corenum": 6},
         datetime_params={"year": 2000},
         rigidity_params={"rigiditystep": 0.1},
