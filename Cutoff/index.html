@@ -1,0 +1,890 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../Cone/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Cutoff - OTSO Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cutoff" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="OTSO Documentation" class="md-header__button md-logo" aria-label="OTSO Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OTSO Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cutoff
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="OTSO Documentation" class="md-nav__button md-logo" aria-label="OTSO Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    OTSO Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cutoff
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cutoff
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#OTSO.cutoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cutoff
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Trajectory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Planet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Flight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Magfield/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Magfield
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trace
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Coordtrans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coordtrans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CLI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#OTSO.cutoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cutoff
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="cutoff">Cutoff</h1>
+<p><img alt="Cutoff Diagram" src="../assests/cutoffplot.png" title="Computation of the Oulu neutron monitor effective cut-off rigidity using the IGRF 2000 epoch and TSY89 model with kp index = 0. Penumbra is shown by the forbidden and allowed trajectories being black and white, respectively. The upper and lower cut-off values (Ru and Rl) are denoted in the legend, from which the effective cut-off (Rc) is computed." /></p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="OTSO.cutoff" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">OTSO.cutoff</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">cutoff</span><span class="p">(</span><span class="n">Stations</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">customlocations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cutoff_comp</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Vertical&#39;</span><span class="p">,</span> <span class="n">solar_wind</span><span class="p">:</span> <span class="n">SolarWindParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">geomagnetic</span><span class="p">:</span> <span class="n">GeomagneticParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">tsyganenko</span><span class="p">:</span> <span class="n">TsyganenkoParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">datetime_params</span><span class="p">:</span> <span class="n">DateTimeParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">magfield_params</span><span class="p">:</span> <span class="n">MagFieldParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">integration_params</span><span class="p">:</span> <span class="n">IntegrationParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">particle_params</span><span class="p">:</span> <span class="n">ParticleParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">rigidity_params</span><span class="p">:</span> <span class="n">RigidityParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">coordinate_params</span><span class="p">:</span> <span class="n">CoordinateParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">computation_params</span><span class="p">:</span> <span class="n">ComputationParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">data_retrieval_params</span><span class="p">:</span> <span class="n">DataRetrievalParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">custom_field_params</span><span class="p">:</span> <span class="n">CustomFieldParams</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">asymptotic_params</span><span class="p">:</span> <span class="n">AsymptoticParams</span> <span class="o">=</span> <span class="p">{})</span> <span class="o">-&gt;</span> <span class="nb">list</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Compute geomagnetic cutoff rigidities for given neutron monitor stations,
+or user-defined locations.</p>
+<p>Upon calling this function, OTSO will perform particle tracing
+simulations based on the specified parameters, returning the cutoff
+rigidities and related metadata.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>Stations</code></b>
+              (<code><span title="str">str</span> | <span title="list">list</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Station name(s) or identifiers used for cutoff calculations.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>customlocations</code></b>
+              (<code><span title="list">list</span></code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Custom locations as [["NAME", lat, lon]].</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>cutoff_comp</code></b>
+              (<code><span title="str">str</span></code>, default:
+                  <code>&#39;Vertical&#39;</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Cutoff computation method ("Vertical", "Custom", etc.).</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>datetime_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.DateTimeParams">DateTimeParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Date/time parameters.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>year</code> (<code>int</code>, default=2024): Year (e.g., 2023)</li>
+<li><code>month</code> (<code>int</code>, default=1): Month (1–12)</li>
+<li><code>day</code> (<code>int</code>, default=1): Day (1–31)</li>
+<li><code>hour</code> (<code>int</code>, default=12): Hour (0–23)</li>
+<li><code>minute</code> (<code>int</code>, default=0): Minute (0–59)</li>
+<li><code>second</code> (<code>int</code>, default=0): Second (0–59)</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>magfield_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.MagFieldParams">MagFieldParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Magnetic field models.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>internalmag</code> (<code>str</code>, default="IGRF"): "NONE", "IGRF", "Dipole", "Custom Gauss"</li>
+<li><code>externalmag</code> (<code>str</code>, default="TSY89c"): "NONE", "TSY89c", "TSY01", "TSY15B", etc.</li>
+<li><code>boberg</code> (<code>bool</code>, default=False): Enable Boberg extension</li>
+<li><code>bobergtype</code> (<code>str</code>, default="EXTENSION"): Boberg extension type</li>
+<li><code>magnetopause</code> (<code>str</code>, default="Kobel"): "NONE", "Kobel", "Sibeck", "Lin", "Sphere"</li>
+<li><code>spheresize</code> (<code>float</code>, default=25): Spherical boundary radius (Re)</li>
+<li><code>AdaptiveExternalModel</code> (<code>bool</code>, default=False): Auto-select external model</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>rigidity_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.RigidityParams">RigidityParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Rigidity scanning.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>startrigidity</code> (<code>float</code>, default=20): Initial rigidity (GV)</li>
+<li><code>endrigidity</code> (<code>float</code>, default=0): Final rigidity (GV)</li>
+<li><code>rigiditystep</code> (<code>float</code>, default=0.01): Step size (GV)</li>
+<li><code>rigidityscan</code> (<code>str</code>, default="ON"): Enable scanning ("ON"/"OFF")</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>solar_wind</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.SolarWindParams">SolarWindParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Solar wind parameters.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>vx</code> (<code>float</code>, default=-500): Solar wind velocity x-component (km/s)</li>
+<li><code>vy</code> (<code>float</code>, default=0): Solar wind velocity y-component (km/s)</li>
+<li><code>vz</code> (<code>float</code>, default=0): Solar wind velocity z-component (km/s)</li>
+<li><code>bx</code> (<code>float</code>, default=0): IMF x-component (nT)</li>
+<li><code>by</code> (<code>float</code>, default=5): IMF y-component (nT)</li>
+<li><code>bz</code> (<code>float</code>, default=5): IMF z-component (nT)</li>
+<li><code>by_avg</code> (<code>float</code>, default=0): Averaged IMF By (nT)</li>
+<li><code>bz_avg</code> (<code>float</code>, default=0): Averaged IMF Bz (nT)</li>
+<li><code>density</code> (<code>float</code>, default=1): Solar wind density (particles/cm³)</li>
+<li><code>pdyn</code> (<code>float</code>, default=0): Solar wind dynamic pressure (nPa)</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>geomagnetic</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.GeomagneticParams">GeomagneticParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Geomagnetic indices.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>Dst</code> (<code>float</code>, default=0): Dst index (nT)</li>
+<li><code>kp</code> (<code>float</code>, default=0): Kp index (0-9)</li>
+<li><code>n_index</code> (<code>float</code>, default=0): Newell coupling function</li>
+<li><code>b_index</code> (<code>float</code>, default=0): Boynton coupling function</li>
+<li><code>sym_h_corrected</code> (<code>float</code>, default=0): Corrected SYM-H index (nT)</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>tsyganenko</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.TsyganenkoParams">TsyganenkoParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Tsyganenko model coefficients.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>G1</code> (<code>float</code>, default=0): Tsyganenko G1 coefficient</li>
+<li><code>G2</code> (<code>float</code>, default=0): Tsyganenko G2 coefficient</li>
+<li><code>G3</code> (<code>float</code>, default=0): Tsyganenko G3 coefficient</li>
+<li><code>W1</code> (<code>float</code>, default=0): Tsyganenko W1 coefficient</li>
+<li><code>W2</code> (<code>float</code>, default=0): Tsyganenko W2 coefficient</li>
+<li><code>W3</code> (<code>float</code>, default=0): Tsyganenko W3 coefficient</li>
+<li><code>W4</code> (<code>float</code>, default=0): Tsyganenko W4 coefficient</li>
+<li><code>W5</code> (<code>float</code>, default=0): Tsyganenko W5 coefficient</li>
+<li><code>W6</code> (<code>float</code>, default=0): Tsyganenko W6 coefficient</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>integration_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.IntegrationParams">IntegrationParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Integration settings.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>intmodel</code> (<code>str</code>, default="Boris"): "Boris", "4RK", "Vay", "HC"</li>
+<li><code>gyropercent</code> (<code>float</code>, default=15): Gyration period percentage</li>
+<li><code>minaltitude</code> (<code>float</code>, default=20): Minimum altitude (GDZ = km or other = Re)</li>
+<li><code>maxdistance</code> (<code>float</code>, default=100): Maximum distance (Re)</li>
+<li><code>maxtime</code> (<code>float</code>, default=0): Maximum time</li>
+<li><code>mintrapdist</code> (<code>float</code>, default=0): Minimum trapping distance</li>
+<li><code>startaltitude</code> (<code>float</code>, default=20): Starting altitude (GDZ = km or other = Re)</li>
+<li><code>betaerror</code> (<code>float</code>, default=0.001): Maximum allowed beta error for integration steps %</li>
+<li><code>totalbetacheck</code> (<code>bool</code>, default=False): Enable cumulative beta check during integration</li>
+<li><code>adaptivestep</code> (<code>bool</code>, default=True): Enable adaptive time steps</li>
+<li><code>maxsteps</code> (<code>int</code>, default=None): Maximum number of integration steps</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>particle_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.ParticleParams">ParticleParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Particle settings.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>Anum</code> (<code>int</code>, default=1): Atomic number (0=electron, 1=proton, 2=alpha)</li>
+<li><code>anti</code> (<code>str</code>, default="YES"): YES = anti-particle, NO = particle</li>
+<li><code>zenith</code> (<code>float</code>, default=0): Zenith angle for Custom cutoff computation</li>
+<li><code>azimuth</code> (<code>float</code>, default=0): Azimuth angle for Custom cutoff computation</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>coordinate_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.CoordinateParams">CoordinateParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Coordinate systems.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>coordsystem</code> (<code>str</code>, default="GEO"): Coordinate system used for calculations</li>
+<li><code>inputcoord</code> (<code>str</code>, default="GDZ"): Input coordinate system</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>computation_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.ComputationParams">ComputationParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Computation settings.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>corenum</code> (<code>int</code>, default=None): Number of CPU cores for multicore processing</li>
+<li><code>Verbose</code> (<code>bool</code>, default=True): Enable verbose output</li>
+<li><code>delim</code> (<code>str</code>, default=";"): Delimiter for asymptotic output formatting</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>data_retrieval_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.DataRetrievalParams">DataRetrievalParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Data retrieval.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>serverdata</code> (<code>str</code>, default="OFF"): Server data retrieval from OMNI</li>
+<li><code>livedata</code> (<code>str</code>, default="OFF"): real-time data retrieval from NOAA</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>custom_field_params</code></b>
+              (<code><span title="OTSO._core.custom_classes.parameter_types.CustomFieldParams">CustomFieldParams</span></code>, default:
+                  <code>{}</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Custom fields.</p>
+<p>Available keys:</p>
+<ul>
+<li><code>g</code> (<code>list</code>, default=None): Gauss g coefficients</li>
+<li><code>h</code> (<code>list</code>, default=None): Gauss h coefficients</li>
+<li><code>MHDfile</code> (<code>str</code>, default=None): MHD simulation file</li>
+<li><code>MHDcoordsys</code> (<code>str</code>, default=None): MHD coordinate system</li>
+</ul>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    
+        <pre><code class="language-python">    import OTSO
+
+    # Using parameter groups
+    result = OTSO.cutoff([&quot;OULU&quot;], 
+                        datetime_params={&quot;year&quot;: 2023, &quot;month&quot;: 6},
+                        solar_wind={&quot;vx&quot;: -400, &quot;by&quot;: 3.0},
+                        rigidity_params={&quot;startrigidity&quot;: 15})
+
+    # Access the results
+    cutoff_data, metadata = result
+</code></pre>
+
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
