@@ -119,10 +119,34 @@ def PlanetInputs(Data: 'PlanetData') -> None: # Add flag
 
         lats = coord_array[:, 0]
         lons = coord_array[:, 1]
+        
+        # Remove duplicate polar coordinates (longitude doesn't matter at poles)
+        unique_coords = []
+        seen_poles = set()
+        
+        for lat, lon in coordinate_pairs:
+            if abs(lat) == 90.0:  # At the poles
+                pole_key = lat  # Only track latitude for poles
+                if pole_key not in seen_poles:
+                    unique_coords.append([lat, lon])  # Keep the first occurrence
+                    seen_poles.add(pole_key)
+            else:
+                unique_coords.append([lat, lon])  # Keep all non-polar coordinates
+        
+        coordinate_pairs = unique_coords
+        
+        # Update the coordinate arrays after removing duplicates
+        if coordinate_pairs:
+            coord_array = np.array(coordinate_pairs)
+            lats = coord_array[:, 0]
+            lons = coord_array[:, 1]
+        
         LatitudeList_meta = sorted(np.unique(lats), reverse=True)
         LongitudeList_meta = sorted(np.unique(lons))
         Data.LatitudeList_meta = LatitudeList_meta
         Data.LongitudeList_meta = LongitudeList_meta
+
+
 
         # --- Conditional Warning --- 
         # Only warn if grid params were explicitly set by the user
