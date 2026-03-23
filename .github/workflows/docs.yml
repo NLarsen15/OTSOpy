@@ -3,36 +3,35 @@ name: Deploy MkDocs
 on:
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
 
       - name: Install dependencies
         run: |
-          pip install mkdocs-material
-          pip install mkdocstrings[python]
-          pip install numpy
-          pip install scipy
-          pip install matplotlib
+          pip install mkdocs-material mkdocstrings[python] numpy scipy matplotlib
+
+      - name: Build site
+        run: mkdocs build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
 
       - name: Deploy to GitHub Pages
-        run: mkdocs gh-deploy --force
+        uses: actions/deploy-pages@v4
