@@ -1,6 +1,6 @@
 # OTSO
 
-![OTSO Logo](../assests/OTSO_logo.png)
+![OTSO Logo](../assets/OTSO_logo.png)
 
 OTSO is a tool used for trajectory computations of charged particles in the Earth's magnetosphere.
 
