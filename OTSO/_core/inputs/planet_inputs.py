@@ -124,16 +124,22 @@ def PlanetInputs(Data: 'PlanetData') -> None: # Add flag
         unique_coords = []
         seen_poles = set()
         
+        print(f"Initial coordinates before filtering: {coordinate_pairs}")
+        
         for lat, lon in coordinate_pairs:
             if abs(lat) == 90.0:  # At the poles
-                pole_key = lat  # Only track latitude for poles
+                pole_key = lat  # Only track latitude for poles (90.0 or -90.0)
                 if pole_key not in seen_poles:
                     unique_coords.append([lat, lon])  # Keep the first occurrence
                     seen_poles.add(pole_key)
+                    print(f"Keeping pole coordinate: [{lat}, {lon}]")
+                else:
+                    print(f"Filtering duplicate pole coordinate: [{lat}, {lon}]")
             else:
                 unique_coords.append([lat, lon])  # Keep all non-polar coordinates
         
         coordinate_pairs = unique_coords
+        print(f"Final coordinates after filtering: {coordinate_pairs}")
         
         # Update the coordinate arrays after removing duplicates
         if coordinate_pairs:

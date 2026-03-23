@@ -1335,6 +1335,7 @@ def magfield(
             Available keys:
 
             - `inputcoord` (`str`, default="GDZ"): Input coordinate system
+            - `coordout` (`str`, default="GSM"): Coordinate system used for calculations
 
         computation_params (ComputationParams): Computation settings.
 

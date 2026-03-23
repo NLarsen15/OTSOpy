@@ -182,7 +182,7 @@ def OTSO_planet(PlanetDataInstance: 'PlanetData') -> list:
     
     ChildProcesses.clear()
 
-    final_planet = combine_planet_files(planet_list)
+    final_planet = combine_planet_files(planet_list, PlanetDataInstance.custom_coords_provided)
 
     stop = time.time()
     Printtime = round((stop-start),3)
@@ -207,7 +207,7 @@ def OTSO_planet(PlanetDataInstance: 'PlanetData') -> list:
     return [final_planet, readme]
 
 
-def combine_planet_files(planet_list):
+def combine_planet_files(planet_list, custom_coords_provided=False):
     resultsfinal = []
     for x in planet_list:
         df = pd.read_csv(x, header=0)
@@ -230,19 +230,32 @@ def combine_planet_files(planet_list):
     
     combined_planet = combined_planet[~((combined_planet['Latitude'] == 90.0) | (combined_planet['Latitude'] == -90.0))]
     
-    if not north_pole_data.empty:
-        for longitude in unique_longitudes:
-            for _, row in north_pole_data.iterrows():
-                new_row = row.copy()
-                new_row['Longitude'] = longitude
-                polar_rows.append(new_row)
-    
-    if not south_pole_data.empty:
-        for longitude in unique_longitudes:
-            for _, row in south_pole_data.iterrows():
-                new_row = row.copy()
-                new_row['Longitude'] = longitude
-                polar_rows.append(new_row)
+    if custom_coords_provided:
+        # For custom coordinates, respect exact user input - don't duplicate poles
+        if not north_pole_data.empty:
+            # Take the first north pole entry (longitude doesn't matter at poles)
+            north_pole_entry = north_pole_data.iloc[0].copy()
+            polar_rows.append(north_pole_entry)
+        
+        if not south_pole_data.empty:
+            # Take the first south pole entry (longitude doesn't matter at poles)
+            south_pole_entry = south_pole_data.iloc[0].copy()
+            polar_rows.append(south_pole_entry)
+    else:
+        # For grid-based calculations, create polar entries for all longitudes
+        if not north_pole_data.empty:
+            for longitude in unique_longitudes:
+                for _, row in north_pole_data.iterrows():
+                    new_row = row.copy()
+                    new_row['Longitude'] = longitude
+                    polar_rows.append(new_row)
+        
+        if not south_pole_data.empty:
+            for longitude in unique_longitudes:
+                for _, row in south_pole_data.iterrows():
+                    new_row = row.copy()
+                    new_row['Longitude'] = longitude
+                    polar_rows.append(new_row)
     
     if polar_rows:
         polar_df = pd.DataFrame(polar_rows)
