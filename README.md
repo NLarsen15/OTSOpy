@@ -387,6 +387,12 @@ A wider thanks goes to the space physics community who, through the use of the o
 OTSO was developed at the University of Oulu as part of the Academy of Finland QUASARE project. I would like to thank my colleagues at the University and the Academy of Finland for supporting the work.
 
 
+# OTSO in Publications
+If you have used OTSO in your scientific research, please acknowledge it in the publication using the following provided sentence, or something similar.
+
+"We acknowledge the use of the OTSO tool [VERSION USED], the latest version of which can be found at  https://doi.org/10.5281/zenodo.15341361."
+
+Additionally, due to the flexibility of OTSO and freedom of user input, it is recommended that, along with your publication, you attach a document detailing the specific inputs for your OTSO computations for reproducibility. 
 
 # References
 - **Larsen, N., Mishev, A., & Usoskin, I. (2023). A new open-source geomagnetosphere propagation tool (OTSO) and its applications. Journal of Geophysical Research: Space Physics, 128, e2022JA031061. https://doi.org/10.1029/2022JA031061**
