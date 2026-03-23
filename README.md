@@ -8,6 +8,10 @@ OTSO is designed to be open-source; all suggestions for improvement are welcome,
 __Supported Python Versions:__ 3.10, 3.11, 3.12, 3.13, and 3.14 
 (I will endeavour to keep OTSO support as up to date as possible)
 
+# OTSO Documentation
+
+Detailed OTSO documentation for functions and input parameters is provided digitally via GitHub pages. Documentation can be found by clicking on [OTSOdocs](https://nlarsen15.github.io/OTSOpy/).
+
 # Installation
 
 Installation of OTSOpy is designed to be as simple as possible and can be done utilising pip. Users have two options when downloading OTSOpy.
