@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
-title: "OTSOpy: Open-source geomagneToSphere prOpagation tool"
+title: "OTSO: Open-source geomagneToSphere prOpagation tool"
 version: "1.2.5"
 date-released: "2026-03-23"
 url: "https://github.com/NLarsen15/OTSOpy"
@@ -35,7 +35,7 @@ identifiers:
     description: "Documentation website"
 preferred-citation:
   type: software
-  title: "OTSOpy: Open-source geomagneToSphere prOpagation tool"
+  title: "OTSO: Open-source geomagneToSphere prOpagation tool"
   authors:
     - family-names: "Larsen"
       given-names: "Nicholas"
