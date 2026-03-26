@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/github/license/NLarsen15/OTSOpy)
 ![GitHub release](https://img.shields.io/github/v/release/NLarsen15/OTSOpy)
 ![Python](https://img.shields.io/badge/python-3.10%20to%203.14-blue)
-![Docs](https://img.shields.io/badge/docs-online-brightgreen)
+[![Docs](https://img.shields.io/badge/docs-online-brightgreen)](https://nlarsen15.github.io/OTSOpy/)
 ![GitHub stars](https://img.shields.io/github/stars/NLarsen15/OTSOpy?style=social)
 
 Python package version of the OTSO tool used for trajectory computations of charged particles in the Earth's magnetosphere.
