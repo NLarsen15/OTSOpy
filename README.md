@@ -176,7 +176,7 @@ if __name__ == '__main__':
 
     trajectory = OTSO.trajectory(
         Stations=stations_list,
-        rigidity_params={"startrigidity": 5},
+        particle_params={"rigidity": 5},
         computation_params={"corenum": 1}
     )
 
