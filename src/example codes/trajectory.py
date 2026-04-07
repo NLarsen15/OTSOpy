@@ -7,7 +7,7 @@ if __name__ == '__main__':
     # Example using grouped parameters
     trajectory_results = trajectory(
         Stations=stations_list,
-        rigidity=5,
+        particle_params={"rigidity": 5},
         computation_params={"corenum": 1}
     )
 

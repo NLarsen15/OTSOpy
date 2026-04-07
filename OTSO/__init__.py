@@ -905,6 +905,7 @@ def trajectory(
             - `anti` (`str`, default="YES"): YES = anti-particle, NO = particle
             - `zenith` (`float`, default=0): Launch zenith angle
             - `azimuth` (`float`, default=0): Launch azimuth angle
+            - `rigidity` (`float`, default=1): Particle rigidity (GV)
 
         coordinate_params (CoordinateParams): Coordinate systems.
 
