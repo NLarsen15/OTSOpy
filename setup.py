@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.2.5',
+    version='1.2.6',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
@@ -38,7 +38,8 @@ setup(
         'tzdata',           # Common dependency across all versions
         'psutil',
         'tqdm',
-        'requests'
+        'requests',
+        'numba'
     ],
     extras_require={
         # Python 3.10 requirements

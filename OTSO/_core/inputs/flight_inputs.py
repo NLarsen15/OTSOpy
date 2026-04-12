@@ -63,6 +63,7 @@ def FlightInputs(Data: FlightData) -> None:
      WindArrayList = []
      IOPTList = []
      i = 0
+
      for x, g_coeffs, h_coeffs in zip(Data.dates, Data.glist, Data.hlist):
           
         if ServerData == 1:
@@ -106,7 +107,8 @@ def FlightInputs(Data: FlightData) -> None:
         if ServerData == 0 and LiveData == 0:
            if Data.vx[i] > 0:
                 Data.vx[i] = -1*Data.vx[i]
-           WindCreate = solar_wind.SolarWind(Data.vx[i], Data.vy[i], Data.vz[i], 0, Data.by[i], Data.bz[i], Data.density[i], Data.pdyn[i], Data.Dst[i], Data.G1[i], Data.G2[i], Data.G3[i], Data.W1[i], Data.W2[i], Data.W3[i], Data.W4[i], Data.W5[i], Data.W6[i], Data.kp[i], 0, 0, 0, 0, 0)
+           WindCreate = solar_wind.SolarWind(Data.vx[i], Data.vy[i], Data.vz[i], Data.bx[i], Data.by[i], Data.bz[i], Data.density[i], Data.pdyn[i], Data.Dst[i], Data.G1[i], Data.G2[i],
+                                              Data.G3[i], Data.W1[i], Data.W2[i], Data.W3[i], Data.W4[i], Data.W5[i], Data.W6[i], Data.kp[i], Data.by_avg[i], Data.bz_avg[i], Data.n_index[i], Data.b_index[i], Data.sym_h_corrected[i])
            WindArray = WindCreate.GetWind()
            KpList.append(Data.kp[i])
            IOPTinput = tsy_params_utils.IOPTprocess(Data.kp[i])

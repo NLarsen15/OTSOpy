@@ -7,6 +7,8 @@ import platform
 from ..libs import MiddleMan as OTSOLib
 from . import omni_data_pull
 from . import tsy15_download
+from . import soho_data_pull
+from . import tsy04_param_generator
 
 def is_invalid_value(value):
     """Check if a value is invalid (NaN or OMNI filler value)"""
@@ -204,30 +206,37 @@ def DownloadServerFile(OMNIYEAR, g, h):
         print(f"Data for {OMNIYEAR} does not exist in OTSO files.")
         print(f'Attempting to download data for {OMNIYEAR}')
         tsy15_download.process_year(OMNIYEAR, g, h)
+        sohocheck = soho_data_pull.celias_url_exists(OMNIYEAR)
+        if sohocheck:
+            if OMNIYEAR >= 1996:
+                soho_data_pull.download_and_unpack_celias(OMNIYEAR)
         omni_data_pull.PullOMNI(OMNIYEAR)
         DIRECTORY = os.path.join(os.path.dirname(os.path.dirname(__file__)),"serverdata")
         length = len(DIRECTORY)
         if platform.system() == "Windows":
-            OTSOLib.gettsy04datawindows(OMNIYEAR, length)
-            omni_data_pull.OMNI_to_csv(OMNIYEAR)
-            omni_data_pull.TSY01(f'{OMNIYEAR}_TSY_Data.csv')
+            #OTSOLib.gettsy04datawindows(OMNIYEAR, length)
+            #omni_data_pull.OMNI_to_csv(OMNIYEAR)
+            #omni_data_pull.TSY01(f'{OMNIYEAR}_TSY_Data.csv')
             omni_data_pull.TSY01(f'omni_{OMNIYEAR}_high_res.csv')
             omni_data_pull.TSY01(f'omni_{OMNIYEAR}_low_res.csv')
-            omni_data_pull.Combine(f'{OMNIYEAR}_TSY_Data.csv', f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv',
+            omni_data_pull.Combine(f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv',
                              f'TSY15_{OMNIYEAR}.csv', OMNIYEAR)
+            tsy04_param_generator.TSY04_param_generator(OMNIYEAR)
+            omni_data_pull.CombineTSY04(f"TSY04_W_parameters_{OMNIYEAR}.csv", OMNIYEAR)
+            omni_data_pull.move_to_server_data(f'{OMNIYEAR}_TSY_Inputs.csv')
             omni_data_pull.Omnidelete(OMNIYEAR)
             print(f'Finished downloading data for {OMNIYEAR}.')
-        elif platform.system() == "Linux"  or "Darwin":
-            OTSOLib.gettsy04datalinux(OMNIYEAR, DIRECTORY, length)
-            omni_data_pull.OMNI_to_csv(OMNIYEAR)
-            omni_data_pull.TSY01(f'{OMNIYEAR}_TSY_Data.csv')
-            omni_data_pull.TSY01(f'omni_{OMNIYEAR}_high_res.csv')
-            omni_data_pull.TSY01(f'omni_{OMNIYEAR}_low_res.csv')
-            omni_data_pull.Combine(f'{OMNIYEAR}_TSY_Data.csv', f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv',
-                              f'TSY15_{OMNIYEAR}.csv', OMNIYEAR)
+        elif platform.system() == "Linux"  or platform.system() == "Darwin":
+            #OTSOLib.gettsy04datalinux(OMNIYEAR, DIRECTORY, length)
+            #omni_data_pull.OMNI_to_csv(OMNIYEAR)
+            #omni_data_pull.TSY01(f'{OMNIYEAR}_TSY_Data.csv')
+            omni_data_pull.Combine(f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv',
+                             f'TSY15_{OMNIYEAR}.csv', OMNIYEAR)
+            tsy04_param_generator.TSY04_param_generator(OMNIYEAR)
+            omni_data_pull.CombineTSY04(f"TSY04_W_parameters_{OMNIYEAR}.csv", OMNIYEAR)
+            omni_data_pull.move_to_server_data(f'{OMNIYEAR}_TSY_Inputs.csv')
             omni_data_pull.Omnidelete(OMNIYEAR)
             print(f'Finished downloading data for {OMNIYEAR}.')
-
     return
 
 

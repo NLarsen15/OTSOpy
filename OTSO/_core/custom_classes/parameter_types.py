@@ -181,7 +181,7 @@ class IntegrationParams(TypedDict, total=False):
     DEFAULTS = {
         "intmodel": "Boris", "gyropercent": 15, "minaltitude": 20, 
         "maxdistance": 100, "maxtime": 0, "mintrapdist": 0, "startaltitude": 20,
-        "betaerror": 0.001, "totalbetacheck": True, "adaptivestep": True, "maxsteps": 0}
+        "betaerror": 0.001, "totalbetacheck": False, "adaptivestep": True, "maxsteps": 0}
     
 
 

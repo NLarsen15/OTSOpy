@@ -59,7 +59,7 @@ def READMEFlight(Data: FlightData, Printtime: float) -> str:
 
 def READMEFlightData(DateArray,WindArray,kparray):
 
-   headers = ["Date","kp","Vx [km/s]", "Vy [km/s]", "Vz [km/s]", "Bx [nT]", "By [nT]", "Bz [nT]", "By Average (30mins) [nT]", "Bz Average (30mins)[nT]", "Density [cm^-3]", "Pdyn [nPa]", "Dst [nT]", "G1", "G2",
+   headers = ["Date","kp","Vx [km/s]", "Vy [km/s]", "Vz [km/s]", "Bx [nT]", "By [nT]", "Bz [nT]", "By Average (30mins) [nT]", "Bz Average (30mins) [nT]", "Density [cm^-3]", "Pdyn [nPa]", "Dst [nT]", "G1", "G2",
               "G3", "W1", "W2", "W3", "W4", "W5", "W6", "N", "B", "SYM-H"]
    
    rows = []

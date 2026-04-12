@@ -2,3 +2,4 @@ include OTSO/_core/libs/*
 include OTSO/_core/custom_classes/StationList.csv
 include OTSO/_core/utils/igrf_coefficients.csv
 include OTSO/_core/serverdata/Parameters.par
+include OTSO/_core/serverdata/parameters.csv

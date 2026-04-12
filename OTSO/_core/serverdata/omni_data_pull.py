@@ -5,7 +5,8 @@ import shutil
 import os
 import requests
 
-from ..utils.tsy_params_utils import OMNI_TSY01_Constants
+from ..utils.tsy_params_utils import OMNI_TSY01_Constants, Pdyn_comp
+from . import soho_data_pull
 
 def download_omni_data(year):
     url = f"https://spdf.gsfc.nasa.gov/pub/data/omni/high_res_omni/omni_5min{year}.asc"
@@ -394,15 +395,14 @@ def CombineLowRes(input_file, year):
     destination_file = os.path.join(destination_folder, os.path.basename(source_file))
     shutil.move(source_file, destination_file)
 
-def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
+def Combine(high_res_file, low_res_file, TSY15file, year):
     base_dir = os.path.join(os.path.dirname(__file__))
-    TSYfile = os.path.join(base_dir, TSYfile)
     high_res_file = os.path.join(base_dir, high_res_file)
     low_res_file = os.path.join(base_dir, low_res_file)
     TSY15file = os.path.join(base_dir, TSY15file)
     futurefile = os.path.join(base_dir, f'omni_{year+1}_low_res.csv')
 
-    partial_df = pd.read_csv(TSYfile, parse_dates=['Date']).set_index('Date')
+    #partial_df = pd.read_csv(TSYfile, parse_dates=['Date']).set_index('Date')
     high_res_df = pd.read_csv(high_res_file, parse_dates=['Date']).set_index('Date')
     low_res_df = pd.read_csv(low_res_file, parse_dates=['Date']).set_index('Date')
     
@@ -458,14 +458,14 @@ def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
     if 'Bz' in low_res_5min.columns:
         low_res_5min['Bz_avg'] = low_res_5min['Bz']
 
-    start_time = partial_df.index.min()
-    end_time = partial_df.index.max()
+    start_time = high_res_df.index.min()
+    end_time = high_res_df.index.max()
     full_index = pd.date_range(start=start_time, end=end_time, freq='5min')
 
     # Reindex and combine with priority: high_res > partial > low_res > tsy15
     combined_df = pd.DataFrame(index=full_index)
     combined_df = combined_df.combine_first(high_res_df)
-    combined_df = combined_df.combine_first(partial_df)
+    #combined_df = combined_df.combine_first(partial_df)
     combined_df = combined_df.combine_first(low_res_5min)
     if tsy15_df is not None:
         combined_df = combined_df.combine_first(tsy15_df)
@@ -515,12 +515,102 @@ def Combine(TSYfile, high_res_file, low_res_file, TSY15file, year):
     # Write output CSV
     output_file = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
     combined_df.to_csv(output_file, index=False)
+    
+    if soho_data_pull.celias_url_exists(year):
+        if year >= 1996:
+            SohoCombine(f'{year}_TSY_Inputs.csv', f'{year}_CELIAS_Proton_Monitor_5min.csv', year)
 
-    # Move to ServerData folder
+def CombineTSY04(TSY04file, year):
+    base_dir = os.path.join(os.path.dirname(__file__))
+    TSY04file = os.path.join(base_dir, TSY04file)
+    mainfile = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
+
+    # Read both CSVs
+    main_df = pd.read_csv(mainfile, parse_dates=['Date'])
+    tsy04_df = pd.read_csv(TSY04file, parse_dates=['Date'])
+
+    # Merge on Date, keeping all rows from main_df
+    merged = pd.merge(main_df, tsy04_df, on='Date', how='left', suffixes=('', '_TSY04'))
+
+    # Find where to insert W1-W6 (after G3)
+    cols = list(merged.columns)
+    try:
+        g3_idx = cols.index('G3')
+    except ValueError:
+        # If G3 not found, just append at the end
+        g3_idx = len(cols) - 1
+
+    # Remove W1-W6 if already present in main_df
+    for w in ['W1','W2','W3','W4','W5','W6']:
+        if w in cols:
+            cols.remove(w)
+
+    # Insert W1-W6 after G3
+    for i, w in enumerate(['W1','W2','W3','W4','W5','W6']):
+        if w in merged.columns:
+            cols.insert(g3_idx + 1 + i, w)
+
+    # Reorder columns
+    merged = merged[cols]
+
+    # Save back to mainfile
+    merged.to_csv(mainfile, index=False)
+
+def move_to_server_data(file_name):
+    base_dir = os.path.join(os.path.dirname(__file__))
     destination_folder = os.path.join(os.path.dirname(__file__), "ServerData")
+    output_file = os.path.join(base_dir, file_name)
     os.makedirs(destination_folder, exist_ok=True)
     shutil.move(output_file, os.path.join(destination_folder, os.path.basename(output_file)))
 
+def SohoCombine(TSYfile, celias_file, year):
+    base_dir = os.path.join(os.path.dirname(__file__))
+    TSYfile = os.path.join(base_dir, TSYfile)
+    celias_file = os.path.join(base_dir, celias_file)
+
+
+    tsy_df = pd.read_csv(TSYfile, parse_dates=['Date']).set_index('Date')
+    celias_df = pd.read_csv(celias_file, parse_dates=['Date']).set_index('Date')
+
+
+    # Only update V and Density where they are 9999.0 or 999.9, respectively
+    for idx, row in tsy_df.iterrows():
+        # Replace V and Density if needed
+        v_replaced = False
+        density_replaced = False
+        if 'V' in tsy_df.columns and idx in celias_df.index:
+            if row['V'] == 9999.0:
+                old_v = row['V']
+                new_v = celias_df.at[idx, 'V']
+                tsy_df.at[idx, 'V'] = new_v
+                v_replaced = True
+                #print(f"[SOHO REPLACE] {idx}: V replaced {old_v} -> {new_v}")
+        if 'Density' in tsy_df.columns and idx in celias_df.index:
+            if row['Density'] == 999.9:
+                old_density = row['Density']
+                new_density = celias_df.at[idx, 'Density']
+                tsy_df.at[idx, 'Density'] = new_density
+                density_replaced = True
+                #print(f"[SOHO REPLACE] {idx}: Density replaced {old_density} -> {new_density}")
+        # Recompute Pdyn if needed
+        if 'Pdyn' in tsy_df.columns:
+            if row['Pdyn'] == 99.99:
+                # Use the possibly updated V and Density
+                new_v = tsy_df.at[idx, 'V']
+                new_density = tsy_df.at[idx, 'Density']
+                # Only compute if both are not NaN
+                if pd.notna(new_v) and pd.notna(new_density):
+                    try:
+                        new_pdyn = Pdyn_comp(float(new_density), float(new_v))
+                        tsy_df.at[idx, 'Pdyn'] = new_pdyn
+                        #print(f"[SOHO REPLACE] {idx}: Pdyn recomputed to {new_pdyn} using V={new_v}, Density={new_density}")
+                    except Exception:
+                        pass
+
+    combined_df = tsy_df.reset_index()
+
+    output_file = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
+    combined_df.to_csv(output_file, index=False)
 
 
 
@@ -528,34 +618,35 @@ def Omnidelete(OMNIYEAR):
 
     current_directory = os.path.join(os.path.dirname(__file__))
 
-    file1 = f'{OMNIYEAR}_TSY_Data.csv'
-    file2 = f'omni_{OMNIYEAR}_low_res.csv'
-    file3 = f'omni_5min_{OMNIYEAR}.lst'
-    file4 = f'omni2_{OMNIYEAR}.dat'
-    file5 = f'{OMNIYEAR}_IMF_&_SW_gaps_le_3hrs_filled.txt'
-    file6 = f'{OMNIYEAR}_IMF_gaps_le_3hrs_filled.txt'
-    file7 = f'{OMNIYEAR}_Interval_list.txt'
-    file8 = f'{OMNIYEAR}_OMNI_5m_with_TS05_variables.dat'
-    file9 = f'omni_{OMNIYEAR+1}_low_res.csv'
-    file10 = f'omni2_{OMNIYEAR+1}.dat'
-    file11 = f'omni_{OMNIYEAR}_high_res.csv'
-    file12 = f'tempfile.csv'
-    file13 = f'TSY15_{OMNIYEAR}.csv'
-    file14 = f'omni_5min{OMNIYEAR}.asc'
-    
-    if OMNIYEAR < datetime.now().year:
-        filelist = [file1,file2,file3,file4,file5,file6,file7,file8,file9,file10,file11,file12,file13,file14]
-    else:
-        filelist = [file1,file2,file3,file4,file5,file6,file7,file8]
-
+    filelist = [
+        f'{OMNIYEAR}_TSY_Data.csv',
+        f'omni_{OMNIYEAR}_low_res.csv',
+        f'omni_5min_{OMNIYEAR}.lst',
+        f'omni2_{OMNIYEAR}.dat',
+        f'{OMNIYEAR}_IMF_&_SW_gaps_le_3hrs_filled.txt',
+        f'{OMNIYEAR}_IMF_gaps_le_3hrs_filled.txt',
+        f'{OMNIYEAR}_Interval_list.txt',
+        f'{OMNIYEAR}_OMNI_5m_with_TS05_variables.dat',
+        f'omni_{OMNIYEAR+1}_low_res.csv',
+        f'omni2_{OMNIYEAR+1}.dat',
+        f'omni_{OMNIYEAR}_high_res.csv',
+        f'tempfile.csv',
+        f'TSY15_{OMNIYEAR}.csv',
+        f'omni_5min{OMNIYEAR}.asc',
+        f'{OMNIYEAR}_CELIAS_Proton_Monitor_5min.csv',
+        f'{OMNIYEAR}_CELIAS_Proton_Monitor_5min.zip',
+        f'TSY04_W_parameters_{OMNIYEAR}.csv'
+    ]
+ 
     for i in filelist:
-        try:
-            os.remove(os.path.join(current_directory, i))
-        except Exception as e:
-            print(f"Error: {e}")
+        file_path = os.path.join(current_directory, i)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                print(f"Error: {e}")
 
-    if os.path.exists(file9):
-        os.remove(os.path.join(current_directory, file9))
+
 
 def OmnideleteLowRes(OMNIYEAR):
 
@@ -566,16 +657,12 @@ def OmnideleteLowRes(OMNIYEAR):
     file4 = f'omni2_{OMNIYEAR+1}.dat'
     file5 = f'omni2_{OMNIYEAR}.dat'
     
-    if OMNIYEAR < datetime.now().year:
-        filelist = [file2,file3,file4,file5]
-    else:
-        filelist = [file2,file3,file5]
+    filelist = [file2,file3,file4,file5]
 
     for i in filelist:
-        try:
-            os.remove(os.path.join(current_directory, i))
-        except Exception as e:
-            print(f"Error: {e}")
-
-    if os.path.exists(file3):
-        os.remove(os.path.join(current_directory, file3))
+        file_path = os.path.join(current_directory, i)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                print(f"Error: {e}")
