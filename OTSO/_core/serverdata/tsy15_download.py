@@ -558,7 +558,8 @@ def download_omni_file(year):
             response.raise_for_status()
             total_size = int(response.headers.get('content-length', 0))
         except:
-            print("Could not determine file size, showing download amount only...")
+            #print("Could not determine file size, showing download amount only...")
+            pass
         
         response = requests.get(url, stream=True)
         response.raise_for_status()

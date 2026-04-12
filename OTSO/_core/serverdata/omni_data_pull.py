@@ -126,7 +126,7 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
         for row in rows:
             try:
                 datetime_str = convert_to_datetime(row[0], row[1], row[2],row[3])  # Year, DOY, Hour, Minute
-                Bx_value = row[16]
+                Bx_value = row[14]
                 By_value = row[17]
                 Bz_value = row[18]
                 V_value = row[21]
@@ -196,8 +196,8 @@ def parse_and_convert_to_csv_low_res(input_file, output_file):
                 kp_raw_value = get_raw_kp_value(row[38])  # Word 39: Kp raw
                 dst_value = row[40]  # Word 41: DST Index
                 Bx_value = row[12]  # Word 13: Bx GSE
-                By_value = row[13]  # Word 14: By GSE
-                Bz_value = row[14]  # Word 15: Bz GSE
+                By_value = row[15]  # Word 16: By GSM
+                Bz_value = row[16]  # Word 17: Bz GSM
                 V_value = row[24]   # Word 25: Plasma speed
                 Density_value = row[23]  # Word 24: Proton Density
                 Pdyn_value = row[28]  # Word 29: Flow Pressure
