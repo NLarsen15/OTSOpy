@@ -130,7 +130,6 @@ IF (model(2) == 11) THEN
     parmod(4) = X(21)
 END IF
 
-
 end subroutine initializeWind
 
 

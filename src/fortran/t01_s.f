@@ -20,7 +20,7 @@ C===============================================================================
 
 C
 c
-      SUBROUTINE T01_S (PARMOD,X,Y,Z,BX,BY,BZ)
+      SUBROUTINE T01_S (PARMOD,PSI,X,Y,Z,BX,BY,BZ)
 c
 C    this is a storm-time version of the T01, with some modifications (including the 3rd index, G3)
 
@@ -72,7 +72,7 @@ C      doi:10.1029/2002JA009808, 2003.
 C
 c----------------------------------------------------------------------
 c
-      REAL*8 PARMOD(10),PS,X,Y,Z,BX,BY,BZ,tilt
+      REAL*8 PARMOD(10),PSI,PS,X,Y,Z,BX,BY,BZ,tilt
       REAL*8 A(51),PDYN,DST_AST,BYIMF,BZIMF,G1,G2,G3,PSS,XX,YY,ZZ,
      *  BXCF,BYCF,BZCF,BXT1,BYT1,BZT1,BXT2,BYT2,BZT2,
      *  BXSRC,BYSRC,BZSRC,BXPRC,BYPRC,BZPRC, BXR11,BYR11,BZR11,
@@ -93,7 +93,7 @@ c
      *0.70733D0,0.30588D0,12.18290D0,40.00D0,82.76604D0,27.22990D0,
      *98.37391D0,14.39243D0,4.80011D0,7.99216D0/
 
-       ps=tilt*rad
+      ps=PSI
 c       
       PDYN=PARMOD(1)
       DST_AST=PARMOD(2)*0.8D0-13.D0*SQRT(PDYN)
@@ -102,7 +102,7 @@ c
       G1=0.D0         !  HERE G1 IS JUST A DUMMY PARAMETER
       G2=PARMOD(5)
       G3=PARMOD(6)
-      PSS=PS
+      PSS=PSI
       XX=X
       YY=Y
       ZZ=Z

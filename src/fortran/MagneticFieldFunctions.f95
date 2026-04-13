@@ -246,9 +246,12 @@ end interface
 
   function function01S(x) ! Tsyganenko 2001 storm-time variation
     real(8) :: function01S(3), TSYGSM(3), TSYGSM1(3)
+    real(8) :: PSItemp
     real(8), intent (in) :: x(3)
+
+    PSItemp = real(PSI,8)
   
-    call T01_S(parmod, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    call T01_S(parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
@@ -261,9 +264,12 @@ end interface
 
   function function04(x) ! Tsyganenko 2004 
     real(8) :: function04(3), TSYGSM(3), TSYGSM1(3)
+    real(8) :: PSItemp
     real(8), intent (in) :: x(3)
+
+    PSItemp = real(PSI,8)
   
-    call T04_S(parmod, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    call T04_S(parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
@@ -277,9 +283,12 @@ end interface
 
   function function15N(x) ! Tsyganenko 2015 N-index 
     real(8) :: function15N(3), TSYGSM(3), TSYGSM1(3)
+    real(8) :: PSItemp
     real(8), intent (in) :: x(3)
   
-    call TA_2015_N(0, parmod, PSI, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    PSItemp = real(PSI,8)
+  
+    call TA_2015_N(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     
     if (model(1) == 4) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
@@ -294,9 +303,12 @@ end interface
 
   function function15B(x) ! Tsyganenko 2015 B-index 
     real(8) :: function15B(3), TSYGSM(3), TSYGSM1(3)
+    real(8) :: PSItemp
     real(8), intent (in) :: x(3)
   
-    call TA_2015_B(0, parmod, PSI, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    PSItemp = real(PSI,8)
+  
+    call TA_2015_B(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     
     if (model(1) == 4) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
@@ -310,9 +322,12 @@ end interface
 
   function function16(x) ! Tsyganenko 2015 B-index 
     real(8) :: function16(3), TSYGSM(3), TSYGSM1(3)
+    real(8) :: PSItemp
     real(8), intent (in) :: x(3)
+
+    PSItemp = real(PSI,8)
   
-    call RBF_MODEL_2016(0, parmod, PSI, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
+    call RBF_MODEL_2016(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     
     if (model(1) == 4) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)

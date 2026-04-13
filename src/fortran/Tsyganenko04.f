@@ -19,7 +19,7 @@
 c====================================================================================
 c
 c
-      SUBROUTINE T04_s (PARMOD,X,Y,Z,BX,BY,BZ)
+      SUBROUTINE T04_s (PARMOD,PS,X,Y,Z,BX,BY,BZ)
 c
 c     ASSEMBLED:  MARCH 25, 2004; UPDATED:  AUGUST 2 & 31, DECEMBER 27, 2004.
 c     A BUG ELIMINATED MARCH 14, 2005 (might cause compilation problems with
@@ -74,14 +74,13 @@ c         strong geomagnetic storms, J. Geophys. Res., v. 110 (A3), A03208, doi:
 
 c----------------------------------------------------------------------
 c
-      REAL*8 PARMOD(10),PS,X,Y,Z,BX,BY,BZ,tilt
+      REAL*8 PARMOD(10),PS,X,Y,Z,BX,BY,BZ
       REAL*8 A(69),PDYN,DST_AST,BXIMF,BYIMF,BZIMF,W1,W2,W3,W4,W5,W6,
      *  PSS,XX,YY,ZZ,BXCF,BYCF,BZCF,BXT1,BYT1,BZT1,BXT2,BYT2,BZT2,
      *  BXSRC,BYSRC,BZSRC,BXPRC,BYPRC,BZPRC, BXR11,BYR11,BZR11,
      *  BXR12,BYR12,BZR12,BXR21,BYR21,BZR21,BXR22,BYR22,BZR22,HXIMF,
      *  HYIMF,HZIMF,BBX,BBY,BBZ
 C
-      COMMON /dip_ang/tilt
 c
       DATA A/1.00000,5.44118,0.891995,9.09684,0.00000,
      * -7.18972,12.2700,
@@ -98,7 +97,6 @@ c
       
       DATA IOPGEN,IOPTT,IOPB,IOPR/0,0,0,0/
 C
-       ps=tilt*4.D0*ATAN(1.D0)/180.d0
 c
       PDYN=PARMOD(1)
       DST_AST=PARMOD(2)*0.8D0-13.D0*SQRT(PDYN)
