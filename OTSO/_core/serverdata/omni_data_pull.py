@@ -109,7 +109,7 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
     with open(input_file, 'r') as datfile:
         lines = datfile.readlines()
 
-    FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", "9999.9", "999.9", "99999.0", "-1.00e+05", "999999", "999.99"}
+    FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", "9999.9", "999.9", "99999.0", "-1.00e+05", "999999", "999.99", "99.99"}
 
 
     rows = [line.split() for line in lines]
@@ -288,7 +288,7 @@ def OMNI_to_csv(year):
     headers = [
         'BXGSM', 'By', 'Bz', 'V', 
         'VYGSE', 'VZGSE', 'Density', 'TEMP', 'IMFFLAG', 'ISWFLAG', 'TILT', 
-        'Pdyn', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'Date'
+        'Pdyn', 'Date'
     ]
 
     file = os.path.join(os.path.dirname(__file__), f'{year}_OMNI_5m_with_TS05_variables.dat')
@@ -374,7 +374,7 @@ def CombineLowRes(input_file, year):
     df = pd.read_csv(input_file)
     
     new_headers = ['Date', 'By', 'Bz', 'V', 'Density', 'Pdyn', 'Dst', 'Kp', 'Kp_raw',
-                   'G1', 'G2', 'G3', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6']
+                   'G1', 'G2', 'G3']
     
 
     new_df = pd.DataFrame(columns=new_headers)
@@ -496,7 +496,7 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
 
     # Ensure column completeness and order
     desired_order = ['Date', 'Bx', 'By', 'Bz', 'By_avg', 'Bz_avg', 'V', 'Density', 'Pdyn', 'Dst', 'Kp', 'Kp_raw',
-                     'G1', 'G2', 'G3', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6',
+                     'G1', 'G2', 'G3',
                      'N_index', 'B_index', 'SYM_H']
     
 
@@ -519,6 +519,56 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
     if soho_data_pull.celias_url_exists(year):
         if year >= 1996:
             SohoCombine(f'{year}_TSY_Inputs.csv', f'{year}_CELIAS_Proton_Monitor_5min.csv', year)
+
+    # --- Interpolate short data gaps (<1 hour) after SohoCombine, treating FILLER_VALUES as gaps ---
+    tsy_inputs_path = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
+    df = pd.read_csv(tsy_inputs_path, parse_dates=['Date'])
+    df = df.set_index('Date')
+    FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", 
+                     "9999.9", "999.9", "99999.0", "-1.00e+05", "999999", "999.99", "99.99"}
+    # Also include numeric versions of filler values
+    FILLER_VALUES_NUMERIC = set()
+    for val in FILLER_VALUES:
+        try:
+            FILLER_VALUES_NUMERIC.add(float(val))
+        except Exception:
+            pass
+    # Replace filler values (string and numeric) with NaN for all columns
+    for col in df.columns:
+        # Replace string versions
+        df[col] = df[col].replace(FILLER_VALUES, pd.NA)
+        # Replace numeric versions
+        df[col] = df[col].replace(list(FILLER_VALUES_NUMERIC), pd.NA)
+    # Convert all columns to numeric where possible (to allow interpolation)
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    # For each column, interpolate only short gaps (max 36 consecutive NaNs)
+    for col in df.columns:
+        if df[col].isnull().any():
+            isnan = df[col].isnull()
+            mask = isnan.copy()
+            start = None
+            for i, val in enumerate(isnan):
+                if val and start is None:
+                    start = i
+                if not val and start is not None:
+                    end = i
+                    if end - start <= 36:
+                        mask.iloc[start:end] = True
+                    else:
+                        mask.iloc[start:end] = False
+                    start = None
+            # Edge case: gap at end
+            if start is not None:
+                end = len(isnan)
+                if end - start <= 36:
+                    mask.iloc[start:end] = True
+                else:
+                    mask.iloc[start:end] = False
+            # Interpolate only short gaps
+            df.loc[mask, col] = df[col].interpolate(limit=36, limit_direction='both')[mask]
+    df = df.reset_index()
+    df.to_csv(tsy_inputs_path, index=False)
 
 def CombineTSY04(TSY04file, year):
     base_dir = os.path.join(os.path.dirname(__file__))

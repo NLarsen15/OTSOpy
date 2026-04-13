@@ -38,9 +38,9 @@ def TSY04_param_generator(YEAR: int) -> None:
             continue
         avg_symh = window_symh.mean()
         # Check for invalid values in the current row
-        v_invalid = 'V' in df.columns and df['V'].iloc[idx] == 9999.0
-        density_invalid = 'Density' in df.columns and df['Density'].iloc[idx] == 999.9
-        pdyn_invalid = 'Pdyn' in df.columns and df['Pdyn'].iloc[idx] == 99.99
+        v_invalid = 'V' in df.columns and (df['V'].iloc[idx] == 9999.0 or np.isnan(df['V'].iloc[idx]))
+        density_invalid = 'Density' in df.columns and (df['Density'].iloc[idx] == 999.9 or np.isnan(df['Density'].iloc[idx]))
+        pdyn_invalid = 'Pdyn' in df.columns and (df['Pdyn'].iloc[idx] == 99.99 or np.isnan(df['Pdyn'].iloc[idx]))
         if in_interval and (v_invalid or density_invalid or pdyn_invalid):
             valid_intervals.append((interval_start, idx-1))
             in_interval = False
@@ -63,6 +63,14 @@ def TSY04_param_generator(YEAR: int) -> None:
     Density = df['Density'].values
     Bz = df['Bz'].values
     Date = df['Date'].values
+
+    # Print out any invalid input parameters and their times
+    #for idx in range(len(df)):
+    #    v_invalid = 'V' in df.columns and (df['V'].iloc[idx] == 9999.0 or np.isnan(df['V'].iloc[idx]))
+    #    density_invalid = 'Density' in df.columns and (df['Density'].iloc[idx] == 999.9 or np.isnan(df['Density'].iloc[idx]))
+    #    bz_invalid = 'Bz' in df.columns and np.isnan(df['Bz'].iloc[idx])
+    #    if v_invalid or density_invalid or bz_invalid:
+    #        print(f"Invalid input at idx={idx}, Date={df['Date'].iloc[idx]}: V_invalid={v_invalid}, Density_invalid={density_invalid}, Bz_invalid={bz_invalid}")
     
     @njit
     def compute_Ws(V, Density, Bz, DT, Bs, FAC_lam, FAC_beta, start_idx, end_idx):
@@ -75,7 +83,7 @@ def TSY04_param_generator(YEAR: int) -> None:
                 vnorm = V[start_idx+kk] / 400.0
                 dennorm = Density[start_idx+kk] * 1.16 / 5.0
                 bsnorm = -Bz[start_idx+kk] / 5.0
-                if bsnorm <= 0 or np.isnan(bsnorm):
+                if bsnorm <= 0:
                     bs = np.zeros(6)
                 else:
                     bs = np.array([bsnorm ** Bs[j] for j in range(6)])
