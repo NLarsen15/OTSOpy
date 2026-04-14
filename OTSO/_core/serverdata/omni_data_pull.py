@@ -109,7 +109,8 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
     with open(input_file, 'r') as datfile:
         lines = datfile.readlines()
 
-    FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", "9999.9", "999.9", "99999.0", "-1.00e+05", "999999", "999.99", "99.99"}
+    FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", "9999.9", "999.9",
+                      "99999.0", "-1.00e+05", "999999", "999.99", "99.99", "9999.0"}
 
 
     rows = [line.split() for line in lines]
@@ -524,7 +525,7 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
     tsy_inputs_path = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
     df = pd.read_csv(tsy_inputs_path, parse_dates=['Date'])
     df = df.set_index('Date')
-    FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", 
+    FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", "9999.0",
                      "9999.9", "999.9", "99999.0", "-1.00e+05", "999999", "999.99", "99.99"}
     # Also include numeric versions of filler values
     FILLER_VALUES_NUMERIC = set()

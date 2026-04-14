@@ -1,6 +1,6 @@
 import math
 import pandas
-
+import numpy as np
 
 def IOPTprocess(Kp:float) -> int:
     if Kp >= 6:
@@ -29,6 +29,9 @@ def TSY01_Constants(By:float,Bz:float,V:float,N:float) -> tuple[float,float,floa
     G1 = 0
     G2 = 0
     G3 = 0
+
+    if V == 9999.0:
+        V = np.nan
 
     By = By
     Bz = Bz
@@ -61,6 +64,7 @@ def OMNI_TSY01_Constants(data: pandas.DataFrame) -> tuple[float,float,float]:
     IMFz = data["Bz"]
     Speed = data["V"]
     Density = data["Density"]
+
     G1 = 0
     G2 = 0
     G3 = 0
@@ -68,6 +72,8 @@ def OMNI_TSY01_Constants(data: pandas.DataFrame) -> tuple[float,float,float]:
     for (By, Bz, V, N) in zip(IMFy, IMFz, Speed, Density):
         By = By
         Bz = Bz
+        if V == 9999.0:
+            V = np.nan
         if V < 0:
             V = -1*V
         W = 1/len(IMFy)

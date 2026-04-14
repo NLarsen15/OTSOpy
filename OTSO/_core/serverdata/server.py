@@ -230,6 +230,8 @@ def DownloadServerFile(OMNIYEAR, g, h):
             #OTSOLib.gettsy04datalinux(OMNIYEAR, DIRECTORY, length)
             #omni_data_pull.OMNI_to_csv(OMNIYEAR)
             #omni_data_pull.TSY01(f'{OMNIYEAR}_TSY_Data.csv')
+            omni_data_pull.TSY01(f'omni_{OMNIYEAR}_high_res.csv')
+            omni_data_pull.TSY01(f'omni_{OMNIYEAR}_low_res.csv')
             omni_data_pull.Combine(f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv',
                              f'TSY15_{OMNIYEAR}.csv', OMNIYEAR)
             tsy04_param_generator.TSY04_param_generator(OMNIYEAR)
