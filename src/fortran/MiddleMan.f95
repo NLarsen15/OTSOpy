@@ -1397,7 +1397,7 @@ GOTO 150
 end if
 end if
 call EscapeCheck()
-call FinalStepCheck()
+!call FinalStepCheck()
 steps = steps + 1
 
 Xnew(1) = XnewTemp(1)/1000
