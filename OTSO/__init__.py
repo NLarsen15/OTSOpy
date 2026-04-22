@@ -832,15 +832,6 @@ def trajectory(
             - `magnetopause` (`str`, default="Kobel"): "NONE", "Kobel", "Sibeck", "Lin", "Sphere"
             - `spheresize` (`float`, default=25): Spherical boundary radius (Re)
             - `AdaptiveExternalModel` (`bool`, default=False): Auto-select external model
-
-        rigidity_params (RigidityParams): Rigidity scanning.
-
-            Available keys:
-
-            - `startrigidity` (`float`, default=20): Initial rigidity (GV)
-            - `endrigidity` (`float`, default=0): Final rigidity (GV)
-            - `rigiditystep` (`float`, default=0.01): Step size (GV)
-            - `rigidityscan` (`str`, default="ON"): Enable scanning ("ON"/"OFF")
         
         solar_wind (SolarWindParams): Solar wind parameters.
 
