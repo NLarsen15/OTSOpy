@@ -31,19 +31,39 @@ subroutine FinalStepCheck()
 USE Particle
 implicit none
 
+
 IF (FinalStep == 1) THEN
+    !print *, "Final Step Triggered"
+    !print *, Result
+    !print *, FinalStep
     FinalStep = 2
+    
     IF (Result == 0) THEN
     Position(1) = OLDPosition(1)
     Position(2) = OLDPosition(2)
     Position(3) = OLDPosition(3)
+
+    !print *, "RESET"
+    !print *, "Before Crossing", OLDGSMPosition(1), OLDGSMPosition(2), OLDGSMPosition(3)
+    !print *, "Distance Before Crossing", (OLDGSMPosition(1)**2 + OLDGSMPosition(2)**2 + OLDGSMPosition(3)**2)**0.5
+    !print *, "After Crossing", GSMPosition(1), GSMPosition(2), GSMPosition(3)
+    !print *, "Distance After Crossing", (GSMPosition(1)**2 + GSMPosition(2)**2 + GSMPosition(3)**2)**0.5
+
+
+    GSMPosition(1) = OLDGSMPosition(1)
+    GSMPosition(2) = OLDGSMPosition(2)
+    GSMPosition(3) = OLDGSMPosition(3)
+
+    GEOPosition(1) = OLDGEOPosition(1)
+    GEOPosition(2) = OLDGEOPosition(2)
+    GEOPosition(3) = OLDGEOPosition(3)
 
     Velocity(1) = OLDVelocity(1)
     Velocity(2) = OLDVelocity(2)
     Velocity(3) = OLDVelocity(3)
 
     secondTotal = OLDsecondTotal
-    Lasth = (h/150)
+    Lasth = 1E-4
     END IF
 END IF
 

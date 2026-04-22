@@ -49,7 +49,7 @@ end interface
       functionSphere = 1
       IF (FinalStep == 0) THEN
         FinalStep = 1
-        TestResult = -1
+        functionSphere = 0
       END IF
     END IF
     

@@ -27,21 +27,11 @@ implicit none
 real(8) :: V(3), StartPosition(5), Date(6), Rigidity, Norm(3), VelocityGEO(3)
 integer(8) :: Anti, Atomic
 integer(4) :: mode(4)
-real(8) :: LocalVector(3), RotatedVelocity(3), GEOVelocity(3), Re, w
+real(8) :: LocalVector(3), RotatedVelocity(3), Re, w
 real(8) :: tempposition(3), temppositionGDZ(3), GEOSPHposition(3)
 character(len=3) :: inputcoord
 
 Re = 6371.2
-
-call Reset()
-
-call initialize()
-
-call CoordinateTransform(inputcoord, "GDZ", year, day, secondTotal, StartPosition, Position)
-
-!Position(1) = StartPosition(1)
-!Position(2) = StartPosition(2)
-!Position(3) = StartPosition(3)
 
 R = Rigidity
 year = INT(Date(1))
@@ -51,7 +41,19 @@ minute = INT(Date(4))
 secondINT = INT(Date(5))
 secondTotal = real(Date(6))
 
+call Reset()
+
+call initialize()
+
 call RECALC_08(year, day, hour, minute, secondINT, SW(1), SW(2), SW(3))
+
+call CoordinateTransform(inputcoord, "GDZ", year, day, secondTotal, StartPosition, Position)
+call CoordinateTransform(inputcoord, "GSM", year, day, secondTotal, StartPosition, GSMPosition)
+call CoordinateTransform(inputcoord, "GEO", year, day, secondTotal, StartPosition, GEOPosition)
+
+!Position(1) = StartPosition(1)
+!Position(2) = StartPosition(2)
+!Position(3) = StartPosition(3)
 
 IF (Anti == 1) THEN
     q_0 = -1.0 * q_0

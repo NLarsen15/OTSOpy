@@ -952,6 +952,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
 
     R = real(Rigidity(1), kind = selected_real_kind(15,307))
     StartRigidity = real(Rigidity(1), kind = selected_real_kind(15,307))
+    EndRigidity = real(Rigidity(2), kind = selected_real_kind(15,307))
     Re = 6371.2
     Limit = 0
     Acount = 0
@@ -970,7 +971,6 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     spheresize = sphere
 
     CoordSystem = "GEO"
-
 
     Ginput = gOTSO
     Hinput = hOTSO
@@ -1414,7 +1414,7 @@ if (model(1) == 4) then
     end if
 end if
 
-write(10,'(*(G0.6,:,","))') XnewConverted/Re
+write(10,'(*(G0.10,:,","))') XnewConverted/Re
 
 IF (Position(1) < End(1) ) THEN
     !print *, "This is Forbidden", "      Encountered Earth"
@@ -1761,6 +1761,7 @@ do idir = 1, 2
         Xnew(2) = XnewTemp(2)/(Re*1000)
         Xnew(3) = XnewTemp(3)/(Re*1000)
 
+
         call CoordinateTransform("GSM", CoordSystem, year, day, secondTotal, &
                                  Xnew, XnewConverted)
 
@@ -1786,11 +1787,13 @@ end do
 
 do inte = nMinus, 1, -1
     write(10,'(*(G0.6,:,","))') LineMinus(inte,:)
+    !print *, "nMinus = ", nMinus, "inte = ", inte
     !print *, LineMinus(inte,:)
 end do
 
 do inte = 2, nPlus
     write(10,'(*(G0.6,:,","))') LinePlus(inte,:)
+    !print *, "nPlus = ", nPlus, "inte = ", inte
     !print *, LinePlus(inte,:)
 end do
 

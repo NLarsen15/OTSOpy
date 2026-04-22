@@ -22,11 +22,9 @@ USE MagneticFieldFunctions
 
 real(8) :: BfieldFinal(3), X1(3), EXTERNALGSM(3), Bfield(3), INTERNALGSM(3), xGSM(3)
 
-call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, X1, xGSM)
-
-if (model(1) == 4) then
-    call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, X1, xGSM)
-end if
+xGSM(1) = X1(1)
+xGSM(2) = X1(2)
+xGSM(3) = X1(3)
 
 INTERNALGSM = InternalMagPointer(xGSM)
 EXTERNALGSM = ExternalMagPointer(xGSM)

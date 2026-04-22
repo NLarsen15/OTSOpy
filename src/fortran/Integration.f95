@@ -34,9 +34,9 @@ if (h == 0) then
     h = 1E-6
 end if
 
-x0(1) = Position(1) !Xx
-x0(2) = Position(2) !Xy
-x0(3) = Position(3) !Xz
+xGSM(1) = GSMPosition(1) !Xx
+xGSM(2) = GSMPosition(2) !Xy
+xGSM(3) = GSMPosition(3) !Xz
 
 v0(1) = Velocity(1) !Vx
 v0(2) = Velocity(2) !Vy
@@ -46,21 +46,22 @@ v0MAG = ((v0(1)**2.0 + v0(2)**2.0 + v0(3)**2.0))**(0.5)
 
 loop = 0
 
+10 h1 = h*0.5
+HOLD = h
+
 IF (FinalStep >= 1) THEN
     h = Lasth
 END IF
 
-10 h1 = h*0.5
-HOLD = h
-
-
-call AccelerationCalc(Position, velocity, a0)
-a0MAG = ((a0(1)**2.0 + a0(2)**2.0 + a0(3)**2.0))**(0.5)
-call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, x0, xGSM)
-
 if (model(1) == 4) then
-    call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, x0, xGSM)
+    xGSM(1) = GEOPosition(1) !Xx
+    xGSM(2) = GEOPosition(2) !Xy
+    xGSM(3) = GEOPosition(3) !Xz
 end if
+
+
+call AccelerationCalc(xGSM, velocity, a0)
+a0MAG = ((a0(1)**2.0 + a0(2)**2.0 + a0(3)**2.0))**(0.5)
 
 ! particle position in geocentric
 
@@ -102,13 +103,7 @@ x1GSM(1) = x1(1)/6371200.0
 x1GSM(2) = x1(2)/6371200.0
 x1GSM(3) = x1(3)/6371200.0
 
-call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x1GSM, x1GDZ)
-
-if (model(1) == 4) then
-    call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x1GSM, x1GDZ)
-end if
-
-call AccelerationCalc(x1GDZ, v1, a1)
+call AccelerationCalc(x1GSM, v1, a1)
 a1MAG = ((a1(1)**2.0 + a1(2)**2.0 + a1(3)**2.0))**(0.5)
 
 !IF ((a1MAG - a0MAG)/a0MAG > 0.15) THEN
@@ -152,13 +147,7 @@ x2GSM(1) = x2(1)/6371200.0
 x2GSM(2) = x2(2)/6371200.0
 x2GSM(3) = x2(3)/6371200.0
 
-call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x2GSM, x2GDZ)
-
-if (model(1) == 4) then
-    call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x2GSM, x2GDZ)
-end if
-
-call AccelerationCalc(x2GDZ, v2, a2)
+call AccelerationCalc(x2GSM, v2, a2)
 a2MAG = ((a2(1)**2.0 + a2(2)**2.0 + a2(3)**2.0))**(0.5)
 
 !IF ((a2MAG - a1MAG)/a1MAG > 0.15) THEN
@@ -204,13 +193,7 @@ x3GSM(1) = x3(1)/6371200.0
 x3GSM(2) = x3(2)/6371200.0
 x3GSM(3) = x3(3)/6371200.0
 
-call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x3GSM, x3GDZ)
-
-if (model(1) == 4) then
-    call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x3GSM, x3GDZ)
-end if
-
-call AccelerationCalc(x3GDZ, v3, a3)
+call AccelerationCalc(x3GSM, v3, a3)
 a3MAG = ((a3(1)**2.0 + a3(2)**2.0 + a3(3)**2.0))**(0.5)
 
 !IF ((a3MAG - a2MAG)/a2MAG > 0.15) THEN
@@ -265,7 +248,10 @@ XnewTemp(1) = Xnew(1)
 XnewTemp(2) = Xnew(2)
 XnewTemp(3) = Xnew(3)
 
-call OldVariables(Position,Velocity)
+if (counter == 2) THEN
+call OldVariables(Position,Velocity, GSMPosition, GEOPosition)
+counter = 0
+end if
 secondTotal = secondTotal + h
 
 Velocity(1) = Vnew(1)
@@ -276,6 +262,14 @@ Position(1) = XnewGDZ(1)
 Position(2) = XnewGDZ(2)
 Position(3) = XnewGDZ(3)
 
+GSMPosition(1) = Xnew(1)/6371200.0
+GSMPosition(2) = Xnew(2)/6371200.0
+GSMPosition(3) = Xnew(3)/6371200.0
+
+GEOPosition(1) = Xnew(1)/6371200.0
+GEOPosition(2) = Xnew(2)/6371200.0
+GEOPosition(3) = Xnew(3)/6371200.0
+
 call NewMax(Max)
 
 IF (adaptivestep .eqv. .TRUE.) THEN
@@ -284,13 +278,19 @@ IF ((Vend - v0MAG)/v0MAG < LOWVerr) THEN
 END IF
 END IF
 
+call NewMax(Max)
+
 IF (adaptivestep .eqv. .FALSE.) THEN
-    h = Max
+    h = firsth
 END IF
 
-IF (h > Max) THEN
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF (h > Max) THEN
     h = Max
+    END IF
 END IF
+
+counter = counter + 1
 
 end subroutine RK4
 
@@ -313,6 +313,7 @@ USE Particle
 real(8) :: Bfield(3), v_plus(3), v_minus(3), v_prime(3), x0(3), v0(3), XGSM(3), xGDZ_half(3)
 real(8) :: tb(3), sb(3), crossed1(3), crossed2(3), scaler, lam, x_half_GSM(3), x_half_GSM_Temp(3)
 real(8) :: Xnew(3), Vnew(3), XnewGDZ(3), vabs1, vabs2, Max, LOWVerr, Verr, h1
+real(8) :: OLDGSM(3), NEWGSM(3)
    
 Verr = BetaError/100
 LOWVerr = BetaError/10000
@@ -321,14 +322,14 @@ if (h == 0) then
     h = 1E-6
 end if
     
-x0(1) = Position(1) !Xx
-x0(2) = Position(2) !Xy
-x0(3) = Position(3) !Xz
-
-call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, x0, xGSM)
+xGSM(1) = GSMPosition(1) !Xx
+xGSM(2) = GSMPosition(2) !Xy
+xGSM(3) = GSMPosition(3) !Xz
 
 if (model(1) == 4) then
-    call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, x0, xGSM)
+    xGSM(1) = GEOPosition(1) !Xx
+    xGSM(2) = GEOPosition(2) !Xy
+    xGSM(3) = GEOPosition(3) !Xz
 end if
 
 xGSM(1) = xGSM(1)*6371200.0
@@ -340,12 +341,12 @@ v0(2) = Velocity(2) !Vy
 v0(3) = Velocity(3) !Vz
     
 Vabs1 = (v0(1)*v0(1) + v0(2)*v0(2) + v0(3)*v0(3))**(0.5)
+    
+10 h1 = h*0.5
 
 IF (FinalStep >= 1) THEN
     h = Lasth
 END IF
-    
-10 h1 = h*0.5
 
 x_half_GSM(1) = xGSM(1) + (v0(1)/2.0)*h
 x_half_GSM(2) = xGSM(2) + (v0(2)/2.0)*h
@@ -359,18 +360,12 @@ x_half_GSM_Temp(1) = x_half_GSM(1)/6371200.0
 x_half_GSM_Temp(2) = x_half_GSM(2)/6371200.0
 x_half_GSM_Temp(3) = x_half_GSM(3)/6371200.0
 
-call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x_half_GSM_Temp, xGDZ_half)
-
-if (model(1) == 4) then
-    call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x_half_GSM_Temp, xGDZ_half)
-end if
-
-call MagneticField(xGDZ_half, Bfield)
+call MagneticField(x_half_GSM_Temp, Bfield)
 call VecScale(scaler,Bfield,tb)
     
-sb(1) = (2*tb(1))/(1+(tb(1)*tb(1)))
-sb(2) = (2*tb(2))/(1+(tb(2)*tb(2)))
-sb(3) = (2*tb(3))/(1+(tb(3)*tb(3)))
+sb(1) = (2*tb(1))/(1+((tb(1)*tb(1) + tb(2)*tb(2) + tb(3)*tb(3))))
+sb(2) = (2*tb(2))/(1+((tb(1)*tb(1) + tb(2)*tb(2) + tb(3)*tb(3))))
+sb(3) = (2*tb(3))/(1+((tb(1)*tb(1) + tb(2)*tb(2) + tb(3)*tb(3))))
     
 v_minus(1) = v0(1)
 v_minus(2) = v0(2)
@@ -425,7 +420,10 @@ IF ((Vabs2 - Vabs1)/Vabs1 < LOWVerr) THEN
 END IF
 END IF
 
-call OldVariables(Position,Velocity)
+if (counter == 2) THEN
+call OldVariables(Position,Velocity, GSMPosition, GEOPosition)
+counter = 0
+end if
     
 XnewTemp(1) = Xnew(1)
 XnewTemp(2) = Xnew(2)
@@ -438,16 +436,27 @@ Velocity(3) = Vnew(3)
 Position(1) = XnewGDZ(1)
 Position(2) = XnewGDZ(2)
 Position(3) = XnewGDZ(3)
-    
-call NewMax(Max)
+
+GSMPosition(1) = Xnew(1)/6371200.0
+GSMPosition(2) = Xnew(2)/6371200.0
+GSMPosition(3) = Xnew(3)/6371200.0
+
+GEOPosition(1) = Xnew(1)/6371200.0
+GEOPosition(2) = Xnew(2)/6371200.0
+GEOPosition(3) = Xnew(3)/6371200.0
 
 IF (adaptivestep .eqv. .FALSE.) THEN
-    h = Max
+    h = firsth
 END IF
-    
-IF (h > Max) THEN
+
+IF (adaptivestep .eqv. .TRUE.) THEN
+    call NewMax(Max)
+    IF (h > Max) THEN
     h = Max
+    END IF
 END IF
+
+counter = counter + 1
     
 end subroutine Boris
 
@@ -483,14 +492,14 @@ if (h == 0) then
     h = 1E-6
 end if
 
-x0(1) = Position(1) !Xx
-x0(2) = Position(2) !Xy
-x0(3) = Position(3) !Xz
-    
-call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, x0, xGSM)
+xGSM(1) = GSMPosition(1) !Xx
+xGSM(2) = GSMPosition(2) !Xy
+xGSM(3) = GSMPosition(3) !Xz
 
 if (model(1) == 4) then
-    call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, x0, xGSM)
+    xGSM(1) = GEOPosition(1) !Xx
+    xGSM(2) = GEOPosition(2) !Xy
+    xGSM(3) = GEOPosition(3) !Xz
 end if
 
 xGSM(1) = xGSM(1)*6371200.0
@@ -502,12 +511,12 @@ v0(2) = Velocity(2) !Vy
 v0(3) = Velocity(3) !Vz
     
 Vabs1 = (v0(1)*v0(1) + v0(2)*v0(2) + v0(3)*v0(3))**(0.5)
+    
+10 h1 = h*0.5
 
 IF (FinalStep >= 1) THEN
     h = Lasth
 END IF
-    
-10 h1 = h*0.5
 
 !Half update position x(n+1/2)
 x_half_GSM(1) = xGSM(1) + (v0(1)/2.0)*h
@@ -525,17 +534,15 @@ x_half_GSM_Temp(1) = x_half_GSM(1)/6371200.0
 x_half_GSM_Temp(2) = x_half_GSM(2)/6371200.0
 x_half_GSM_Temp(3) = x_half_GSM(3)/6371200.0
 
-call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x_half_GSM_Temp, xGDZ_half)
-
-if (model(1) == 4) then
-    call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x_half_GSM_Temp, xGDZ_half)
-end if
-
-call MagneticField(xGDZ_half, Bfield)
+call MagneticField(x_half_GSM_Temp, Bfield)
 
 call VecCross(v0, Bfield, crossed1)
 call VecScale(scaler,crossed1,scale1)
 call VecAddition(Un,scale1,Un_half)
+
+!Un_half(1) = Un(1)
+!Un_half(2) = Un(2)
+!Un_half(3) = Un(3)
 
 !U(n+1/2) now determined
     
@@ -626,7 +633,10 @@ IF ((Vabs2 - Vabs1)/Vabs1 < LOWVerr) THEN
 END IF
 END IF
 
-call OldVariables(Position,Velocity)
+if (counter == 2) THEN
+call OldVariables(Position,Velocity, GSMPosition, GEOPosition)
+counter = 0
+end if
     
 XnewTemp(1) = Xnew(1)
 XnewTemp(2) = Xnew(2)
@@ -639,16 +649,28 @@ Velocity(3) = Vnew(3)
 Position(1) = XnewGDZ(1)
 Position(2) = XnewGDZ(2)
 Position(3) = XnewGDZ(3)
+
+GSMPosition(1) = Xnew(1)/6371200.0
+GSMPosition(2) = Xnew(2)/6371200.0
+GSMPosition(3) = Xnew(3)/6371200.0
+
+GEOPosition(1) = Xnew(1)/6371200.0
+GEOPosition(2) = Xnew(2)/6371200.0
+GEOPosition(3) = Xnew(3)/6371200.0
     
 call NewMax(Max)
 
 IF (adaptivestep .eqv. .FALSE.) THEN
-    h = Max
+    h = firsth
 END IF
-    
-IF (h > Max) THEN
+
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF (h > Max) THEN
     h = Max
+    END IF
 END IF
+
+counter = counter + 1
     
 end subroutine Vay
 
@@ -685,14 +707,14 @@ if (h == 0) then
     h = 1E-6
 end if
     
-x0(1) = Position(1) !Xx
-x0(2) = Position(2) !Xy
-x0(3) = Position(3) !Xz
-    
-call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, x0, xGSM)
+xGSM(1) = GSMPosition(1) !Xx
+xGSM(2) = GSMPosition(2) !Xy
+xGSM(3) = GSMPosition(3) !Xz
 
 if (model(1) == 4) then
-    call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, x0, xGSM)
+    xGSM(1) = GEOPosition(1) !Xx
+    xGSM(2) = GEOPosition(2) !Xy
+    xGSM(3) = GEOPosition(3) !Xz
 end if
 
 xGSM(1) = xGSM(1)*6371200.0
@@ -705,11 +727,11 @@ v0(3) = Velocity(3) !Vz
     
 Vabs1 = (v0(1)*v0(1) + v0(2)*v0(2) + v0(3)*v0(3))**(0.5)
 
+10 h1 = h*0.5
+
 IF (FinalStep >= 1) THEN
     h = Lasth
 END IF
-
-10 h1 = h*0.5
 
 !Half update position x(n+1/2)
 x_half_GSM(1) = xGSM(1) + (v0(1)/2.0)*h
@@ -727,13 +749,7 @@ x_half_GSM_Temp(1) = x_half_GSM(1)/6371200.0
 x_half_GSM_Temp(2) = x_half_GSM(2)/6371200.0
 x_half_GSM_Temp(3) = x_half_GSM(3)/6371200.0
 
-call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x_half_GSM_Temp, xGDZ_half)
-
-if (model(1) == 4) then
-    call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x_half_GSM_Temp, xGDZ_half)
-end if
-
-call MagneticField(xGDZ_half, Bfield)
+call MagneticField(x_half_GSM_Temp, Bfield)
 
 call VecScale(scaler,Bfield,tau)
 call VecDot(Uminus,tau,Ustar)
@@ -818,7 +834,10 @@ IF ((Vabs2 - Vabs1)/Vabs1 < LOWVerr) THEN
 END IF
 END IF
 
-call OldVariables(Position,Velocity)
+if (counter == 2) THEN
+call OldVariables(Position,Velocity, GSMPosition, GEOPosition)
+counter = 0
+end if
     
 XnewTemp(1) = Xnew(1)
 XnewTemp(2) = Xnew(2)
@@ -831,16 +850,28 @@ Velocity(3) = Vnew(3)
 Position(1) = XnewGDZ(1)
 Position(2) = XnewGDZ(2)
 Position(3) = XnewGDZ(3)
+
+GSMPosition(1) = Xnew(1)/6371200.0
+GSMPosition(2) = Xnew(2)/6371200.0
+GSMPosition(3) = Xnew(3)/6371200.0
+
+GEOPosition(1) = Xnew(1)/6371200.0
+GEOPosition(2) = Xnew(2)/6371200.0
+GEOPosition(3) = Xnew(3)/6371200.0
     
 call NewMax(Max)
 
 IF (adaptivestep .eqv. .FALSE.) THEN
-    h = Max
+    h = firsth
 END IF
-    
-IF (h > Max) THEN
+
+IF (adaptivestep .eqv. .TRUE.) THEN
+    IF (h > Max) THEN
     h = Max
+    END IF
 END IF
+
+counter = counter + 1
         
 end subroutine HC
 
@@ -875,10 +906,15 @@ Vmag = Vmag / 1000.0
 
 p = 33.33 * (R/Bmag)
 
-h = (0.01 * p) / Vmag
-
 MaxMulti = MaxGyroPercent
 Max = (MaxMulti*p)/Vmag
+!print *, "Max time step is ", Max, " seconds"
+
+IF (adaptivestep .eqv. .TRUE.) THEN
+    h = (0.01 * p) / Vmag
+ELSE
+    h = Max
+END IF
 
 IF (HOLD == 0) THEN
     h = h
@@ -887,8 +923,11 @@ ELSE IF (h > HOLD * 1.1) THEN
 END IF
 
 IF (h > Max ) THEN
+    !print *, "Time step of ", h, " seconds is greater than max time step of ", Max, " seconds. Time step is set to max time step."
     h = Max
 END IF
+
+!print *, "time step is ", h, " seconds"
 end subroutine TimeStep
 
 ! ************************************************************************************************************************************
@@ -907,7 +946,11 @@ USE particle
 implicit none
 real(8) :: Bfield(3), Bmag
     
-call MagneticField(Position, Bfield)
+if (model(1) == 4) then
+call MagneticField(GEOPosition, Bfield)
+else
+call MagneticField(GSMPosition, Bfield)
+end if
 call TimeStep(Bfield)
 
 Bmag = ((Bfield(1)**2.0 + Bfield(2)**2.0 + Bfield(3)**2.0))**(0.5)
@@ -916,6 +959,7 @@ h = 10**(-4)
 end if
 
 Firsth = h
+
 end subroutine FirstTimeStep
 
 ! ************************************************************************************************************************************
@@ -934,7 +978,13 @@ USE Particle
 implicit none
 real(8) :: Max, Bfield(3), Bmag
 
-call MagneticField(Position, Bfield)
+
+if (model(1) == 4) then
+call MagneticField(GEOPosition, Bfield)
+else
+call MagneticField(GSMPosition, Bfield)
+end if
+
 call TimeStepMax(Bfield,Max)
 
 Bmag = ((Bfield(1)**2.0 + Bfield(2)**2.0 + Bfield(3)**2.0))**(0.5)
@@ -1010,20 +1060,21 @@ subroutine RK4_FieldTrace(Bfield)
     real(8) :: Bfield1(3), Bfield1Mag, Bfield1unit(3)
     real(8) :: Bfield2(3), Bfield2Mag, Bfield2unit(3)
     real(8) :: Bfield3(3), Bfield3Mag, Bfield3unit(3)
-    
-    x0(1) = Position(1) !Xx
-    x0(2) = Position(2) !Xy
-    x0(3) = Position(3) !Xz
+
+
+    xGSM(1) = GSMPosition(1) !Xx
+    xGSM(2) = GSMPosition(2) !Xy
+    xGSM(3) = GSMPosition(3) !Xz
 
     h = 10000
     
-    call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, x0, xGSM)
-    
     if (model(1) == 4) then
-        call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, x0, xGSM)
+        xGSM(1) = GEOPosition(1) !Xx
+        xGSM(2) = GEOPosition(2) !Xy
+        xGSM(3) = GEOPosition(3) !Xz
     end if
 
-    call MagneticField(x0, Bfield0)
+    call MagneticField(xGSM, Bfield0)
 
     
     ! particle position in geocentric
@@ -1047,14 +1098,8 @@ subroutine RK4_FieldTrace(Bfield)
     x0GSM(1) = Newx0(1)/6371200.0
     x0GSM(2) = Newx0(2)/6371200.0
     x0GSM(3) = Newx0(3)/6371200.0
-
-    call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x0GSM, x0GDZ)
-    
-    if (model(1) == 4) then
-        call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x0GSM, x0GDZ)
-    end if
  
-    call MagneticField(x0GDZ, Bfield1)
+    call MagneticField(x0GSM, Bfield1)
  
     Bfield1Mag = ((Bfield1(1)**2.0 + Bfield1(2)**2.0 + Bfield1(3)**2.0))**(0.5)
     Bfield1unit(1) = Bfield1(1)/Bfield1Mag
@@ -1070,13 +1115,7 @@ subroutine RK4_FieldTrace(Bfield)
     x1GSM(2) = x1(2)/6371200.0
     x1GSM(3) = x1(3)/6371200.0
     
-    call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x1GSM, x1GDZ)
-    
-    if (model(1) == 4) then
-        call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x1GSM, x1GDZ)
-    end if
-    
-    call MagneticField(x1GDZ, Bfield2)
+    call MagneticField(x1GSM, Bfield2)
 
     Bfield2Mag = ((Bfield2(1)**2.0 + Bfield2(2)**2.0 + Bfield2(3)**2.0))**(0.5)
     Bfield2unit(1) = Bfield2(1)/Bfield2Mag
@@ -1092,13 +1131,7 @@ subroutine RK4_FieldTrace(Bfield)
     x2GSM(2) = x2(2)/6371200.0
     x2GSM(3) = x2(3)/6371200.0
     
-    call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, x2GSM, x2GDZ)
-    
-    if (model(1) == 4) then
-        call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, x2GSM, x2GDZ)
-    end if
-    
-    call MagneticField(x2GDZ, Bfield3)
+    call MagneticField(x2GSM, Bfield3)
 
     Bfield3Mag = ((Bfield3(1)**2.0 + Bfield3(2)**2.0 + Bfield3(3)**2.0))**(0.5)
     Bfield3unit(1) = Bfield3(1)/Bfield3Mag
@@ -1143,6 +1176,15 @@ subroutine RK4_FieldTrace(Bfield)
     Position(1) = XnewGDZ(1)
     Position(2) = XnewGDZ(2)
     Position(3) = XnewGDZ(3)
+
+    GSMPosition(1) = Xnew(1)/6371200.0
+    GSMPosition(2) = Xnew(2)/6371200.0
+    GSMPosition(3) = Xnew(3)/6371200.0
+
+    GEOPosition(1) = Xnew(1)/6371200.0
+    GEOPosition(2) = Xnew(2)/6371200.0
+    GEOPosition(3) = Xnew(3)/6371200.0
+
     
     DistanceTraveled = DistanceTraveled + h
 
@@ -1182,11 +1224,11 @@ subroutine Boris_FieldTrace_Advanced(Bsign, Bfield)
     !print *, "Boris_FieldTrace_Advanced: Starting advanced field line trace"
     !print *, "========================================="
     
-    x0(1) = Position(1) !Xx
-    x0(2) = Position(2) !Xy
-    x0(3) = Position(3) !Xz
+    xGSM(1) = GSMPosition(1) !Xx
+    xGSM(2) = GSMPosition(2) !Xy
+    xGSM(3) = GSMPosition(3) !Xz
 
-    !print *, "Initial position (GDZ):", x0(1), x0(2), x0(3)
+    !print *, "Initial position (GSM):", xGSM(1), xGSM(2), xGSM(3)
     !print *, "Field direction sign (Bsign):", Bsign
 
     ! Step size and time step for Boris method
@@ -1196,18 +1238,15 @@ subroutine Boris_FieldTrace_Advanced(Bsign, Bfield)
     
     !print *, "Time step dt:", dt, "meters"
     
-    call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, x0, xGSM)
-    
     if (model(1) == 4) then
-        call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, x0, xGSM)
-        !print *, "Using GEO coordinate system (model 4)"
-    else
-        !print *, "Using GSM coordinate system"
+        xGSM(1) = GEOPosition(1) !Xx
+        xGSM(2) = GEOPosition(2) !Xy
+        xGSM(3) = GEOPosition(3) !Xz
     end if
 
-    call MagneticField(x0, Bfield0)
+    call MagneticField(xGSM, Bfield0)
 
-    !print *, "Initial B-field (GDZ):", Bfield0(1), Bfield0(2), Bfield0(3)
+    !print *, "Initial B-field (GSM):", Bfield0(1), Bfield0(2), Bfield0(3)
     
     ! Convert position to meters for calculations
     xGSM(1) = xGSM(1)*6371200.0
@@ -1244,13 +1283,7 @@ subroutine Boris_FieldTrace_Advanced(Bsign, Bfield)
     xhalfGSM(2) = xhalf(2)/6371200.0
     xhalfGSM(3) = xhalf(3)/6371200.0
     
-    call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, xhalfGSM, xhalfGDZ)
-    
-    if (model(1) == 4) then
-        call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, xhalfGSM, xhalfGDZ)
-    end if
-    
-    call MagneticField(xhalfGDZ, BfieldHalf)
+    call MagneticField(xhalfGSM, BfieldHalf)
     
     BfieldHalfMag = ((BfieldHalf(1)**2.0 + BfieldHalf(2)**2.0 + BfieldHalf(3)**2.0))**(0.5)
     BfieldHalfunit(1) = BfieldHalf(1)/BfieldHalfMag
@@ -1281,6 +1314,8 @@ subroutine Boris_FieldTrace_Advanced(Bsign, Bfield)
     XnewGSM(2) = Xnew(2)/6371200.0
     XnewGSM(3) = Xnew(3)/6371200.0
 
+    !print *, "New position (GSM):", XnewGSM(1), XnewGSM(2), XnewGSM(3)
+
     call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, XnewGSM, XnewGDZ)
     
     if (model(1) == 4) then
@@ -1294,7 +1329,7 @@ subroutine Boris_FieldTrace_Advanced(Bsign, Bfield)
     XnewTemp(3) = Xnew(3)
 
     ! Get magnetic field at final position
-    call MagneticField(XnewGDZ, Bfield)
+    call MagneticField(XnewGSM, Bfield)
     
     !print *, "Final B-field at new position:", Bfield(1), Bfield(2), Bfield(3)
     
@@ -1302,6 +1337,14 @@ subroutine Boris_FieldTrace_Advanced(Bsign, Bfield)
     Position(1) = XnewGDZ(1)
     Position(2) = XnewGDZ(2)
     Position(3) = XnewGDZ(3)
+
+    GSMPosition(1) = XnewGSM(1)
+    GSMPosition(2) = XnewGSM(2)
+    GSMPosition(3) = XnewGSM(3)
+
+    GEOPosition(1) = Xnew(1)
+    GEOPosition(2) = Xnew(2)
+    GEOPosition(3) = Xnew(3)
     
     DistanceTraveled = DistanceTraveled + dt
     

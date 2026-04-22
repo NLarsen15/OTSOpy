@@ -22,9 +22,11 @@
 !
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 PARMOD,PS,X,Y,Z,BX,BY,BZ,DST,Kp,PredictedDst
+      REAL*8 Zscore, DSTmeanval, DSTstdval
       INTEGER*4 IOPT
       INTEGER*4 model(4)
       DIMENSION PARAM(30,7),A(30),PARMOD(10)
+      DIMENSION DSTMEAN(10),DSTSTD(10)
       DATA A02,XLW2,YN,RPI,RT/25.D0,170.D0,30.D0,0.31830989D0,30.D0/
       DATA XD,XLD2/0.D0,40.D0/
 !
@@ -75,9 +77,23 @@
      2.9633D0,9.3909D0,9.7263D0,11.123D0,21.558D0,0.01D0,0.0D0, &
      4.4518D0,4.0D0,20.0D0/
 
+      DATA DSTMEAN/-3.85D0, -6.30D0, -11.46D0, -18.30D0, &
+     -28.36D0, -40.40D0, -57.31D0, -91.88D0, -122.80D0, &
+     -183.18D0/
+
+
+     DATA DSTSTD/12.28D0, 13.04D0, 15.28D0, 18.41D0, &
+     21.59D0, 28.59D0, 40.32D0, 57.68D0, 75.97D0, &
+     86.24D0/
+
        DATA IOP/1000/
 
        SAVE
+
+       DSTmeanval = DSTMEAN(Kp + 1)
+       DSTstdval = DSTSTD(Kp + 1)
+  
+       Zscore = (DST - DSTmeanval) / DSTstdval
 
        IF (Kp.GT.6) THEN
        IOPT = 7
@@ -175,9 +191,12 @@
        END IF
 
        IF (model(4) == 3) THEN
-       PredictedDst = -(0.13)*(kp**(3.38))-9.93
-       IF (DST .LT. PredictedDst) THEN
-       AK5= -13081+(1034.9*DST)
+       IF (Zscore .GT. 1.1D0) THEN
+       !print *, "DST is much higher than expected for this Kp, using refit parameters"
+       AK5= A(5)
+       ELSE
+       !print *, "DST is within expected range or below for the given Kp."
+       AK5 = -2923.09D0*(abs(DST)+2.01D0)**0.78
        END IF
        END IF
        END IF

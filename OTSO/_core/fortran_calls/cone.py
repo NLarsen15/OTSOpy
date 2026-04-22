@@ -42,7 +42,7 @@ def FortranCone(Data: list, ConeDataInstance: ConeData, queue: mp.Queue) -> None
       totalbetacheck = ConeDataInstance.totalbetacheck
 
 
-      length = int(StartRigidity/RigidityStep)
+      length = int((StartRigidity-EndRigidity)/RigidityStep)
 
       Cone, Rigidities = OTSOLib.cone(Position, StartRigidity, EndRigidity, RigidityStep, DateArray, model, 
                                       IntModel, AtomicNum, AntiCheck, IOPT, WindArray,

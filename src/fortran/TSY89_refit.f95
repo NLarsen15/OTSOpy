@@ -22,10 +22,11 @@
 !
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 PARMOD,PS,X,Y,Z,BX,BY,BZ,DST,Kp
-      REAL*8 PredictedDst
-      INTEGER*4 IOPT
+      REAL*8 PredictedDst, Zscore, DSTmeanval, DSTstdval
+      INTEGER*4 IOPT, KPINT
       INTEGER*4 model(4)
       DIMENSION PARAM(30,22),A(30),PARMOD(10)
+      DIMENSION DSTMEAN(28),DSTSTD(28)
       DATA A02,XLW2,YN,RPI,RT/25.D0,170.D0,30.D0,0.31830989D0,30.D0/
       DATA XD,XLD2/0.D0,40.D0/
 !
@@ -172,15 +173,30 @@
      3.9274D0,6.1679D0,6.6338D0,19.963D0,16.599D0, &
      0.010000D0,0.00000D+00,72.764D0,4.0000D0,20.000D0/
 
+     DATA DSTMEAN/-2.57D0, -3.53D0, -4.85D0, -6.22D0, -7.90D0, &
+     -9.63D0, -11.98D0, -14.30D0, -16.43D0,-19.44D0, -22.74D0, & 
+     -26.54D0, -30.24D0, -34.41D0, -38.49D0, -43.81D0, -49.73D0, &
+     -57.35D0, -63.26D0, -71.92D0, -81.70D0, -94.28D0, -108.03D0, &
+     -123.51D0, -127.85D0, -164.23D0, -177.05D0, -240.70D0/
 
+     DATA DSTSTD/8.61D0, 9.90D0, 10.98D0, 12.08D0, 12.91D0, &
+     13.87D0, 15.04D0, 16.13D0, 17.04D0, 18.47D0, 19.38D0, &
+     20.71D0, 22.84D0, 25.22D0, 27.36D0, 31.13D0, 34.36D0, &
+     37.45D0, 42.57D0, 50.83D0, 53.64D0, 59.75D0, 66.16D0, &
+     83.83D0, 79.52D0, 98.82D0, 106.44D0, 152.06D0/
 
        DATA IOP/1000/
 
        SAVE
+
+       KPINT = INT(Kp * 3.0D0 + 1.0D0)
+
+       DSTmeanval = DSTMEAN(KPINT)
+       DSTstdval = DSTSTD(KPINT)
+  
+       Zscore = (DST - DSTmeanval) / DSTstdval
        
-       !print *, "T89DBobergSub called with IOPT=", IOPT, " DST=", DST, " Kp=", Kp
        IF (IOPT.GT.22) THEN
-       Kp = 7
        IOPT=22
        END IF
 
@@ -277,8 +293,11 @@
        END IF
 
        IF (model(4) == 3) THEN
-       PredictedDst = -(0.13)*(kp**(3.38))-9.93
-       IF (DST .LT. PredictedDst) THEN
+       IF (Zscore .GT. 1.1D0) THEN
+       !print *, "DST is much higher than expected for this Kp, using refit parameters"
+       AK5= A(5)
+       ELSE
+       !print *, "DST is within expected range or below for the given Kp."
        AK5 = -2923.09D0*(abs(DST)+2.01D0)**0.78
        END IF
        END IF

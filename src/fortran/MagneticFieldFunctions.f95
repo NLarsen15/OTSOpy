@@ -120,6 +120,10 @@ end interface
  function function87S(x) ! Tsyganenko 1987 short
    real(8) :: function87S(3), TSYGSM(3), TSYGSM1(3)
    real(8), intent (in) :: x(3)
+
+   if (model(1) == 4) then
+    call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+   end if
  
    call TSY87S(IOPT, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
    if (model(1) == 4) THEN
@@ -135,6 +139,10 @@ end interface
   function function87L(x) ! Tsyganenko 1987 long
     real(8) :: function87L(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
   
     call TSY87L(IOPT, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
@@ -151,6 +159,10 @@ end interface
     real(8) :: function89a(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
 
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
+
     call T89a(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
@@ -163,8 +175,12 @@ end interface
   end function function89a
 
   function function89c(x) ! Tsyganenko 1989c
-    real(8) :: function89c(3), TSYGSM(3), TSYGSM1(3)
+    real(8) :: function89c(3), TSYGSM(3), TSYGSM1(3), test(3)
     real(8), intent (in) :: x(3)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
 
     call T89c(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
@@ -180,6 +196,10 @@ end interface
   function function89_refit(x) ! Tsyganenko 1989 refit
     real(8) :: function89_refit(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
 
     call T89_refit(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
@@ -197,6 +217,10 @@ end interface
     real(8), intent (in) :: x(3)
     real(8), dimension(10) :: parmod2
     real(8) :: GSMx(3), PSItemp, TSYfield(3)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
 
     parmod2 = real(parmod,4)
     GSMx(1) = real(x(1),4) 
@@ -224,6 +248,10 @@ end interface
     real, dimension(10) :: parmod2
     real :: GSMx(3), PSItemp, TSYfield(3)
 
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
+
     parmod2 = real(parmod,4)
     GSMx(1) = real(x(1),4) 
     GSMx(2) = real(x(2),4)
@@ -250,6 +278,10 @@ end interface
     real(8), intent (in) :: x(3)
 
     PSItemp = real(PSI,8)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
   
     call T01_S(parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
@@ -268,6 +300,10 @@ end interface
     real(8), intent (in) :: x(3)
 
     PSItemp = real(PSI,8)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
   
     call T04_S(parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     if (model(1) == 4) THEN
@@ -287,6 +323,10 @@ end interface
     real(8), intent (in) :: x(3)
   
     PSItemp = real(PSI,8)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
   
     call TA_2015_N(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     
@@ -307,6 +347,10 @@ end interface
     real(8), intent (in) :: x(3)
   
     PSItemp = real(PSI,8)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
   
     call TA_2015_B(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     
@@ -326,6 +370,10 @@ end interface
     real(8), intent (in) :: x(3)
 
     PSItemp = real(PSI,8)
+
+    if (model(1) == 4) then
+     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
+    end if
   
     call RBF_MODEL_2016(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     
