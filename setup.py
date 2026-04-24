@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.2.10',
+    version='1.2.11',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',

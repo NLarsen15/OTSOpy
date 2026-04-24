@@ -41,6 +41,7 @@ MDP(1) = 0.0
 MDP(2) = 0.0
 MDP(3) = 0.0
 steps = 0
+Lasth = 1E-4
 
 end subroutine initialize
 
@@ -72,6 +73,7 @@ MDP(1) = 0.0
 MDP(2) = 0.0
 MDP(3) = 0.0
 steps = 0
+Lasth = 1E-4
 
 end subroutine Reset
       
