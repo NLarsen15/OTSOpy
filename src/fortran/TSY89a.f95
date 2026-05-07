@@ -198,7 +198,7 @@
        AK5= A(5)
        ELSE
        !print *, "DST is within expected range or below for the given Kp."
-       AK5 = -2923.09D0*(abs(DST)+2.01D0)**0.78
+       AK5= -10220+(408.5*DST)
        END IF
        END IF
        END IF
