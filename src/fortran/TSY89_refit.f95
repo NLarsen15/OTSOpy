@@ -1,6 +1,6 @@
 
       SUBROUTINE T89_refit(IOPT,PARMOD,PS,DST,KP,model,X,Y,Z,BX,BY,BZ)
-      
+
 !   A REFITTED VERSION OF THE T89 MODEL OF THE EARTH'S MAGNETOSPHERE,
 !   USING A MORE EXTENSIVE DATA SET WITH MODERN SPACECRAFT MEASUREMENTS.
 !   KP BINS HAVE BEEN REDEFINED IN AN ATTEMPT TO REPRESENT SMALLER VARIATIONS
@@ -326,7 +326,7 @@
        END IF
 
        IF (model(4) == 3) THEN
-       IF (Zscore .GT. 1.1D0) THEN
+       IF (Zscore .GT. 1.2D0) THEN
        !print *, "DST is much higher than expected for this Kp, using refit parameters"
        AK5= A(5)
        ELSE
