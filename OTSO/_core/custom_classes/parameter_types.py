@@ -328,10 +328,6 @@ class GridParams(TypedDict, total=False):
 
 class AsymptoticParams(TypedDict, total=False):
     """Asymptotic direction calculation parameters.
-    
-    Example usage:
-        asymptotic = {"altitude": 10.0}
-        trace("GEO", asymptotic_params=asymptotic)
         
     Controls settings for asymptotic direction computations.
     """
