@@ -1,24 +1,57 @@
 
       SUBROUTINE T89_refit(IOPT,PARMOD,PS,DST,KP,model,X,Y,Z,BX,BY,BZ)
-!          (double precision version)
+      
+!   A REFITTED VERSION OF THE T89 MODEL OF THE EARTH'S MAGNETOSPHERE,
+!   USING A MORE EXTENSIVE DATA SET WITH MODERN SPACECRAFT MEASUREMENTS.
+!   KP BINS HAVE BEEN REDEFINED IN AN ATTEMPT TO REPRESENT SMALLER VARIATIONS
+!   OF THE MAGNETOSPHERE.
 !
 !   COMPUTES GSM COMPONENTS OF THE MAGNETIC FIELD PRODUCED BY EXTRA-
-!  TERRESTRIAL CURRENT SYSTEMS IN THE GEOMAGNETOSPHERE. THE MODEL IS
+!   TERRESTRIAL CURRENT SYSTEMS IN THE GEOMAGNETOSPHERE. THE MODEL IS
 !   VALID UP TO GEOCENTRIC DISTANCES OF 70 RE AND IS BASED ON THE MER-
 !   GED IMP-A,C,D,E,F,G,H,I,J (1966-1974), HEOS-1 AND -2 (1969-1974),
-!   AND ISEE-1 AND -2  SPACECRAFT DATA SET.
+!   AND ISEE-1 AND -2, Geotail (1992-2019), Cluster (2000-2023), and 
+!   THEMIS A,B,C,D,E (2008-2024) SPACECRAFT DATA SETS.
 !
 !----INPUT PARAMETERS: IOPT - SPECIFIES THE GROUND DISTURBANCE LEVEL:
 !
-!   IOPT= 1       2        3        4        5        6      7
+!    IOPT= 1     2     3     4    5     6 ... 22
 !                  CORRESPOND TO:
-!    KP= 0,0+  1-,1,1+  2-,2,2+  3-,3,3+  4-,4,4+  5-,5,5+  > =6-
+!    KP=   0.00  0.33  0.66  1.0  1.33  1.67  >=7.0
 !
 !    PS - GEODIPOLE TILT ANGLE IN RADIANS
 !    X, Y, Z  - GSM COORDINATES OF THE POINT IN EARTH RADII
 !
+!    DST - DISTURBANCE STORM TIME INDEX IN NANOTESLAS
+!
+!    KP - PLANETARY K-INDEX (E.G. 0.0, 0.33, 0.67, 1.0, 1.33, ETC.)
+!         KP VALUES CAN BE FOUND FROM GFZ Potsdam 
+!         (https://www.gfz-potsdam.de/en/kp-index/) 
+!         OR FROM THE OMNIWEB DATABASE 
+!         (https://omniweb.gsfc.nasa.gov/ow.html).
+!
+!   THE PARAMETER PARMOD(10) IS A DUMMY ARRAY.  IT IS NOT USED IN THIS
+!   SUBROUTINE AND IS PROVIDED JUST FOR MAKING IT COMPATIBLE WITH THE
+!   NEW VERSION (4/16/96) OF THE GEOPACK SOFTWARE.
+!
 !----OUTPUT PARAMETERS: BX,BY,BZ - GSM COMPONENTS OF THE MODEL MAGNETIC
 !                        FIELD IN NANOTESLAS
+!
+!           MODEL ORIGINAL AUTHOR: NIKOLAI A. TSYGANENKO
+!                          HSTX CORP./NASA GSFC (1992-2007)
+!                          SPB STATE UNIVERSITY (2007-present)
+!
+!   THE ORIGINAL T89 MODEL CAN BE FOUND AT:
+!   (https://geo.phys.spbu.ru/~tsyganenko/empirical-models/)
+!
+!   ORIGINAL PAPER: Tsyganenko, N. A., A magnetospheric magnetic 
+!   field model with a warped tail current sheet (Planet. Space Sci., 
+!   v.37(1), pp.5-20, 1989)
+!
+!
+!----REFITTED VERSION AUTHOR: NICHOLAS LARSEN 
+!                             Oulu University, Finland (2021 - 2025)
+!                             Nagoya University, Japan (2025 - present)
 !
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 PARMOD,PS,X,Y,Z,BX,BY,BZ,DST,Kp
