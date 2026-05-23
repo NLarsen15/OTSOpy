@@ -65,7 +65,7 @@ IF (Atomic == -1) THEN ! Muon
     m = 1.883531627e-28
     q = -1.0 * q
 
-IF (Atomic == 0) THEN ! Electron
+ELSE IF (Atomic == 0) THEN ! Electron
     A = 1.0
     Z = 1.0
     m = 9.10938356e-31
