@@ -59,6 +59,12 @@ IF (Anti == 1) THEN
     q_0 = -1.0 * q_0
 END IF
 
+IF (Atomic == -1) THEN ! Muon
+    A = 1.0
+    Z = 1.0
+    m = 1.883531627e-28
+    q = -1.0 * q
+
 IF (Atomic == 0) THEN ! Electron
     A = 1.0
     Z = 1.0
@@ -82,7 +88,7 @@ IF (Atomic == 0) THEN ! Electron
     Z = 4.0
  
  ELSE IF (Atomic > 4) THEN
-    print *, "Values above Z=4 not supported need to be added by user. Please edit the Particle.f95 file accordingly."
+    print *, "Values above Z=4 not supported yet."
     stop
  END IF
 
