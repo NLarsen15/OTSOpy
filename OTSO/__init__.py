@@ -182,7 +182,7 @@ def cutoff(
 
             Available keys:
 
-            - `Anum` (`int`, default=1): Atomic number (0=electron, 1=proton, 2=alpha)
+            - `Anum` (`int`, default=1): Atomic number (-1=muon, 0=electron, 1=proton, 2=alpha)
             - `anti` (`str`, default="YES"): YES = anti-particle, NO = particle
             - `zenith` (`float`, default=0): Zenith angle for Custom cutoff computation
             - `azimuth` (`float`, default=0): Azimuth angle for Custom cutoff computation
@@ -413,7 +413,7 @@ def cone(
 
             Available keys:
 
-            - `Anum` (`int`, default=1): Atomic number (0=electron, 1=proton, 2=alpha)
+            - `Anum` (`int`, default=1): Atomic number (-1=muon, 0=electron, 1=proton, 2=alpha)
             - `anti` (`str`, default="YES"): YES = anti-particle, NO = particle
             - `zenith` (`float`, default=0): Zenith angle for Custom cutoff computation
             - `azimuth` (`float`, default=0): Azimuth angle for Custom cutoff computation
@@ -650,7 +650,7 @@ def planet(
 
             Available keys:
 
-            - `Anum` (`int`, default=1): Atomic number (0=electron, 1=proton, 2=alpha)
+            - `Anum` (`int`, default=1): Atomic number (-1=muon, 0=electron, 1=proton, 2=alpha)
             - `anti` (`str`, default="YES"): YES = anti-particle, NO = particle
             - `zenith` (`float`, default=0): Zenith angle for Custom cutoff computation
             - `azimuth` (`float`, default=0): Azimuth angle for Custom cutoff computation
@@ -892,7 +892,7 @@ def trajectory(
 
             Available keys:
 
-            - `Anum` (`int`, default=1): Atomic number (0=electron, 1=proton, 2=alpha)
+            - `Anum` (`int`, default=1): Atomic number (-1=muon, 0=electron, 1=proton, 2=alpha)
             - `anti` (`str`, default="YES"): YES = anti-particle, NO = particle
             - `zenith` (`float`, default=0): Launch zenith angle
             - `azimuth` (`float`, default=0): Launch azimuth angle
@@ -1114,7 +1114,7 @@ def flight(
 
             Available keys:
 
-            - `Anum` (`int`, default=1): Atomic number (0=electron, 1=proton, 2=alpha)
+            - `Anum` (`int`, default=1): Atomic number (-1=muon, 0=electron, 1=proton, 2=alpha)
             - `anti` (`str`, default="YES"): YES = anti-particle, NO = particle
             - `zenith` (`float`, default=0): Zenith angle for Custom cutoff computation
             - `azimuth` (`float`, default=0): Azimuth angle for Custom cutoff computation
