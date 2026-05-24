@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "OTSO: Open-source geomagneToSphere prOpagation tool"
-version: "1.2.5"
-date-released: "2026-03-23"
+version: "1.2.14"
+date-released: "2026-05-23"
 url: "https://github.com/NLarsen15/OTSOpy"
 repository-code: "https://github.com/NLarsen15/OTSOpy"
 abstract: "A comprehensive Python package for charged particle trajectory and geomagnetic cut-off computations in the Earth's magnetosphere. OTSO provides tools for cosmic ray geomagnetic cut-off rigidity calculations, asymptotic cone of acceptance computations, magnetic field line tracing, coordinate system transformations, and particle trajectory tracing in geomagnetic fields."
@@ -41,7 +41,7 @@ preferred-citation:
       given-names: "Nicholas"
       email: "nlarsen1505@gmail.com"
       orcid: "https://orcid.org/0000-0003-4713-1350"
-  version: "1.2.5"
+  version: "1.2.14"
   doi: "10.5281/zenodo.19002978"
   url: "https://github.com/NLarsen15/OTSOpy"
   year: 2026
