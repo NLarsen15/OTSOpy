@@ -191,7 +191,7 @@
        END IF
 
        IF (model(4) == 3) THEN
-       IF (Zscore .GT. 1.1D0) THEN
+       IF (Zscore .GT. 1.2D0) THEN
        !print *, "DST is much higher than expected for this Kp, using refit parameters"
        AK5= A(5)
        ELSE
