@@ -384,6 +384,16 @@ magfield[0] output showing the magnetic field vector at the input location in th
 0        10.0        10.0        10.0    10.735517    -2.413889    11.586277
 ```
 
+## Star History
+
+<a href="https://www.star-history.com/?repos=NLarsen15%2FOTSOpy&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=NLarsen15/OTSOpy&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=NLarsen15/OTSOpy&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=NLarsen15/OTSOpy&type=date&legend=top-left" />
+ </picture>
+</a>
+
 # Acknowledgements
 The fantastic IRBEM library has been used in the development of OTSO, which proved an invaluable asset and greatly sped up development. The latest release of the IRBEM library can be found at [https://doi.org/10.5281/zenodo.6867552](https://doi.org/10.5281/zenodo.6867552). Thank you to N. Tsyganenko for the development of the external magnetic field models and their code, which are used within OTSO.
 
