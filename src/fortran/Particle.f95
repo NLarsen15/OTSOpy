@@ -27,11 +27,12 @@ implicit none
 real(8) :: V(3), StartPosition(5), Date(6), Rigidity, Norm(3), VelocityGEO(3)
 integer(8) :: Anti, Atomic
 integer(4) :: mode(4)
-real(8) :: LocalVector(3), RotatedVelocity(3), Re, w
+real(8) :: Re, w, Renew
 real(8) :: tempposition(3), temppositionGDZ(3), GEOSPHposition(3)
 character(len=3) :: inputcoord
 
 Re = 6371.2
+Renew = 6371200.0
 
 R = Rigidity
 year = INT(Date(1))
@@ -51,8 +52,7 @@ call CoordinateTransform(inputcoord, "GDZ", year, day, secondTotal, StartPositio
 call CoordinateTransform(inputcoord, "GSM", year, day, secondTotal, StartPosition, GSMPosition)
 call CoordinateTransform(inputcoord, "GEO", year, day, secondTotal, StartPosition, GEOPosition)
 
-!Position(1) = StartPosition(1)
-!Position(2) = StartPosition(2)
+ ! -------------------------------------------------------
 !Position(3) = StartPosition(3)
 
 IF (Anti == 1) THEN
@@ -99,30 +99,27 @@ ELSE IF (Atomic == 0) THEN ! Electron
  tempposition(1) = StartPosition(1)
  tempposition(2) = StartPosition(2)
  tempposition(3) = StartPosition(3)
+ ! ---------------------------------------------------
 
- call CoordinateTransform(inputcoord, "GDZ", year, day, secondTotal, tempposition, temppositionGDZ)
-
- call NormalVector(temppositionGDZ, inputcoord, Norm)
+ call NormalVector(tempposition, inputcoord, Norm)
 
  call VelocityComponents(V, Norm)
 
- if (model(1) /= 4) then
-   call CoordinateTransform("GSM", "GEO", year, day, secondTotal, Velocity, VelocityGEO)
- ELSE
-   VelocityGEO = Velocity
- end if
+ ! Speed from the velocity set by VelocityComponents
+ w = (Velocity(1)**2 + Velocity(2)**2 + Velocity(3)**2)**0.5
 
- call CoordinateTransform("GDZ", "SPH", year, day, secondTotal, temppositionGDZ, GEOSPHposition)
+ ! Get geocentric lat/lon of the position
+ !call CoordinateTransform(inputcoord, "SPH", year, day, secondTotal, tempposition, GEOSPHposition)
+ 
+ call CoordinateTransform(inputcoord, "GEO", year, day, secondTotal, tempposition, temppositionGDZ)
+ call CoordinateTransform("GEO", "SPH", year, day, secondTotal, temppositionGDZ, GEOSPHposition)
 
- call Vector_Geo2Local(VelocityGEO, GEOSPHposition(2), GEOSPHposition(3), LocalVector)
-
- call Rotate(LocalVector, StartPosition(4), StartPosition(5), RotatedVelocity)
-
- call Vector_Local2Geo(RotatedVelocity, GEOSPHposition(2), GEOSPHposition(3), GEOVelocity)
+ call AzimuthZenith2GEO(w, GEOSPHposition(2), GEOSPHposition(3), &
+                         StartPosition(4), StartPosition(5), GEOVelocity)
 
  if (model(1) /= 4) then
-   call CoordinateTransform("GEO", "GSM", year, day, secondTotal, GEOVelocity, Velocity)
- ELSE
+   call CoordinateTransformVec("GEO", "GSM", year, day, secondTotal, GEOVelocity, Velocity)
+ else
    Velocity = GEOVelocity
  end if
 
@@ -130,5 +127,9 @@ ELSE IF (Atomic == 0) THEN ! Electron
  OriginalBeta = w / c
  MaxT = Re*1000**(-2.0) / (w/1000)
 
+
+ ! --- DEBUG: final velocity direction (unit vector) ---
+ w = (Velocity(1)**2 + Velocity(2)**2 + Velocity(3)**2)**0.5
+ ! -------------------------------------------------------
 
 end subroutine CreateParticle

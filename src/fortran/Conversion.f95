@@ -121,3 +121,27 @@ NewVector(2) = TempVector(1)*sin(NewAzimuth) + TempVector(2)*cos(NewAzimuth)
 NewVector(3) = TempVector(3)
 
 end subroutine Rotate
+
+
+subroutine AzimuthZenith2GEO(Speed, GeoLat, GeoLon, Zenith, Azimuth, GEOVelocity)
+implicit none
+real(8), intent(in)  :: Speed, GeoLat, GeoLon, Zenith, Azimuth
+real(8), intent(out) :: GEOVelocity(3)
+real(8) :: geolat_r, geolon_r, zen_r, az_r
+real(8), parameter :: pi = 4.0d0 * atan(1.0d0)
+
+geolat_r = (pi/180.0d0) * GeoLat
+geolon_r = (pi/180.0d0) * GeoLon
+zen_r    = (pi/180.0d0) * Zenith
+az_r     = (pi/180.0d0) * Azimuth
+
+GEOVelocity(1) = Speed * ( sin(zen_r)*cos(az_r)*(-sin(geolat_r)*cos(geolon_r)) &
+                           + sin(zen_r)*sin(az_r)*(-sin(geolon_r))               &
+                           + cos(zen_r)*( cos(geolat_r)*cos(geolon_r)))
+GEOVelocity(2) = Speed * ( sin(zen_r)*cos(az_r)*(-sin(geolat_r)*sin(geolon_r)) &
+                           + sin(zen_r)*sin(az_r)*( cos(geolon_r))               &
+                           + cos(zen_r)*( cos(geolat_r)*sin(geolon_r)))
+GEOVelocity(3) = Speed * ( sin(zen_r)*cos(az_r)*( cos(geolat_r))                &
+                           + cos(zen_r)*( sin(geolat_r)))
+
+end subroutine AzimuthZenith2GEO

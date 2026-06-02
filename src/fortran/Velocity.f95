@@ -63,13 +63,13 @@ end subroutine VelocityComponents
 ! NormOUT - Normal vector at the given point on Earth
 !
 ! ************************************************************************************************************************************
-subroutine NormalVector(StartPosition, inputcoord, NormOUT)
+subroutine NormalVector(EnteredPosition, inputcoord, NormOUT)
 USE particle
 implicit none
     
-real(8) :: Earth, StartPosition(5)
+real(8) :: Earth, EnteredPosition(3)
 real(8) :: NormOUT(3), xDT(3), xDTConvert(3), xINConvert(3)
-real(8) :: SPHposition(3)
+real(8) :: rMag
 character(len=3) :: inputcoord
     
 !f2py intent(in) xIN, year, day, sec
@@ -77,38 +77,50 @@ character(len=3) :: inputcoord
     
 Earth = 6371200.0
 
-if (inputcoord .NE. "GDZ") then
-    call CoordinateTransform("GDZ", "SPH", year, day, secondTotal, StartPosition, SPHposition)
-    xDT(1) = SPHposition(1) + 1
-    xDT(2) = SPHposition(2)
-    xDT(3) = SPHposition(3)
+if (inputcoord == "GDZ") then
+    ! Geodetic: step +0.00001 Re along geodetic altitude
+    xDT(1) = EnteredPosition(1) + 1
+    xDT(2) = EnteredPosition(2)
+    xDT(3) = EnteredPosition(3)
+    if (model(1) == 4) then
+        call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, EnteredPosition, xINConvert)
+        call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, xDT, xDTConvert)
+    else
+        call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, EnteredPosition, xINConvert)
+        call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, xDT, xDTConvert)
+    end if
 
-    call CoordinateTransform("SPH", "GSM", year, day, secondTotal, SPHposition, xINConvert)
-    call CoordinateTransform("SPH", "GSM", year, day, secondTotal, xDT, xDTConvert)
-
-    if (model(1) == 4) THEN
-        call CoordinateTransform("SPH", "GEO", year, day, secondTotal, SPHposition, xINConvert)
+else if (inputcoord == "SPH") then
+    ! Spherical: step +0.00001 Re along geocentric radius directly
+    xDT(1) = EnteredPosition(1) + 0.00001
+    xDT(2) = EnteredPosition(2)
+    xDT(3) = EnteredPosition(3)
+    if (model(1) == 4) then
+        call CoordinateTransform("SPH", "GEO", year, day, secondTotal, EnteredPosition, xINConvert)
         call CoordinateTransform("SPH", "GEO", year, day, secondTotal, xDT, xDTConvert)
+    else
+        call CoordinateTransform("SPH", "GSM", year, day, secondTotal, EnteredPosition, xINConvert)
+        call CoordinateTransform("SPH", "GSM", year, day, secondTotal, xDT, xDTConvert)
     end if
 
 else
-
-    xDT(1) = StartPosition(1) + 1
-    xDT(2) = StartPosition(2)
-    xDT(3) = StartPosition(3)
-
-    call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, StartPosition, xINConvert)
-    call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, xDT, xDTConvert)
-
-    if (model(1) == 4) THEN
-        call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, StartPosition, xINConvert)
-        call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, xDT, xDTConvert)
+    ! Cartesian (GEO, GSM, SM, MAG, etc.): step +0.00001 Re along geocentric radial
+    rMag = sqrt(EnteredPosition(1)**2 + EnteredPosition(2)**2 + EnteredPosition(3)**2)
+    xDT(1) = EnteredPosition(1) * (1.0d0 + 0.00001d0 / rMag)
+    xDT(2) = EnteredPosition(2) * (1.0d0 + 0.00001d0 / rMag)
+    xDT(3) = EnteredPosition(3) * (1.0d0 + 0.00001d0 / rMag)
+    if (model(1) == 4) then
+        call CoordinateTransform(inputcoord, "GEO", year, day, secondTotal, EnteredPosition, xINConvert)
+        call CoordinateTransform(inputcoord, "GEO", year, day, secondTotal, xDT, xDTConvert)
+    else
+        call CoordinateTransform(inputcoord, "GSM", year, day, secondTotal, EnteredPosition, xINConvert)
+        call CoordinateTransform(inputcoord, "GSM", year, day, secondTotal, xDT, xDTConvert)
     end if
 
 end if
 
-NormOUT(1) = (xDTConvert(1) - xINConvert(1))*Earth
-NormOUT(2) = (xDTConvert(2) - xINConvert(2))*Earth
-NormOUT(3) = (xDTConvert(3) - xINConvert(3))*Earth
+NormOUT(1) = (xDTConvert(1) - xINConvert(1)) * Earth
+NormOUT(2) = (xDTConvert(2) - xINConvert(2)) * Earth
+NormOUT(3) = (xDTConvert(3) - xINConvert(3)) * Earth
     
 end subroutine NormalVector
