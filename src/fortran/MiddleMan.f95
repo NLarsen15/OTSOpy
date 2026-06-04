@@ -438,7 +438,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     real(8) :: gOTSO(136), hOTSO(136)
     real(8) :: trapdist
     real(8) :: Berr
-    logical :: adapt, totalbetacheck, BetaCheckResult
+    logical :: adapt, totalbetacheck, BetaCheckResult, laststep
 
     intent(out) :: ConeArray, Rigidities
 
@@ -465,12 +465,13 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     Limit = 0
     Acount = 0
     Result = 0
-    stepNum = 0
+    stepNum = -1
     NeverFail = 0
     Step = RigidityStep
     SubResult = 0
     MaxGyroPercent = GyroPercent
     spheresize = sphere
+    laststep = .FALSE.
 
     Ginput = gOTSO
     Hinput = hOTSO
@@ -487,7 +488,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
         stop
     END IF
 
-    do while (R > EndRigidity)
+    do while (R >= EndRigidity)
     Subresult = 0
     MaxGyroPercent = GyroPercent
 
@@ -628,19 +629,24 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     END IF
 
     end do
-    
+
     write(temp_string, '(F7.3, 1X, I5, 1X, F7.3, 1X, F7.3)') R, bool_val, Lat, Long
 
-    ConeArray(1, old_size + 1) = temp_string
+    ConeArray(1, old_size) = temp_string
     old_size = old_size + 1
     
     stepNum = stepNum + 1
 
     R = (StartRigidity - (stepNum*RigidityStep))
+
+    IF (laststep .eqv. .FALSE.) THEN
     IF (EndRigidity < R .AND. R < RigidityStep) THEN
         R = RigidityStep
+        laststep = .TRUE.
     ELSEIF (R < EndRigidity) THEN
         R = EndRigidity
+        laststep = .TRUE.
+    END IF
     END IF
     Result = 0
 
