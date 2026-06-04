@@ -461,11 +461,11 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     
     R = real(StartRigidity, kind = selected_real_kind(15,307))
     Re = 6371.2
-    old_size = 0
+    old_size = 1
     Limit = 0
     Acount = 0
     Result = 0
-    stepNum = -1
+    stepNum = 0
     NeverFail = 0
     Step = RigidityStep
     SubResult = 0
@@ -477,7 +477,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     Hinput = hOTSO
 
     RigidityStep = real(RigidityStep, kind = selected_real_kind(10,307))
-    
+
     IF (PositionIN(5) < 0) THEN
         print *, "ERROR: Please enter an azimuth angle between 0 and 360 degrees"
         print *, "N = 0, E = 90, S = 180, and W = 270 (degrees)"
@@ -639,6 +639,8 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
 
     R = (StartRigidity - (stepNum*RigidityStep))
 
+    if (R <= 0.0) exit
+
     IF (laststep .eqv. .FALSE.) THEN
     IF (EndRigidity < R .AND. R < RigidityStep) THEN
         R = RigidityStep
@@ -648,6 +650,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
         laststep = .TRUE.
     END IF
     END IF
+
     Result = 0
 
     end do

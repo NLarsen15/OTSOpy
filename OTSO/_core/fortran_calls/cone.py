@@ -41,6 +41,8 @@ def FortranCone(Data: list, ConeDataInstance: ConeData, queue: mp.Queue) -> None
       Berr = ConeDataInstance.Berr
       totalbetacheck = ConeDataInstance.totalbetacheck
 
+      if EndRigidity <= 0:
+         EndRigidity = 0 + RigidityStep
 
       length = int(round((StartRigidity-EndRigidity)/RigidityStep)) + 1
 
@@ -57,6 +59,7 @@ def FortranCone(Data: list, ConeDataInstance: ConeData, queue: mp.Queue) -> None
       Conedf = pd.DataFrame(data, columns=['R [GV]', 'Filter', 'ALat', 'ALong'])
       Conedf[NMname] = Conedf[['Filter', 'ALat', 'ALong']].astype(str).agg(f'{ConeDataInstance.delim}'.join, axis=1)
       Conedf.drop(columns=['Filter', 'ALat', 'ALong'], inplace=True)
+      
 
       Rigiditydataframe = pd.DataFrame({Station: Rigidities}, index=['Ru', 'Rc', 'Rl'])
  
