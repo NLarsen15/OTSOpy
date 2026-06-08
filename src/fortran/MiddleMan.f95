@@ -437,6 +437,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     integer(4) :: length, old_size
     real(8) :: gOTSO(136), hOTSO(136)
     real(8) :: trapdist
+    real(8) :: lastR
     real(8) :: Berr
     logical :: adapt, totalbetacheck, BetaCheckResult, laststep
 
@@ -472,6 +473,7 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     MaxGyroPercent = GyroPercent
     spheresize = sphere
     laststep = .FALSE.
+    lastR = -1.0d99
 
     Ginput = gOTSO
     Hinput = hOTSO
@@ -489,6 +491,14 @@ subroutine cone(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mode
     END IF
 
     do while (R >= EndRigidity)
+
+    if (R == lastR) then
+        stepNum = stepNum + 1
+        R = StartRigidity - (stepNum*RigidityStep)
+        cycle
+    end if
+
+    lastR = R
     Subresult = 0
     MaxGyroPercent = GyroPercent
 
