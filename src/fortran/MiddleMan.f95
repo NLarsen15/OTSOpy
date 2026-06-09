@@ -309,7 +309,7 @@ subroutine cutoff(PositionIN, StartRigidity, EndRigidity, RigidityStep, Date, mo
     IF (scan == 0) THEN
         scan = 1
         StartRigidity = RU + 2*RigidityScan
-        EndRigidity = RL - 2*RigidityScan
+        EndRigidity = RL - 4*RigidityScan
         IF (EndRigidity < 0) THEN
             EndRigidity = 0
         END IF
@@ -1229,7 +1229,7 @@ subroutine planet(PositionIN, Rigidity, Date, mode, IntMode, AtomicNumber, Anti,
     IF (scan == 0) THEN
         scan = 1
         StartRigidity = RU + 2*RigidityScan
-        EndRigidity = RL - 2*RigidityScan
+        EndRigidity = RL - 4*RigidityScan
         IF (EndRigidity < 0) THEN
             EndRigidity = 0
         END IF
