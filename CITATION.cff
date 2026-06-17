@@ -25,7 +25,7 @@ license: "GPL-3.0"
 license-url: "https://www.gnu.org/licenses/gpl-3.0.html"
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.19002978"
+    value: "10.5281/zenodo.15341361"
     description: "Software archive on Zenodo"
   - type: url
     value: "https://github.com/NLarsen15/OTSOpy"
@@ -41,7 +41,7 @@ preferred-citation:
       given-names: "Nicholas"
       email: "nlarsen1505@gmail.com"
       orcid: "https://orcid.org/0000-0003-4713-1350"
-  version: "1.2.14"
-  doi: "10.5281/zenodo.19002978"
+  version: "1.2.19"
+  doi: "10.5281/zenodo.15341361"
   url: "https://github.com/NLarsen15/OTSOpy"
   year: 2026
