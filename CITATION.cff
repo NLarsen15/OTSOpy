@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "OTSO: Open-source geomagneToSphere prOpagation tool"
-version: "1.2.14"
+version: "1.2.19"
 date-released: "2026-05-23"
 url: "https://github.com/NLarsen15/OTSOpy"
 repository-code: "https://github.com/NLarsen15/OTSOpy"
