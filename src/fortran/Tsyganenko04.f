@@ -254,8 +254,10 @@ C+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       IF (IOPGEN.LE.1) THEN
          CALL SHLCAR3X3_04(XX,YY,ZZ,PS,CFX,CFY,CFZ)
+         BXCF=CFX*XAPPA3
          BYCF=CFY*XAPPA3
          BZCF=CFZ*XAPPA3
+         
       ELSE
          BXCF=0.D0
          BYCF=0.D0
