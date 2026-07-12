@@ -78,6 +78,8 @@ c
      *  BXSRC,BYSRC,BZSRC,BXPRC,BYPRC,BZPRC, BXR11,BYR11,BZR11,
      *  BXR12,BYR12,BZR12,BXR21,BYR21,BZR21,BXR22,BYR22,BZR22,HXIMF,
      *  HYIMF,HZIMF,BBX,BBY,BBZ
+
+      SAVE PDYN, DST_AST, BYIMF, BZIMF, G1, G2, G3, PSS
 C
       COMMON /dip_ang/tilt
         REAL*8     pi,rad
@@ -93,6 +95,8 @@ c
      *0.70733D0,0.30588D0,12.18290D0,40.00D0,82.76604D0,27.22990D0,
      *98.37391D0,14.39243D0,4.80011D0,7.99216D0/
 
+      if (PDYN .NE. parmod(1)) then
+
       ps=PSI
 c       
       PDYN=PARMOD(1)
@@ -103,6 +107,12 @@ c
       G2=PARMOD(5)
       G3=PARMOD(6)
       PSS=PSI
+
+      CPS=DCOS(PS)
+      SPS=DSIN(PS)
+
+      end if
+
       XX=X
       YY=Y
       ZZ=Z
@@ -450,6 +460,7 @@ C
      *4.663639687D0,15.73319647D0,2.303504968D0,5.840511214D0,
      *.8385953499D-01,.3477844929D0/
 C
+         if (P1 .NE. A(37)) then
          P1=A(37)
          P2=A(38)
          P3=A(39)
@@ -471,15 +482,16 @@ C
          S2PS=2.D0*CPS      !   MODIFIED HERE (INSTEAD OF SIN(3*PS) I TRY SIN(2*PS)
 
 C
-           ST1=DSIN(PS*T1)
-           CT1=DCOS(PS*T1)
-           ST2=DSIN(PS*T2)
-           CT2=DCOS(PS*T2)
+         ST1=DSIN(PS*T1)
+         CT1=DCOS(PS*T1)
+         ST2=DSIN(PS*T2)
+         CT2=DCOS(PS*T2)
+         end if
 
-            X1=X*CT1-Z*ST1
-            Z1=X*ST1+Z*CT1
-            X2=X*CT2-Z*ST2
-            Z2=X*ST2+Z*CT2
+         X1=X*CT1-Z*ST1
+         Z1=X*ST1+Z*CT1
+         X2=X*CT2-Z*ST2
+         Z2=X*ST2+Z*CT2
 C
 C
 c  MAKE THE TERMS IN THE 1ST SUM ("PERPENDICULAR" SYMMETRY):
@@ -2704,6 +2716,8 @@ C
       REAL*8 PS,X,Y,Z,BX,BY,BZ
       SAVE M,PSI
       DATA M,PSI/0,5.D0/
+      M = 0
+      PSI = 5.D0
       IF(M.EQ.1.AND.DABS(PS-PSI).LT.1.D-5) GOTO 1
       SPS=DSIN(PS)
       CPS=DCOS(PS)
