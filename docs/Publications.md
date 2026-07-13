@@ -26,6 +26,11 @@ This page lists scientific publications utilising **OTSO**.
   Advances in Space Research.  
   https://doi.org/10.1016/j.asr.2026.03.023
 
+- **Tsvetkov, T., Petrov, N., Mishev, A., Poluianov, S., & Minev, M. (2026)**
+ *New mini neutron monitor at National Astronomical Observatory Rozhen: First measurements. Advances in Space Research.*
+ Advances in Space Research
+ https://doi.org/10.1016/j.asr.2026.07.017
+
 ---
 
 ## 2025
