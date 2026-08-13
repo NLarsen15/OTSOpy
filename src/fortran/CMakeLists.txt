@@ -96,7 +96,7 @@ set(PYTHON_MODULE "${CMAKE_CURRENT_BINARY_DIR}/MiddleMan.pyd")
 add_custom_command(
     OUTPUT "${PYTHON_MODULE}"
     COMMAND ${Python_EXECUTABLE} -m numpy.f2py --backend=meson -c "${PYF_FILE}" ${FORTRAN_SOURCES}
-            -L"${CMAKE_CURRENT_BINARY_DIR}"  MiddleMan.f95 -m MiddleMan
+            -L"${CMAKE_CURRENT_BINARY_DIR}"  MiddleMan.f95 -m MiddleMan --opt="-O3 -ffast-math -funroll-loops"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     DEPENDS "${PYF_FILE}" MiddleMan
 )
