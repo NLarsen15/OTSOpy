@@ -70,7 +70,7 @@ rem Clean any existing build files
 del %MODULE_NAME%.*.pyd 2>nul
 del %MODULE_NAME%.*.so 2>nul
 
-python -m numpy.f2py -c !FILES! -m %MODULE_NAME% --backend=meson --opt="-O3 -ffast-math -march=native -mtune=native"
+python -m numpy.f2py -c !FILES! -m %MODULE_NAME% --backend=meson --opt="-O3 -ffast-math -funroll-loops"
 
 rem Find the generated .pyd or .so file
 set OUTPUT_FILE=
