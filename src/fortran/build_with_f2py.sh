@@ -3,7 +3,7 @@
 # This is the working approach that generates proper PyInit_MiddleMan symbols
 
 echo "Building MiddleMan extension with f2py..."
-python -m numpy.f2py -c --fcompiler=gnu95 -m MiddleMan *.f *.f95 *.for --opt="-O3 -ffast-math -funroll-loops"
+python -m numpy.f2py -c --fcompiler=gnu95 -m MiddleMan *.f *.f95 *.for
 
 if [ $? -eq 0 ]; then
     echo "Build successful!"

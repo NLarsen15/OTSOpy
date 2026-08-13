@@ -98,10 +98,10 @@ build_version() {
     if [ -f "fortran_files.txt" ]; then
         FILES=$(cat fortran_files.txt | tr '\n' ' ')
         echo "Building with files from fortran_files.txt: $FILES"
-        python -m numpy.f2py -c $FILES -m "$MODULE_NAME" --backend=meson --opt="-O3 -ffast-math -funroll-loops"
+        python -m numpy.f2py -c $FILES -m "$MODULE_NAME" --backend=meson
     else
         echo "fortran_files.txt not found, using all Fortran files..."
-        python -m numpy.f2py -c *.f95 *.f *.for -m "$MODULE_NAME" --backend=meson --opt="-O3 -ffast-math -funroll-loops"
+        python -m numpy.f2py -c *.f95 *.f *.for -m "$MODULE_NAME" --backend=meson
     fi
     
     # Find the generated shared object file
