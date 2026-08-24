@@ -256,7 +256,7 @@ def smallest_step_check(FortranData, g, h, CutoffDataInstance):
     FortranData.gyropercent = CutoffDataInstance.maxsteppercent
 
     FortranData.n = n
-    FortranData.rigiditystep = CutoffDataInstance.rigidityarray[2]
+    FortranData.rigiditystep = CutoffDataInstance.rigidityarray[2] + CutoffDataInstance.rigidityarray[1]
     #FortranData.rigiditystep = 0.05
 
     Rigidities = np.zeros(n, dtype=np.float64)
