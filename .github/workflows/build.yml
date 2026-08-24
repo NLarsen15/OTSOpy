@@ -157,19 +157,23 @@ jobs:
         ls -l OTSO/_core/libs/
         
         echo "Searching for built .pyd file in OTSO/_core/libs..."
-        EXTNAME=$(python -c "import sysconfig; ext = sysconfig.get_config_var('EXT_SUFFIX'); soabi = sysconfig.get_config_var('SOABI'); print(f'_MiddleMan{ext}' if ext else f'_MiddleMan.{soabi}.pyd')")
-        echo "EXTNAME is $EXTNAME"
-        
-        # The bat file moves the extension to OTSO/_core/libs
-        if [[ -f "OTSO/_core/libs/$EXTNAME" ]]; then
-          echo "Found built extension, copying to build_artifacts..."
-          cp "OTSO/_core/libs/$EXTNAME" OTSO/_core/libs/build_artifacts/
-        else
-          echo "ERROR: Expected extension $EXTNAME not found in OTSO/_core/libs/."
-          echo "Contents of OTSO/_core/libs/:"
+        # build_middleman.bat creates and activates its own per-version conda env,
+        # separate from this job's env - it can resolve a different Python ABI variant
+        # (e.g. free-threaded cp314t vs standard cp314) than sysconfig would report here.
+        # We already deleted any stale committed .pyd before building, so just pick up
+        # whatever _MiddleMan*.pyd this build produced instead of guessing its name.
+        mapfile -t PYD_FILES < <(find OTSO/_core/libs -maxdepth 1 -name "_MiddleMan*.pyd" -type f)
+        if [[ ${#PYD_FILES[@]} -eq 0 ]]; then
+          echo "ERROR: No _MiddleMan*.pyd file found in OTSO/_core/libs/ after build."
           ls -l OTSO/_core/libs/
           exit 1
+        elif [[ ${#PYD_FILES[@]} -gt 1 ]]; then
+          echo "ERROR: Multiple _MiddleMan*.pyd files found in OTSO/_core/libs/ - expected exactly one:"
+          printf '%s\n' "${PYD_FILES[@]}"
+          exit 1
         fi
+        echo "Found built extension: ${PYD_FILES[0]}"
+        cp "${PYD_FILES[0]}" OTSO/_core/libs/build_artifacts/
 
         echo "Library copied. Listing build_artifacts contents:"
         ls -l OTSO/_core/libs/build_artifacts/

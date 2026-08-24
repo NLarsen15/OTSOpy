@@ -75,6 +75,12 @@ rem ============================================================
 
 set "PYVER=%~1"
 set "ENV_NAME=middleman_py%PYVER%"
+set "PYVER_NODOT=%PYVER:.=%"
+rem conda-forge ships both the standard and free-threaded ("t"/no-GIL) ABI variants of
+rem Python 3.13+. Without this pin, the solver is free to pick either - pin explicitly to
+rem the standard build string (ends "_cpNNN", not "_cpNNNt") so we don't silently end up
+rem with a cp314t extension that won't import under a normal cp314 interpreter.
+set "PYTHON_ABI_PIN=python_abi=%PYVER%=*_cp%PYVER_NODOT%"
 
 echo.
 echo.
@@ -115,6 +121,7 @@ if errorlevel 1 (
 
     call conda create -n "%ENV_NAME%" ^
         python=%PYVER% ^
+        "%PYTHON_ABI_PIN%" ^
         numpy ^
         pandas ^
         ninja ^
@@ -133,6 +140,8 @@ if errorlevel 1 (
     echo Updating packages...
 
     call conda install -n "%ENV_NAME%" ^
+        python=%PYVER% ^
+        "%PYTHON_ABI_PIN%" ^
         numpy ^
         pandas ^
         ninja ^
