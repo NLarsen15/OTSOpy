@@ -24,6 +24,7 @@ jobs:
           pip install mkdocs-material
           pip install mkdocstrings[python]
           pip install ruff
+          pip install "numpy>=2.4.2,<2.5.0"
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
