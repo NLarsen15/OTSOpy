@@ -1,11 +1,14 @@
 from datetime import date
 
+from .readme_utils import OTSOVersion
+
 def READMECoordtrans(CoordIN, CoordOUT, Printtime) -> str:
 
     result = []
 
     today = date.today()
     result.append(f"\n")
+    result.append(f"OTSO Version: {OTSOVersion()}\n")
     result.append(f"Date of OTSO computation: {today}\n")
     result.append(f"Total computation time: {Printtime} seconds\n\n")
     result.append(f"Input Coordinate System:\n{CoordIN}\n\n")

@@ -41,41 +41,19 @@ log_warn() {
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
-
-# Function to extract information from setup.py
+    
 extract_package_info() {
     log_info "Extracting package information from setup.py..."
-    
+
     cd "$PROJECT_ROOT"
-    
-    # Extract version
-    PACKAGE_VERSION=$(python3 -c "
-import sys
-sys.path.insert(0, '.')
-from setup import setup
-import setuptools
-# Monkey patch setup to capture arguments
-original_setup = setuptools.setup
-captured_args = {}
-def capture_setup(**kwargs):
-    captured_args.update(kwargs)
-    return original_setup(**kwargs)
-setuptools.setup = capture_setup
-# Import setup.py to capture arguments
-exec(open('setup.py').read())
-print(captured_args.get('version', '1.1.2'))
-" 2>/dev/null || echo "1.1.2")
-    
-    # Extract other info using more reliable method
-    PACKAGE_DESCRIPTION=$(python3 -c "
-exec(open('setup.py').read())
-" 2>/dev/null | grep -oP "description='\K[^']+" || echo "Geomagnetic Cutoff Computation Tool")
-    
-    # Set defaults if extraction failed
+
+    PACKAGE_VERSION=$(python3 setup.py --version)
+
+    PACKAGE_DESCRIPTION="Geomagnetic Cutoff Computation Tool"
     PACKAGE_AUTHOR="Nicholas Larsen"
     PACKAGE_EMAIL="nlarsen1505@gmail.com"
     PACKAGE_URL="https://github.com/NLarsen15/OTSOpy"
-    
+
     log_info "Package: $PACKAGE_NAME"
     log_info "Version: $PACKAGE_VERSION"
     log_info "Description: $PACKAGE_DESCRIPTION"
@@ -210,19 +188,20 @@ create_debian_structure() {
 # Function to create control file
 create_control_file() {
     log_info "Creating DEBIAN/control file..."
-    
+
     # Calculate installed size (rough estimate)
-    local installed_size=$(du -sk "$PROJECT_ROOT/OTSO" | cut -f1)
-    
+    local installed_size
+    installed_size=$(du -sk "$PROJECT_ROOT/OTSO" | cut -f1)
+
     cat > "$DEBIAN_DIR/DEBIAN/control" << EOF
 Package: $PACKAGE_NAME
 Version: $PACKAGE_VERSION-1
 Section: python
 Priority: optional
 Architecture: all
-Depends: python3 (>= 3.12), python3-numpy (>= 2.2.0), python3-pandas (>= 2.2.0), python3-requests, python3-psutil, python3-tqdm
+Depends: python3 (>= 3.10), python3-dateutil, python3-six, tzdata, python3-psutil, python3-tqdm, python3-requests, python3-numba, python3-matplotlib, python3-numpy, python3-pandas, python3-packaging, python3-pytz, python3-wheel
 Maintainer: $PACKAGE_AUTHOR <$PACKAGE_EMAIL>
-Description: $PACKAGE_DESCRIPTION
+Description: Geomagnetic Cutoff Computation Tool
  OTSO (Open-source Trajectory Simulation and Optimization) is a comprehensive
  geomagnetic cutoff computation tool designed for space physics applications.
  It provides functionality for particle trajectory tracing, geomagnetic field
@@ -237,11 +216,10 @@ Description: $PACKAGE_DESCRIPTION
 Homepage: $PACKAGE_URL
 Installed-Size: $installed_size
 EOF
-    
+
     log_info "Control file created"
 }
 
-# Function to create postinst script
 create_postinst_script() {
     log_info "Creating post-installation script..."
     
@@ -275,7 +253,6 @@ EOF
     log_info "Post-installation script created"
 }
 
-# Function to create prerm script
 create_prerm_script() {
     log_info "Creating pre-removal script..."
     
@@ -300,40 +277,31 @@ EOF
     log_info "Pre-removal script created"
 }
 
-# Function to copy package files
 copy_package_files() {
     log_info "Copying package files..."
     
-    # Copy OTSO package
     cp -r "$PROJECT_ROOT/OTSO" "$DEBIAN_DIR/usr/lib/python3/dist-packages/"
     
-    # Remove non-Linux libraries from the package
     log_info "Removing non-Linux libraries from package..."
     local libs_dir="$DEBIAN_DIR/usr/lib/python3/dist-packages/OTSO/_core/libs"
     
     if [ -d "$libs_dir" ]; then
-        # Remove Windows libraries (.pyd files)
         find "$libs_dir" -name "*.pyd" -delete 2>/dev/null || true
         
-        # Remove macOS libraries (darwin.so files)
         find "$libs_dir" -name "*darwin.so" -delete 2>/dev/null || true
         
-        # Count remaining libraries
-        local remaining_libs=$(find "$libs_dir" -name "MiddleMan.*" | wc -l)
+        local remaining_libs=$(find "$libs_dir" -name "_MiddleMan.*" | wc -l)
         log_info "Kept $remaining_libs Linux library files"
         
-        # List remaining libraries for verification
         if [ $remaining_libs -gt 0 ]; then
             log_info "Remaining libraries:"
-            find "$libs_dir" -name "MiddleMan.*" -exec basename {} \; | sed 's/^/  - /'
+            find "$libs_dir" -name "_MiddleMan.*" -exec basename {} \; | sed 's/^/  - /'
         fi
     fi
     
-    # Copy documentation
     cp "$PROJECT_ROOT/README.md" "$DEBIAN_DIR/usr/share/doc/$PACKAGE_NAME/"
     cp "$PROJECT_ROOT/LICENSE" "$DEBIAN_DIR/usr/share/doc/$PACKAGE_NAME/"
     
-    # Create changelog
     cat > "$DEBIAN_DIR/usr/share/doc/$PACKAGE_NAME/changelog" << EOF
 $PACKAGE_NAME ($PACKAGE_VERSION-1) unstable; urgency=low
 
@@ -343,10 +311,8 @@ $PACKAGE_NAME ($PACKAGE_VERSION-1) unstable; urgency=low
  -- $PACKAGE_AUTHOR <$PACKAGE_EMAIL>  $(date -R)
 EOF
     
-    # Compress changelog
     gzip -9 "$DEBIAN_DIR/usr/share/doc/$PACKAGE_NAME/changelog"
     
-    # Set proper permissions
     find "$DEBIAN_DIR" -type f -exec chmod 644 {} \;
     find "$DEBIAN_DIR" -type d -exec chmod 755 {} \;
     chmod 755 "$DEBIAN_DIR/DEBIAN/postinst"
@@ -355,29 +321,24 @@ EOF
     log_info "Files copied and permissions set"
 }
 
-# Function to build the debian package
 build_package() {
     log_info "Building Debian package..."
     
     cd "$PROJECT_ROOT"
     
-    # Create output directory
     mkdir -p "$PROJECT_ROOT/src/debian"
     
     local deb_filename="${PACKAGE_NAME}_${PACKAGE_VERSION}-1_all.deb"
     local output_path="$PROJECT_ROOT/src/debian/$deb_filename"
     
-    # Build the package
     fakeroot dpkg-deb --build "$DEBIAN_DIR" "$output_path"
     
     if [ -f "$output_path" ]; then
         log_info "Package built successfully: $output_path"
         
-        # Display package information
         echo -e "\n${BLUE}Package Information:${NC}"
         dpkg --info "$output_path"
         
-        # Display file size
         local file_size=$(du -h "$output_path" | cut -f1)
         log_info "Package size: $file_size"
         
@@ -387,7 +348,6 @@ build_package() {
     fi
 }
 
-# Function to verify the package
 verify_package() {
     log_info "Verifying package contents..."
     
@@ -398,17 +358,14 @@ verify_package() {
         echo -e "\n${BLUE}Package Contents:${NC}"
         dpkg --contents "$package_path"
         
-        # Check for common issues
         echo -e "\n${BLUE}Package Validation:${NC}"
         
-        # Check if main module exists
         if dpkg --contents "$package_path" | grep -q "usr/lib/python3/dist-packages/OTSO/__init__.py"; then
             log_info "✓ Main OTSO module found"
         else
             log_warn "✗ Main OTSO module not found"
         fi
         
-        # Check if documentation exists
         if dpkg --contents "$package_path" | grep -q "usr/share/doc/$PACKAGE_NAME/README.md"; then
             log_info "✓ Documentation found"
         else
@@ -445,7 +402,6 @@ main() {
     echo -e "${BLUE}sudo apt-get install -f${NC}  # Fix dependencies if needed"
 }
 
-# Handle command line arguments
 case "${1:-build}" in
     "build"|"")
         main

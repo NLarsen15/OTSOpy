@@ -3,8 +3,10 @@ import numpy as np
 
 from ..custom_classes import date
 from ..libs import MiddleMan as OTSOLib
+from ..utils import fortran_data_utils
+from ..libs.MiddleMan import Middleman as OTSOLib
 
-def FortranCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, g, h):
+def FortranCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, maxdegree, g, h):
     for x,y in zip(Data,DateArray):
       # Only apply position correction for GDZ input coordinates
       if CoordIN == "GDZ":
@@ -14,14 +16,11 @@ def FortranCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, g, h):
 
       datetimeobj = date.convert_to_datetime(y)
 
-      year = y[0]
-      day = y[1]
-      hour = y[2]
-      minute = y[3]
-      secint = y[4]
-      sectot = y[5]
+      FortranData = fortran_data_utils.prepare_fortran_Coordtrans(y,maxdegree,g,h)
+
+      Coords = np.zeros(3, dtype=np.float64)
       
-      Coords = OTSOLib.coordtrans(Position,year,day,hour,minute,secint,sectot,CoordIN,CoordOUT, g, h)
+      OTSOLib.coordtrans(Position,FortranData,CoordIN,CoordOUT, g, h, Coords)
       combined_array = np.concatenate(([datetimeobj], Position, Coords))
 
       coord_suffix = f"_{CoordIN}"

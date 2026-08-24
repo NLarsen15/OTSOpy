@@ -6,8 +6,11 @@ from ..custom_classes import date, solar_wind, stations
 from ..livedata import pull_live_data
 from ..serverdata import server
 from ..data_classes.cone_data import ConeData
+from ..citation_generator import get_citations
 
 def ConeInputs(Data: 'ConeData') -> None:
+
+     get_citations.generate_citation_array(Data)
     
      EventDate = datetime(Data.year,Data.month,Data.day,Data.hour,Data.minute,Data.second)
      DateCreate = date.Date(EventDate)
@@ -15,7 +18,7 @@ def ConeInputs(Data: 'ConeData') -> None:
 
      AntiCheck = input_utils.anti_check(Data.anti)
     
-     Data.magnetopause = input_utils.magnetopause_check(Data.mpause)
+     Data.magnetopauseinput = input_utils.magnetopause_check(Data.magnetopause)
 
      Data.integrationmodel = input_utils.intmodel_check(Data.intmodel)
 
@@ -23,11 +26,16 @@ def ConeInputs(Data: 'ConeData') -> None:
 
      LiveData = input_utils.livedata_check(Data.livedata)
     
-     Internal, Data.g, Data.h = input_utils.internalmag_check(Data.internalmag, Data.datearray, Data.g, Data.h)
+     Internal, new_max_degree, Data.g, Data.h = input_utils.internalmag_check(Data.internalmag, Data.datearray,
+                                                               Data.max_degree, Data.g, Data.h)
+
+     Data.max_degree = new_max_degree
       
      External = input_utils.externalmag_check(Data.externalmag, Data.MHDfile)
 
      Bobon, bobtype = input_utils.BobergCheck(Data.boberg, Data.bobergtype)
+
+     input_utils.core_and_thread_check(Data.corenum, Data.threadnum)
 
      input_utils.coordsystem_check(Data.coordsystem, Data.inputcoord)
  

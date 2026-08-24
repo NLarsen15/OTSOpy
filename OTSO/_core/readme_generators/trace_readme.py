@@ -9,14 +9,15 @@ def READMETrace(Data: TraceData, EventDate: date, Printtime: float) -> str:
 
   OnlineData = OnlineDataStatus(Data.livedata, Data.serverdata)
 
-  Internal = InternalModelCheck(Data.model)
+  Internal = InternalModelCheck(Data.internalmag)
 
   External = ExternalModelCheck(Data.model)
 
-  PauseModel = MagnetopauseModelCheck(Data.magnetopause)
+  PauseModel = MagnetopauseModelCheck(Data.magnetopauseinput, Data.spheresize)
 
   today = date.today()
   result.append(f"\n")
+  result.append(f"OTSO Version: {OTSOVersion()}\n")
   result.append(f"Date of OTSO computation: {today}\n")
   result.append(f"Total computation time: {Printtime} seconds\n\n")
   result.append(f"Input Variables:\n\n")
@@ -29,7 +30,7 @@ def READMETrace(Data: TraceData, EventDate: date, Printtime: float) -> str:
   result.append(f"Kp = {Data.Kp}\n")
   result.append(f"IOPT = {Data.IOPT}\n\n")
   result = solar_wind_readme_section(result, Data.windarray)
-  result = field_models_readme_section(result, Internal, External, PauseModel)
+  result = field_models_readme_section(result, Internal, External, PauseModel, Data.max_degree)
   result = boberg_readme_section(result, Data.boberg, Data.bobergtype)
   result.append("Max and Min Latitude and Longitude:"+ "\n")
   result.append("Latitude: Max = " + str(Data.maxlat) + " Min = " + str(Data.minlat) + "\n")

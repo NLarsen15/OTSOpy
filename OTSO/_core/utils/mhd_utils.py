@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from ..libs import MiddleMan as OTSOLib
+from ..libs.MiddleMan import Middleman as OTSOLib
 
 def MHDinitialise(MHDfile):
       data = pd.read_csv(MHDfile)
@@ -88,8 +88,6 @@ def MHDinitialise(MHDfile):
       maxY_global = np.max(MHDposition[:, :, :, 1])  # Max value in Y axis for the whole grid
       minZ_global = np.min(MHDposition[:, :, :, 2])  # Min value in Z axis for the whole grid
       maxZ_global = np.max(MHDposition[:, :, :, 2])  # Max value in Z axis for the whole grid
-
-      #print("MHD file Loaded")
 
       del data
       

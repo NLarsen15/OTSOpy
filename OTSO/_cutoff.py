@@ -12,8 +12,17 @@ def cutoff(
 ) -> "OTSO_cutoff":
     
     import psutil
+    from dataclasses import fields
     from ._core.otso_functions import otso_cutoff
     from ._core.data_classes.cutoff_data import CutoffData
+
+    allowed = {f.name for f in fields(CutoffData)}
+
+    unknown = set(kwargs) - allowed
+    if unknown:
+        raise TypeError(
+            f"Unexpected keyword arguments: {', '.join(sorted(unknown))}"
+    )
 
     # Set corenum if not provided in kwargs
     if 'corenum' not in kwargs or kwargs['corenum'] is None:
@@ -30,35 +39,87 @@ def cutoff(
 
     # Create CutoffData instance - all parameters already provided by wrapper
     CutoffDataInstance = CutoffData(
-        Stations, customlocations, kwargs['startaltitude'], cutoff_comp, 
-        kwargs['minaltitude'], kwargs['maxdistance'], kwargs['maxtime'],
-        kwargs['serverdata'], kwargs['livedata'],
-        kwargs['vx'], kwargs['vy'], kwargs['vz'], 
-        kwargs['bx'], kwargs['by'], kwargs['bz'],
-        kwargs['density'], kwargs['pdyn'], kwargs['Dst'], 
-        kwargs['G1'], kwargs['G2'], kwargs['G3'],
-        kwargs['W1'], kwargs['W2'], kwargs['W3'], kwargs['W4'], 
-        kwargs['W5'], kwargs['W6'], kwargs['kp'], 
-        kwargs['by_avg'], kwargs['bz_avg'], kwargs['n_index'], 
-        kwargs['b_index'], kwargs['sym_h_corrected'], kwargs['Anum'], 
-        kwargs['anti'], kwargs['year'], kwargs['month'],
-        kwargs['day'], kwargs['hour'], kwargs['minute'], 
-        kwargs['second'], kwargs['internalmag'], 
-        kwargs['externalmag'], kwargs['boberg'], 
-        kwargs['bobergtype'], kwargs['intmodel'],
-        kwargs['startrigidity'], kwargs['endrigidity'], 
-        kwargs['rigiditystep'], kwargs['rigidityscan'],
-        kwargs['coordsystem'], kwargs['gyropercent'], 
-        kwargs['magnetopause'], kwargs['corenum'],
-        kwargs['azimuth'], kwargs['zenith'], kwargs['g'], 
-        kwargs['h'], kwargs['MHDfile'], kwargs['MHDcoordsys'],
-        kwargs['spheresize'], kwargs['inputcoord'], 
-        kwargs['Verbose'], kwargs['AdaptiveExternalModel'], 
-        kwargs['mintrapdist'], kwargs['unit'], kwargs['asymptotic'],
-        kwargs['asymlevels'], kwargs['delim'],
-        kwargs['adaptivestep'], kwargs['betaerror'], kwargs['totalbetacheck'],
-        kwargs['maxsteps']
+        Stations = Stations, 
+        customlocations = customlocations, 
+        startaltitude = kwargs['startaltitude'], 
+        cutoff_comp = cutoff_comp, 
+        minaltitude = kwargs['minaltitude'], 
+        maxdistance = kwargs['maxdistance'], 
+        maxtime = kwargs['maxtime'],
+        serverdata = kwargs['serverdata'], 
+        livedata = kwargs['livedata'],
+        vx = kwargs['vx'], 
+        vy = kwargs['vy'], 
+        vz = kwargs['vz'], 
+        bx = kwargs['bx'], 
+        by = kwargs['by'], 
+        bz = kwargs['bz'],
+        density = kwargs['density'], 
+        pdyn = kwargs['pdyn'], 
+        Dst = kwargs['Dst'], 
+        G1 = kwargs['G1'], 
+        G2 = kwargs['G2'], 
+        G3 = kwargs['G3'],
+        W1 = kwargs['W1'], 
+        W2 = kwargs['W2'], 
+        W3 = kwargs['W3'], 
+        W4 = kwargs['W4'], 
+        W5 = kwargs['W5'], 
+        W6 = kwargs['W6'], 
+        kp = kwargs['kp'], 
+        by_avg = kwargs['by_avg'], 
+        bz_avg = kwargs['bz_avg'], 
+        n_index = kwargs['n_index'], 
+        b_index = kwargs['b_index'], 
+        sym_h_corrected = kwargs['sym_h_corrected'], 
+        Anum = kwargs['Anum'], 
+        anti = kwargs['anti'], 
+        year = kwargs['year'], 
+        month = kwargs['month'],
+        day = kwargs['day'], 
+        hour = kwargs['hour'], 
+        minute = kwargs['minute'], 
+        second = kwargs['second'], 
+        internalmag = kwargs['internalmag'], 
+        externalmag = kwargs['externalmag'], 
+        boberg = kwargs['boberg'], 
+        bobergtype = kwargs['bobergtype'], 
+        intmodel = kwargs['intmodel'],
+        startrigidity = kwargs['startrigidity'], 
+        endrigidity = kwargs['endrigidity'], 
+        rigiditystep = kwargs['rigiditystep'], 
+        rigidityscan = kwargs['rigidityscan'],
+        coordsystem = kwargs['coordsystem'],
+        gyropercent = kwargs['gyropercent'],
+        fixedstep = kwargs['fixedstep'],
+        magnetopause = kwargs['magnetopause'],
+        corenum = kwargs['corenum'],
+        azimuth = kwargs['azimuth'], 
+        zenith = kwargs['zenith'], 
+        g = kwargs['g'], 
+        h = kwargs['h'], 
+        MHDfile = kwargs['MHDfile'], 
+        MHDcoordsys = kwargs['MHDcoordsys'],
+        spheresize = kwargs['spheresize'], 
+        inputcoord = kwargs['inputcoord'], 
+        Verbose = kwargs['Verbose'], 
+        AdaptiveExternalModel = kwargs['AdaptiveExternalModel'], 
+        mintrapdist = kwargs['mintrapdist'], 
+        unit = kwargs['unit'], 
+        asymptotic = kwargs['asymptotic'],
+        asymlevels = kwargs['asymlevels'], 
+        delim = kwargs['delim'],
+        adaptivestep = kwargs['adaptivestep'], 
+        betaerror = kwargs['betaerror'], 
+        totalbetacheck = kwargs['totalbetacheck'],
+        maxsteps = kwargs['maxsteps'],
+        threadnum = kwargs['threadnum'],
+        transmission = kwargs['transmission'],
+        transmissionsamples = kwargs['transmissionsamples'],
+        transmissionRstep = kwargs['transmissionRstep'],
+        max_degree = kwargs["max_degree"]
     )
 
     cutoff = otso_cutoff.OTSO_cutoff(CutoffDataInstance)
+    
     return cutoff

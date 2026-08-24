@@ -1,13 +1,17 @@
 import numpy as np
 
 from ..utils import input_utils, tsy_params_utils
+from ..citation_generator import get_citations
 from ..custom_classes import date as d
 from ..custom_classes import solar_wind
 from ..livedata import pull_live_data
 from ..serverdata import server
 from ..data_classes.flight_data import FlightData
 
+
 def FlightInputs(Data: FlightData) -> None:
+
+     get_citations.generate_citation_array(Data)
     
      DateArrayList = []
      for x in Data.dates:
@@ -26,7 +30,7 @@ def FlightInputs(Data: FlightData) -> None:
 
      AntiCheck = input_utils.anti_check(Data.anti)
 
-     Data.magnetopause = input_utils.magnetopause_check(Data.mpause)
+     Data.magnetopauseinput = input_utils.magnetopause_check(Data.magnetopause)
 
      Data.integrationmodel = input_utils.intmodel_check(Data.intmodel)
 
@@ -40,7 +44,10 @@ def FlightInputs(Data: FlightData) -> None:
      tempHList = []
 
      for date in Data.datearraylist:
-          Internal, g, h = input_utils.internalmag_check(Data.internalmag, date, Data.g, Data.h)
+          Internal, new_max_degree, g, h = input_utils.internalmag_check(Data.internalmag, date,
+                                                               Data.max_degree, Data.g, Data.h)
+
+          Data.max_degree = new_max_degree
           tempGlist.append(g)
           tempHList.append(h)
      Data.glist = tempGlist
@@ -64,28 +71,65 @@ def FlightInputs(Data: FlightData) -> None:
      IOPTList = []
      i = 0
 
-     for x, g_coeffs, h_coeffs in zip(Data.dates, Data.glist, Data.hlist):
-          
-        if ServerData == 1:
+     if ServerData == 1:
+          for x, g_coeffs, h_coeffs in zip(Data.dates, Data.glist, Data.hlist):
            if int(x.year) >= 1981:
                 server.DownloadServerFile(int(x.year), g_coeffs, h_coeffs)
            elif int(x.year) < 1981 and int(x.year) > 1963:
                 server.DownloadServerFileLowRes(int(x.year))
            else:
                 print("Server data only valid for 1963 to present, please enter a valid date.")
-           BxS, ByS, BzS, VS, DensityS, PdynS, KpS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS, External = server.GetServerData(x,External,Data.AdaptiveExternalModel)
-           KpList.append(KpS)
-           IOPTinput = tsy_params_utils.IOPTprocess(KpS)
-           if External == 100:
-               IOPTinput = tsy_params_utils.IOPTprocess_refit(KpS)
-           IOPTList.append(IOPTinput)
-           vytemp = 0
-           vztemp = 0
-           WindCreate = solar_wind.SolarWind(VS, vytemp, vztemp, BxS, ByS, BzS, DensityS, PdynS, DstS, G1S, G2S, G3S, W1S, W2S, W3S, W4S, W5S, W6S, KpS, By_avgS, Bz_avgS, N_indexS, B_indexS, SYM_H_correctedS)
-           WindArray = WindCreate.GetWind()
-           WindArrayList.append(WindArray)
+     if ServerData == 1:
+           data = server.GetServerDataFlight(Data.dates,External,Data.AdaptiveExternalModel)
+           for x in data:
+               BxS = x[0]
+               ByS = x[1]
+               BzS = x[2]
+               VS = x[3]
+               DensityS = x[4]
+               PdynS = x[5]
+               KpS = x[6]
+               DstS = x[7]
+               G1S = x[8]
+               G2S = x[9]
+               G3S = x[10]
+               W1S = x[11]
+               W2S = x[12]
+               W3S = x[13]
+               W4S = x[14]
+               W5S = x[15]
+               W6S = x[16]
+               ByAvgS = x[17]
+               BzAvgS = x[18]
+               NIndexS = x[19]
+               BIndexS = x[20]
+               sym_h_correctedS = x[21]
+               External = x[22]
+
+
+               KpList.append(x[6])
+               IOPTinput = tsy_params_utils.IOPTprocess(x[6])
+               if External == 100:
+                    IOPTinput = tsy_params_utils.IOPTprocess_refit(x[6])
+               IOPTList.append(IOPTinput)
+               vytemp = 0
+               vztemp = 0
+               WindCreate = solar_wind.SolarWind(VS, vytemp, vztemp, BxS, ByS, BzS, 
+                                                 DensityS, PdynS, 
+                                                 DstS, G1S, 
+                                                 G2S, G3S, 
+                                                 W1S, W2S, 
+                                                 W3S, W4S, W5S, 
+                                                 W6S, KpS, 
+                                                 ByAvgS, BzAvgS, 
+                                                 NIndexS, BIndexS, 
+                                                 sym_h_correctedS)
+               WindArray = WindCreate.GetWind()
+               WindArrayList.append(WindArray)
+
+     for x, g_coeffs, h_coeffs in zip(Data.dates, Data.glist, Data.hlist):
            
-           if LiveData == 1:
+          if LiveData == 1:
                 if External == 7 or External == 11:
                     print("LIVE DATA NOT SUPPORTED FOR TSY04 OR TA16 MAGNETOSPHERIC MODELS. PLEASE SELECT ANOTHER EXTERNAL MAGNETIC FIELD MODEL.")
                     exit()
@@ -104,23 +148,54 @@ def FlightInputs(Data: FlightData) -> None:
                 WindArray = WindCreate.GetWind()
                 WindArrayList.append(WindArray)
  
-        if ServerData == 0 and LiveData == 0:
-           if Data.vx[i] > 0:
-                Data.vx[i] = -1*Data.vx[i]
-           WindCreate = solar_wind.SolarWind(Data.vx[i], Data.vy[i], Data.vz[i], Data.bx[i], Data.by[i], Data.bz[i], Data.density[i], Data.pdyn[i], Data.Dst[i], Data.G1[i], Data.G2[i],
-                                              Data.G3[i], Data.W1[i], Data.W2[i], Data.W3[i], Data.W4[i], Data.W5[i], Data.W6[i], Data.kp[i], Data.by_avg[i], Data.bz_avg[i], Data.n_index[i], Data.b_index[i], Data.sym_h_corrected[i])
-           WindArray = WindCreate.GetWind()
-           KpList.append(Data.kp[i])
-           IOPTinput = tsy_params_utils.IOPTprocess(Data.kp[i])
-           if External == 100:
-               IOPTinput = tsy_params_utils.IOPTprocess_refit(Data.kp[i])
-           IOPTList.append(IOPTinput)
-           WindArrayList.append(WindArray)
-           i += 1
-          
-     Data.windarraylist = WindArrayList
-     Data.IOPTlist = IOPTList
-     Data.Kplist = KpList
+     if ServerData == 0 and LiveData == 0:
+          for i in range(len(Data.dates)):
+
+               if Data.vx[i] > 0:
+                    Data.vx[i] = -1 * Data.vx[i]
+
+               WindCreate = solar_wind.SolarWind(
+                    Data.vx[i],
+                    Data.vy[i],
+                    Data.vz[i],
+                    Data.bx[i],
+                    Data.by[i],
+                    Data.bz[i],
+                    Data.density[i],
+                    Data.pdyn[i],
+                    Data.Dst[i],
+                    Data.G1[i],
+                    Data.G2[i],
+                    Data.G3[i],
+                    Data.W1[i],
+                    Data.W2[i],
+                    Data.W3[i],
+                    Data.W4[i],
+                    Data.W5[i],
+                    Data.W6[i],
+                    Data.kp[i],
+                    Data.by_avg[i],
+                    Data.bz_avg[i],
+                    Data.n_index[i],
+                    Data.b_index[i],
+                    Data.sym_h_corrected[i]
+               )
+
+               WindArray = WindCreate.GetWind()
+
+               KpList.append(Data.kp[i])
+
+               IOPTinput = tsy_params_utils.IOPTprocess(Data.kp[i])
+
+               if External == 100:
+                    IOPTinput = tsy_params_utils.IOPTprocess_refit(Data.kp[i])
+
+               IOPTList.append(IOPTinput)
+               WindArrayList.append(WindArray)
+                    
+               Data.windarraylist = WindArrayList
+               Data.IOPTlist = IOPTList
+               Data.Kplist = KpList
  
      Data.rigidityarray = [Data.startrigidity,Data.endrigidity,Data.rigiditystep]
  

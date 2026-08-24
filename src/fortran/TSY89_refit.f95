@@ -53,12 +53,15 @@
 !                             Oulu University, Finland (2021 - 2025)
 !                             Nagoya University, Japan (2025 - present)
 !
+
+      USE TSY89module
+
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 PARMOD,PS,X,Y,Z,BX,BY,BZ,DST,Kp
       REAL*8 PredictedDst, Zscore, DSTmeanval, DSTstdval
       INTEGER*4 IOPT, KPINT
       INTEGER*4 model(4)
-      DIMENSION PARAM(30,22),A(30),PARMOD(10)
+      DIMENSION PARAM(30,22),PARMOD(10)
       DIMENSION DSTMEAN(28),DSTSTD(28)
       DATA A02,XLW2,YN,RPI,RT/25.D0,170.D0,30.D0,0.31830989D0,30.D0/
       DATA XD,XLD2/0.D0,40.D0/
@@ -218,10 +221,6 @@
      37.45D0, 42.57D0, 50.83D0, 53.64D0, 59.75D0, 66.16D0, &
      83.83D0, 79.52D0, 98.82D0, 106.44D0, 152.06D0/
 
-       DATA IOP/1000/
-
-       SAVE
-
        KPINT = INT(Kp * 3.0D0 + 1.0D0)
 
        DSTmeanval = DSTMEAN(KPINT)
@@ -309,11 +308,8 @@
        YNP=RPI/YN*0.5D0
        YND=2.D0*YN
 
-       ENDIF
-
        AK5= A(5)
-       PredictedDst = -(0.13)*(kp**(3.38))-9.93
-
+       
        IF (model(3) == 1) THEN
        IF (model(4) == 1) THEN
        IF (Kp > 7) THEN
@@ -334,13 +330,22 @@
        AK5 = -2923.09D0*(abs(DST)+2.01D0)**0.78
        END IF
        END IF
+
+
+       IF (model(4) == 4) THEN
+       IF (Zscore .GT. 1.2D0) THEN
+       !print *, "DST is much higher than expected for this Kp, using refit parameters"
+       AK5= A(5)
+       ELSE
+       !print *, "DST is within expected range or below for the given Kp."
+       AK5 = ((-2923.09D0*(abs(DST)+2.01D0)**0.78) + A(5)) / 2
+       END IF
        END IF
 
- 
+       END IF
 
-       !IF (Kp > 7) THEN
-       !AK5 = (2.41*DST**2) + (1.22e+3*DST) - 7.93e+3
-       !END IF
+       ENDIF
+
 
        SPS = DSIN(PS)
        CPS = DCOS(PS)

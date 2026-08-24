@@ -13,34 +13,36 @@
 ! BfieldFinal - Magnetic field strength [T]
 !
 ! ************************************************************************************************************************************
-subroutine MagneticField(X1, BfieldFinal)
-USE Particle
+subroutine MagneticField(X1, secondTotal, BfieldFinal)
 USE GEOPACK1
 USE GEOPACK2
 USE SolarWind
 USE MagneticFieldFunctions
 
-real(8) :: BfieldFinal(3), X1(3), EXTERNALGSM(3), Bfield(3), INTERNALGSM(3), xGSM(3)
+real(8) :: BfieldFinal(3), X1(3), secondTotal
+real(8) :: EXTERNALGSM(3), Bfield(3), INTERNALGSM(3), xGSM(3)
+real(8) :: EXTERNAMMAG
 
 xGSM(1) = X1(1)
 xGSM(2) = X1(2)
 xGSM(3) = X1(3)
 
 INTERNALGSM = InternalMagPointer(xGSM)
-EXTERNALGSM = ExternalMagPointer(xGSM)
+EXTERNALGSM = ExternalMagPointer(xGSM, secondTotal)
 
 Bfield(1) = INTERNALGSM(1) + EXTERNALGSM(1)
 Bfield(2) = INTERNALGSM(2) + EXTERNALGSM(2)
 Bfield(3) = INTERNALGSM(3) + EXTERNALGSM(3)
 
-Bfield(1) = Bfield(1) * 10.0**(-9)
-Bfield(2) = Bfield(2) * 10.0**(-9) 
-Bfield(3) = Bfield(3) * 10.0**(-9)
+EXTERNAMMAG = (EXTERNALGSM(1)**2 + EXTERNALGSM(2)**2 + EXTERNALGSM(3)**2)**0.5
+
+Bfield(1) = Bfield(1) * 1.0d-9
+Bfield(2) = Bfield(2) * 1.0d-9 
+Bfield(3) = Bfield(3) * 1.0d-9
 
 BfieldFinal(1) = DBLE(Bfield(1))
 BfieldFinal(2) = DBLE(Bfield(2))
 BfieldFinal(3) = DBLE(Bfield(3))
-
 
 end subroutine MagneticField
 
@@ -56,17 +58,17 @@ end subroutine MagneticField
 ! BfieldFinal - Magnetic field strength [T]
 !
 ! ************************************************************************************************************************************
-subroutine MagFieldCheck(xGSM, BfieldFinal)
-    USE Particle
+subroutine MagFieldCheck(xGSM, secondTotal, BfieldFinal)
     USE GEOPACK1
     USE GEOPACK2
     USE SolarWind
     USE MagneticFieldFunctions
     
     real(8) :: BfieldFinal(3), EXTERNALGSM(3), Bfield(3), INTERNALGSM(3), xGSM(3)
+    real(8) :: secondTotal
     
     INTERNALGSM = InternalMagPointer(xGSM)
-    EXTERNALGSM = ExternalMagPointer(xGSM)
+    EXTERNALGSM = ExternalMagPointer(xGSM, secondTotal)
     
     Bfield(1) = INTERNALGSM(1) + EXTERNALGSM(1)
     Bfield(2) = INTERNALGSM(2) + EXTERNALGSM(2)

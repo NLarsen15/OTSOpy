@@ -1,0 +1,342 @@
+name: Thread Test
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  test:
+    runs-on: ${{ matrix.architecture == 'arm64' && 'ubuntu-22.04-arm' || matrix.os }}
+    continue-on-error: true
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-latest, windows-latest]
+        architecture: [x64, arm64]
+        exclude:
+          # Exclude arm64 for macOS, as GitHub Actions only supports x64 runners for macOS
+          - os: macos-latest
+            architecture: arm64
+          # Exclude arm64 for Windows, as GitHub Actions only supports x64 runners for Windows
+          - os: windows-latest
+            architecture: arm64
+
+    steps:
+      # ---------------------------------------------------------
+      # Checkout
+      # ---------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------
+      # Python 3.12
+      # ---------------------------------------------------------
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ---------------------------------------------------------
+      # Show environment
+      # ---------------------------------------------------------
+      - name: Show environment
+        run: |
+          echo "===== OS ====="
+          uname -a || true
+
+          echo ""
+          echo "===== Architecture ====="
+          uname -m || true
+
+          echo ""
+          echo "===== Python ====="
+          python --version
+          which python
+
+          echo ""
+          echo "===== Pip ====="
+          python -m pip --version
+
+      # ---------------------------------------------------------
+      # Install R-tools (Windows only)
+      # ---------------------------------------------------------
+      - name: Install R-tools (Windows only)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://cran.r-project.org/bin/windows/Rtools/rtools40-x86_64.exe" -OutFile "rtools40.exe"
+          Start-Process -Wait -FilePath "rtools40.exe" -ArgumentList "/SILENT"
+          echo "C:\rtools40\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "C:\rtools40\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          C:\rtools40\mingw64\bin\gcc --version
+
+      # ---------------------------------------------------------
+      # Install GCC/OpenMP (Linux only)
+      # ---------------------------------------------------------
+      - name: Install GCC/OpenMP (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran
+
+          echo ""
+          echo "===== GCC ====="
+          gcc --version || true
+
+          echo ""
+          echo "===== libgomp ====="
+          find / -xdev -name "libgomp*.so*" -print 2>/dev/null || true
+
+      # ---------------------------------------------------------
+      # Install GCC/OpenMP (macOS only)
+      # ---------------------------------------------------------
+      - name: Install GCC/OpenMP (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gcc
+
+          echo ""
+          echo "===== GCC ====="
+          gcc --version || true
+
+          echo ""
+          echo "===== GCC location ====="
+          which gcc || true
+
+          echo ""
+          echo "===== libgomp ====="
+          find "$(brew --prefix gcc)" -name "libgomp*.dylib" -print || true
+
+      # ---------------------------------------------------------
+      # Clean old build artifacts
+      # ---------------------------------------------------------
+      - name: Clean build artifacts
+        run: |
+          rm -rf build
+          rm -rf dist
+          rm -rf OTSO.egg-info
+
+          find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+
+      # ---------------------------------------------------------
+      # Create virtual environment
+      # ---------------------------------------------------------
+      - name: Create virtual environment
+        run: |
+          python -m venv .venv
+
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            ACTIVATE=".venv/Scripts/activate"
+          else
+            ACTIVATE=".venv/bin/activate"
+          fi
+
+          echo "VENV_ACTIVATE=$ACTIVATE" >> "$GITHUB_ENV"
+
+          source "$ACTIVATE"
+
+          python --version
+          python -m pip --version
+
+          python -m pip install --upgrade pip setuptools wheel
+
+      # ---------------------------------------------------------
+      # Check package discovery BEFORE installation
+      # ---------------------------------------------------------
+      - name: Check setuptools package discovery
+        run: |
+          source "$VENV_ACTIVATE"
+
+          python - <<'PY'
+          from setuptools import find_packages
+
+          print("===== PACKAGES FOUND BY SETUPTOOLS =====")
+
+          packages = find_packages(include=["OTSO", "OTSO.*"])
+
+          for package in packages:
+              print(package)
+
+          print("")
+          print("===== REQUIRED PACKAGES =====")
+
+          required = [
+              "OTSO",
+              "OTSO._core",
+              "OTSO._core.data_classes",
+              "OTSO._core.fortran_calls",
+              "OTSO._core.utils",
+          ]
+
+          missing = [pkg for pkg in required if pkg not in packages]
+
+          if missing:
+              print("ERROR: Missing packages:")
+              for pkg in missing:
+                  print(f"  {pkg}")
+
+              raise SystemExit(1)
+
+          print("All required packages found.")
+          PY
+
+      # ---------------------------------------------------------
+      # Install package
+      # ---------------------------------------------------------
+      - name: Install package
+        run: |
+          source "$VENV_ACTIVATE"
+
+          python -m pip install .
+
+      # ---------------------------------------------------------
+      # Show installed OTSO package
+      # ---------------------------------------------------------
+      - name: Inspect installed OTSO package
+        run: |
+          source "$VENV_ACTIVATE"
+
+          echo "===== OTSO LOCATION ====="
+
+          python - <<'PY'
+          import OTSO
+
+          print(OTSO.__file__)
+          PY
+
+          echo ""
+          echo "===== INSTALLED OTSO FILES ====="
+
+          python - <<'PY'
+          import os
+
+          import OTSO
+
+          pkg_dir = os.path.dirname(OTSO.__file__)
+
+          entries = []
+          for root, _, names in os.walk(pkg_dir):
+              depth = root[len(pkg_dir):].count(os.sep)
+              if depth >= 4:
+                  continue
+              for name in names:
+                  entries.append(os.path.relpath(os.path.join(root, name), pkg_dir))
+
+          for entry in sorted(entries):
+              print(entry)
+          PY
+
+      # ---------------------------------------------------------
+      # Verify data_classes installation
+      # ---------------------------------------------------------
+      - name: Verify data_classes
+        run: |
+          source "$VENV_ACTIVATE"
+
+          python - <<'PY'
+          from OTSO._core.data_classes.cutoff_data import CutoffData
+
+          print("Successfully imported:")
+          print(CutoffData)
+          PY
+
+      # ---------------------------------------------------------
+      # Verify CPU affinity implementation
+      # ---------------------------------------------------------
+      - name: Verify CPU affinity implementation
+        run: |
+          source "$VENV_ACTIVATE"
+
+          python - <<'PY'
+          import sys
+          import inspect
+
+          import OTSO._core.utils.cpus_utils as cpu_util
+          import OTSO._core.fortran_calls.cutoff as cutoff
+
+          print("========================================")
+          print("ENVIRONMENT")
+          print("========================================")
+          print("Python:", sys.version)
+          print("Platform:", sys.platform)
+
+          print("")
+          print("========================================")
+          print("CPU UTILS MODULE")
+          print("========================================")
+          print("Loaded from:")
+          print(cpu_util.__file__)
+
+          print("")
+          print("set_process_affinity source:")
+          print("----------------------------------------")
+          print(inspect.getsource(cpu_util.set_process_affinity))
+
+          print("")
+          print("========================================")
+          print("CUTOFF MODULE")
+          print("========================================")
+          print("Loaded from:")
+          print(cutoff.__file__)
+
+          print("")
+          print("FortranCutoff source:")
+          print("----------------------------------------")
+          print(inspect.getsource(cutoff.FortranCutoff))
+          PY
+
+      # ---------------------------------------------------------
+      # Directly test CPU affinity abstraction
+      # ---------------------------------------------------------
+      - name: Test CPU affinity
+        run: |
+          source "$VENV_ACTIVATE"
+
+          python - <<'PY'
+          import sys
+          from OTSO._core.utils import cpus_utils
+
+          print("Platform:", sys.platform)
+
+          if sys.platform == "darwin":
+              print("Testing macOS CPU affinity implementation...")
+
+              cpus_utils.set_process_affinity([0])
+
+              print("macOS CPU affinity setup completed successfully.")
+
+          elif sys.platform.startswith("linux"):
+              print("Testing Linux CPU affinity implementation...")
+
+              cpus_utils.set_process_affinity([0])
+
+              print("Linux CPU affinity setup completed successfully.")
+
+          elif sys.platform == "win32":
+              print("Testing Windows CPU affinity implementation...")
+
+              cpus_utils.set_process_affinity([0])
+
+              print("Windows CPU affinity setup completed successfully.")
+
+          else:
+              raise RuntimeError(
+                  f"Unsupported platform: {sys.platform}"
+              )
+          PY
+
+      # ---------------------------------------------------------
+      # Run the actual cutoff test
+      # ---------------------------------------------------------
+      - name: Run cutoff test
+        run: |
+          source "$VENV_ACTIVATE"
+
+          python "src/example codes/benchmark tests/cutoff_thread_test.py"

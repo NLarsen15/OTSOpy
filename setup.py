@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='OTSO',
-    version='1.2.20',
+    version='1.3.0',
     author='Nicholas Larsen',
     author_email='nlarsen1505@gmail.com',
     description='Geomagnetic Cutoff Computation Tool',
@@ -24,6 +24,7 @@ setup(
                 'OTSO.liststations=OTSO.otso_cli:liststations',
                 'OTSO.IGRFupdate=OTSO.otso_cli:IGRFupdate',
                 'OTSO.serverdownload=OTSO.otso_cli:serverdownload',
+                'OTSO.chaosdownload=OTSO.otso_cli:CHAOSdownload'
             ],
     },
     classifiers=[
@@ -31,7 +32,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.10, <3.15',
+    python_requires='>=3.11, <3.15',
     install_requires=[
         'python-dateutil',   # Common dependency across all versions
         'six',              # Common dependency across all versions
@@ -39,17 +40,12 @@ setup(
         'psutil',
         'tqdm',
         'requests',
-        'numba'
+        'numba',
+        'f90wrap',
+        'chaosmagpy',
+        'matplotlib'
     ],
     extras_require={
-        # Python 3.10 requirements
-        ':python_version=="3.10"': [
-            'meson',
-            'numpy>=2.2.6, <2.3.0',
-            'packaging',
-            'pandas',
-            'pytz',
-        ],
         # Python 3.11 requirements
         ':python_version=="3.11"': [
             'meson',
@@ -78,6 +74,9 @@ setup(
             'meson',
             'numpy>=2.4.2, <2.5.0',
             'pandas',
+        ],
+        'test': [
+            'pytest',
         ],
     },
     )

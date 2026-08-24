@@ -65,7 +65,8 @@ C
 C
       DATA  AM0,S0,X00,DSIG/70.,1.08,5.48,0.005/
       DATA  DELIMFX,DELIMFY /20.,10./
-C
+C     
+
        PDYN=PARMOD(1)
        DST=PARMOD(2)
        BYIMF=PARMOD(3)
@@ -77,6 +78,7 @@ C
        DEPR=0.8*DST-13.*SQRT(PDYN)  !  DEPR is an estimate of total near-Earth
 c                                         depression, based on DST and Pdyn
 c                                             (usually, DEPR < 0 )
+
 C
 C  CALCULATE THE IMF-RELATED QUANTITIES:
 C
@@ -179,6 +181,7 @@ C
        BX=real((FX+QX)*FINT+OIMFX*FEXT -QX,4)
        BY=real((FY+QY)*FINT+OIMFY*FEXT -QY,4)
        BZ=real((FZ+QZ)*FINT+OIMFZ*FEXT -QZ,4)
+
 c
         ENDIF  !   THE CASES (1) AND (2) ARE EXHAUSTED; THE ONLY REMAINING
 C                      POSSIBILITY IS NOW THE CASE (3):
@@ -520,19 +523,17 @@ c    the arguments of exponents, sines, and cosines in the 9 "Cartesian"
 c       harmonics (3+3)
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C
+        USE TSY96_intercon
         IMPLICIT  REAL * 8  (A - H, O - Z)
         REAL*8 x,y,z,bx,by,bz
 C
         REAL*8, DIMENSION(15) :: A
-        REAL*8, DIMENSION(3) :: RP,RR,P,R
-        SAVE
+
 C
       DATA A/-8.411078731,5932254.951,-9073284.93,-11.68794634,
      * 6027598.824,-9218378.368,-6.508798398,-11824.42793,18015.66212,
      * 7.99754043,13.9669886,90.24475036,16.75728834,1015.645781,
      * 1553.493216/
-C
-        DATA M/0/
 C
         IF (M.NE.0) GOTO 111
         M=1
@@ -593,11 +594,10 @@ c                   TAIL MODES WITH UNIT AMPLITUDES
 C      (FOR THE RING CURRENT, IT MEANS THE DISTURBANCE OF Bz=-1nT AT ORIGIN,
 C   AND FOR THE TAIL MODES IT MEANS MAXIMAL BX JUST ABOVE THE SHEET EQUAL 1 nT.
 C
+         USE TSY96_Warp
          IMPLICIT REAL*8 (A-H,O-Z)
          REAL*8 sps,x,y,z,BXRC,BYRC,BZRC,BXT2,BYT2,BZT2,BXT3,BYT3,BZT3
          REAL*8, DIMENSION(48) :: ARC,ATAIL2,ATAIL3
-         COMMON /WARP/ CPSS,SPSS,DPSRR,RPS,WARP,D,XS,ZS,DXSX,DXSY,DXSZ,
-     *   DZSX,DZSY,DZSZ,DZETAS,DDZETADX,DDZETADY,DDZETADZ,ZSWW
 C
          DATA ARC/-3.087699646,3.516259114,18.81380577,-13.95772338,
      *  -5.497076303,0.1712890838,2.392629189,-2.728020808,-14.79349936,
@@ -718,11 +718,10 @@ C                  IN LINE WITH WHAT IS ACTUALLY OBSERVED
 C
 C             FOR DETAILS, SEE NB #3, PAGES 70-73
 C
+        USE TSY96_Warp
         IMPLICIT REAL*8 (A-H,O-Z)
         REAL*8 x,y,z,bx,by,bz
         REAL*8, DIMENSION(2) :: F,BETA
-        COMMON /WARP/ CPSS,SPSS,DPSRR, XNEXT(3),XS,ZSWARPED,DXSX,DXSY,
-     *   DXSZ,DZSX,DZSYWARPED,DZSZ,OTHER(4),ZS
 C
 
       DATA D0,DELTADX,XD,XLDX /2.,0.,0.,4./  !  ACHTUNG !!  THE RC IS NOW
@@ -735,8 +734,11 @@ C  THE ORIGINAL VALUES OF F(I) WERE MULTIPLIED BY BETA(I) (TO REDUCE THE
 C     NUMBER OF MULTIPLICATIONS BELOW)  AND BY THE FACTOR -0.43, NORMALIZING
 C      THE DISTURBANCE AT ORIGIN  TO  B=-1nT
 C
-           DZSY=XS*Y*DPSRR  ! NO WARPING IN THE Y-Z PLANE (ALONG X ONLY), AND
-C                         THIS IS WHY WE DO NOT USE  DZSY FROM THE COMMON-BLOCK
+           ! local variable, not the module variable
+           DZSY_LOCAL = XS*Y*DPSRR  
+           ! NO WARPING IN THE Y-Z PLANE (ALONG X ONLY), AND
+C          THIS IS WHY WE DO NOT USE  DZSY FROM THE COMMON-BLOCK
+
            XXD=X-XD
            FDX=0.5D0*(1.D0+XXD/DSQRT(XXD**2+XLDX**2))
            DDDX=DELTADX*0.5D0*XLDX**2/DSQRT(XXD**2+XLDX**2)**3
@@ -746,7 +748,7 @@ C                         THIS IS WHY WE DO NOT USE  DZSY FROM THE COMMON-BLOCK
 C                                        OUT THE SHEET, AS THAT USED IN T89
            RHOS=DSQRT(XS**2+Y**2)
            DDZETADX=(ZS*DZSX+D*DDDX)/DZETAS
-           DDZETADY=ZS*DZSY/DZETAS
+           DDZETADY=ZS*DZSY_LOCAL/DZETAS ! USE LOCAL DZSY
            DDZETADZ=ZS*DZSZ/DZETAS
          IF (RHOS.LT.1.D-5) THEN
             DRHOSDX=0.D0
@@ -821,11 +823,10 @@ C           NOW ONLY 4 TERMS
 C
 C             FOR DETAILS, SEE NB #3, PAGES 74-
 C
+         USE TSY96_Warp
          IMPLICIT REAL*8 (A-H,O-Z)
          REAL*8 x,y,z,bx,by,bz
          REAL*8, DIMENSION(4) :: F,BETA
-         COMMON /WARP/ CPSS,SPSS,DPSRR,XNEXT(3),XS,ZS,DXSX,DXSY,DXSZ,
-     *    OTHER(3),DZETAS,DDZETADX,DDZETADY,DDZETADZ,ZSWW
 C
          DATA XSHIFT /4.5/
 C
@@ -899,11 +900,11 @@ C-------------------------------------------------------------------------
 C
       SUBROUTINE TAIL87(X,Z,BX,BZ)
 
+      USE TSY96_Warp
+
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 x,z,bx,bz
-      REAL*8 :: FIRST, RPS,WARP,D, OTHER
-
-      COMMON /WARP/ FIRST(3), RPS,WARP,D, OTHER(13)
+      REAL*8 :: FIRST,OTHER
 C
 C      'LONG' VERSION OF THE 1987 TAIL MAGNETIC FIELD MODEL
 C              (N.A.TSYGANENKO, PLANET. SPACE SCI., V.35, P.1347, 1987)
@@ -1122,18 +1123,17 @@ C   OUTER SPACE, MAPPED BY MEANS OF A SPHERO-DIPOLAR COORDINATE SYSTEM (NB #3,
 C   P.91).   THE DIFFERENCE FROM THE FIRST ONE IS THAT INSTEAD OF OCTAGONAL
 C   CURRENT LOOPS, CIRCULAR ONES ARE USED IN THIS VERSION FOR APPROXIMATING THE
 C   FIELD IN THE OUTER REGION, WHICH IS FASTER.
-C
+C      
+
+      USE TSY96_Coord11
+      USE TSY96_RHDR
+      USE TSY96_LoopDip1
+      USE TSY96_Coord21
+      USE TSY96_DX1
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 PS,x,y,z,bx,by,bz
 C
       DIMENSION D1(3,26),D2(3,79),XI(4),C1(26),C2(79)
-
-         COMMON /COORD11/ XX1(12),YY1(12)
-         COMMON /RHDR/ RH,DR
-         COMMON /LOOPDIP1/ TILT,XCENTRE(2),RADIUS(2), DIPX,DIPY
-C
-         COMMON /COORD21/ XX2(14),YY2(14),ZZ2(14)
-         COMMON /DX1/ DX,SCALEIN,SCALEOUT
 C
       DATA C1/-0.911582E-03,-0.376654E-02,-0.727423E-02,-0.270084E-02,
      * -0.123899E-02,-0.154387E-02,-0.340040E-02,-0.191858E-01,
@@ -1157,25 +1157,10 @@ C
      * -.661373E-02,.249201E-02,.343978E-01,-.193145E-05,.493963E-05,
      * -.535748E-04,.191833E-04,-.100496E-03,-.210103E-03,-.232195E-02,
      * .315335E-02,-.134320E-01,-.263222E-01/
-c
-      DATA TILT,XCENTRE,RADIUS,DIPX,DIPY /1.00891,2.28397,-5.60831,
-     * 1.86106,7.83281,1.12541,0.945719/
-
-      DATA DX,SCALEIN,SCALEOUT /-0.16D0,0.08D0,0.4D0/
-      DATA XX1/-11.D0,2*-7.D0,2*-3.D0,3*1.D0,2*5.D0,2*9.D0/
-      DATA YY1/2.D0,0.D0,4.D0,2.D0,6.D0,0.D0,4.D0,8.D0,2.D0,6.D0,0.D0,
-     *  4.D0/
-      DATA XX2/-10.D0,-7.D0,2*-4.D0,0.D0,2*4.D0,7.D0,10.D0,5*0.D0/
-      DATA YY2/3.D0,6.D0,3.D0,9.D0,6.D0,3.D0,9.D0,6.D0,3.D0,5*0.D0/
-      DATA ZZ2/2*20.D0,4.D0,20.D0,2*4.D0,3*20.D0,2.D0,3.D0,4.5D0,
-     *  7.D0,10.D0/
-C
-      DATA RH,DR /9.D0,4.D0/   !  RH IS THE "HINGING DISTANCE" AND DR IS THE
-C                                TRANSITION SCALE LENGTH, DEFINING THE
-C                                CURVATURE  OF THE WARPING (SEE P.89, NB #2)
 C
       DATA XLTDAY,XLTNGHT /78.D0,70.D0/  !  THESE ARE LATITUDES OF THE R-1 OVAL
 C                                             AT NOON AND AT MIDNIGHT
+
       DATA DTET0 /0.034906/   !   THIS IS THE LATITUDINAL HALF-THICKNESS OF THE
 C                                  R-1 OVAL (THE INTERPOLATION REGION BETWEEN
 C                                    THE HIGH-LAT. AND THE PLASMA SHEET)
@@ -1420,11 +1405,12 @@ C     The dipoles with nonzero  Yi appear in pairs with equal moments.
 c                  (see the notebook #2, pp.102-103, for details)
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 c
+         USE TSY96_Coord11
+         USE TSY96_LoopDip1
+         USE TSY96_RHDR
          IMPLICIT  REAL * 8  (A - H, O - Z)
 C
-         COMMON /COORD11/ XX(12),YY(12)
-         COMMON /LOOPDIP1/ TILT,XCENTRE(2),RADIUS(2),  DIPX,DIPY
-         COMMON /RHDR/RH,DR
+
          REAL*8, DIMENSION(4) :: XI
          REAL*8, DIMENSION(3,26) :: D
 C
@@ -1435,7 +1421,7 @@ C
            SPS=DSIN(PS)
 C
          DO 1 I=1,12
-           R2=(XX(I)*DIPX)**2+(YY(I)*DIPY)**2
+           R2=(XX1(I)*DIPX)**2+(YY1(I)*DIPY)**2
            R=DSQRT(R2)
              RMRH=R-RH
              RPRH=R+RH
@@ -1446,9 +1432,9 @@ C
              Q=DSQRT((RH+1.D0)**2+DR2)-DSQRT((RH-1.D0)**2+DR2)
              SPSAS=SPS/R*C/Q
              CPSAS=DSQRT(1.D0-SPSAS**2)
-         XD= (XX(I)*DIPX)*CPSAS
-         YD= (YY(I)*DIPY)
-         ZD=-(XX(I)*DIPX)*SPSAS
+         XD= (XX1(I)*DIPX)*CPSAS
+         YD= (YY1(I)*DIPY)
+         ZD=-(XX1(I)*DIPX)*SPSAS
       CALL DIPXYZ(X-XD,Y-YD,Z-ZD,BX1X,BY1X,BZ1X,BX1Y,BY1Y,BZ1Y,
      *  BX1Z,BY1Z,BZ1Z)
         IF (DABS(YD).GT.1.D-10) THEN
@@ -1637,10 +1623,9 @@ c                           (2) (9x3+5x2)x2=74 components of the dipole moments
 c              (see the notebook #2, pp.113-..., for details)
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 c
+         USE TSY96_Coord21
+         USE TSY96_RHDR
          IMPLICIT  REAL * 8  (A - H, O - Z)
-C
-      COMMON /DX1/ DX,SCALEIN,SCALEOUT
-      COMMON /COORD21/ XX(14),YY(14),ZZ(14)
 c
          REAL*8, DIMENSION(4) :: XI
          REAL*8, DIMENSION(3,79) :: D
@@ -1697,14 +1682,14 @@ C
         DO 2 I=1,9
 C
         IF (I.EQ.3.OR.I.EQ.5.OR.I.EQ.6) THEN
-                XD =  XX(I)*SCALEIN
-                YD =  YY(I)*SCALEIN
+                XD =  XX2(I)*SCALEIN
+                YD =  YY2(I)*SCALEIN
                                          ELSE
-                XD =  XX(I)*SCALEOUT
-                YD =  YY(I)*SCALEOUT
+                XD =  XX2(I)*SCALEOUT
+                YD =  YY2(I)*SCALEOUT
         ENDIF
 C
-         ZD =  ZZ(I)
+         ZD =  ZZ2(I)
 C
       CALL DIPXYZ(XSM-XD,Y-YD,ZSM-ZD,BX1X,BY1X,BZ1X,BX1Y,BY1Y,BZ1Y,
      *  BX1Z,BY1Z,BZ1Z)
@@ -1749,7 +1734,7 @@ C
   2   CONTINUE
 C
       DO 3 I=1,5
-      ZD=ZZ(I+9)
+      ZD=ZZ2(I+9)
       CALL DIPXYZ(XSM,Y,ZSM-ZD,BX1X,BY1X,BZ1X,BX1Y,BY1Y,BZ1Y,BX1Z,BY1Z,
      *  BZ1Z)
       CALL DIPXYZ(XSM,Y,ZSM+ZD,BX2X,BY2X,BZ2X,BX2Y,BY2Y,BZ2Y,BX2Z,BY2Z,
@@ -2011,10 +1996,10 @@ C
 C  RETURNS THE MODEL FIELD FOR THE REGION 2 BIRKELAND CURRENT/PARTIAL RC
 C    (WITHOUT SHIELDING FIELD)
 C
+       USE TSY96_BIRK
        IMPLICIT REAL*8 (A-H,O-Z)
        REAL*8 X,Y,Z,PS,BX,BY,BZ
-       SAVE PSI,CPS,SPS
-       DATA DELARG/0.030D0/,DELARG1/0.015D0/,PSI/10.D0/
+       DATA DELARG/0.030D0/,DELARG1/0.015D0/
 C
        IF (DABS(PSI-PS).GT.1.D-10) THEN
          PSI=PS
@@ -2583,10 +2568,9 @@ C
 C************************************************************************
 C
          REAL*8 FUNCTION TKSI(XKSI,XKS0,DXKSI)
+         USE TSY96_TKSI
          IMPLICIT REAL*8 (A-H,O-Z)
          REAL*8 XKSI,XKS0,DXKSI
-         SAVE M,TDZ3
-         DATA M/0/
 C
          IF (M.EQ.0) THEN
          TDZ3=2.*DXKSI**3
@@ -2610,34 +2594,38 @@ C
 C
 C~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 c
-       SUBROUTINE DIPOLE(PS,X,Y,Z,BX,BY,BZ)
-C
-C  CALCULATES GSM COMPONENTS OF GEODIPOLE FIELD WITH THE DIPOLE MOMENT
-C  CORRESPONDING TO THE EPOCH OF 1980.
-C------------INPUT PARAMETERS:
-C   PS - GEODIPOLE TILT ANGLE IN RADIANS, X,Y,Z - GSM COORDINATES IN RE
-C------------OUTPUT PARAMETERS:
-C   BX,BY,BZ - FIELD COMPONENTS IN GSM SYSTEM, IN NANOTESLA.
-C
-C
-C     WRITEN BY: N. A. TSYGANENKO
+      SUBROUTINE DIPOLE(PS,X,Y,Z,BX,BY,BZ)
 
-      REAL*8 PS,x,y,z,bx,by,bz
-      DATA M,PSI/0,5./
-      SAVE M,PSI,SPS,CPS
-      IF(M.EQ.1.AND.ABS(PS-PSI).LT.1.E-5) GOTO 1
-      SPS=SIN(PS)
-      CPS=COS(PS)
-      PSI=PS
-      M=1
-  1   P=X**2
-      U=Z**2
-      V=3.*Z*X
-      T=Y**2
-      Q=30574./SQRT(P+T+U)**5
-      BX=Q*((T+U-2.*P)*SPS-V*CPS)
-      BY=-3.*Y*Q*(X*SPS+Z*CPS)
-      BZ=Q*((P+T-2.*U)*CPS-V*SPS)
+      USE TSY96_DIPOLE
+      IMPLICIT NONE
+
+      REAL*8 PS,X,Y,Z,BX,BY,BZ
+      REAL*8 P,T,U,V,Q,R
+
+      IF (M.EQ.1 .AND. ABS(PS-PSI).LT.1.D-5) THEN
+         GOTO 1
+      END IF
+
+      SPS = SIN(PS)
+      CPSS = COS(PS)
+      PSI = PS
+      M = 1
+
+1     CONTINUE
+
+      P = X**2
+      T = Y**2
+      U = Z**2
+      V = 3.D0*Z*X
+
+      R = SQRT(P+T+U)
+
+      Q = 30574.D0/(R**5)
+
+      BX = Q*((T+U-2.D0*P)*SPS - V*CPSS)
+      BY = -3.D0*Y*Q*(X*SPS + Z*CPSS)
+      BZ = Q*((P+T-2.D0*U)*CPSS - V*SPS)
+
       RETURN
       END
 

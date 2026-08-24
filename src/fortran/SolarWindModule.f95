@@ -4,10 +4,12 @@
 !
 !********************************************************************************************************************************
 module SolarWind
-real(8) :: SW(3), IMF(3), Dst, DSTBob, PDYN, Magpressure, clock, B, Bs, PI, hb, G1, G2, KpIndex, Bmag
+implicit none
+save
+real(8) :: SW(3), IMF(3), Dst, DSTBob, PDYN, Magpressure, clock, B, Bs, solar_PI, hb, G1, G2, KpIndex, Bmag
 integer(4) :: IOPT
 real(8), Dimension(10) :: parmod
-SAVE
+
 contains
 
 
@@ -45,7 +47,7 @@ integer(4) :: model(4)
 KpIndex = X(19)
 DSTBob = X(20)
 
-PI = 4.D0*DATAN(1.D0)
+solar_PI = 4.D0*DATAN(1.D0)
 
 IF (X(1) == 0.0) THEN
  SW(1) = -400.0

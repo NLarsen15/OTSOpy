@@ -1,7 +1,12 @@
 import os
-from datetime import datetime, timedelta
+import psutil
+from datetime import datetime, timedelta, timezone
+import random
+
 
 from .igrf_utils import compute_gauss_coefficients, schmidt_normalize, create_custom_coefficient_arrays
+from .chaos_utils.chaos_method import get_chaos_g_h, check_chaos_exists
+from ..custom_classes import date
 
 
 def anti_check(anti: str) -> int:
@@ -33,14 +38,20 @@ def magnetopause_check(magnetopause: str) -> int:
 def intmodel_check(intmodel: str) -> int:
     if intmodel == "4RK":
          return 1
-    elif intmodel == "Boris":
-         return 2
+    # elif intmodel == "Boris":
+    #      return 2
     elif intmodel == "Vay":
          return 3
     elif intmodel == "HC":
          return 4
+    elif intmodel == "6RK":
+         return 5
+    elif intmodel == "5RK":
+         return 6
+    elif intmodel == "Boris-Buneman":
+         return 7
     else:
-         print("Please enter a valid intmodel model: ""4RK"", ""Boris"", ""Vay"", ""HC"" ")
+         print("Please enter a valid intmodel model: ""4RK"", ""5RK"", ""6RK"", ""Vay"", ""HC"", ""Boris-Buneman"" ")
          exit()
 
 def serverdata_check(serverdata: str) -> int:
@@ -61,47 +72,114 @@ def livedata_check(livedata: str) -> int:
          print("Please enter a valid livedata value: ""ON"" or ""OFF"" ")
          exit()
 
-def internalmag_check(internalmag: str, DateArray, g, h) -> tuple[int, list[float], list[float]]:
+def internalmag_check(internalmag: str, DateArray, max_degree, g, h) -> tuple[int, int, list[float], list[float]]:
+    
     if internalmag == "NONE":
+        new_max_degree = max_degree
+
         coeffs = compute_gauss_coefficients(DateArray)
         g = coeffs['G_coefficients']
         h = coeffs['H_coefficients']
-        if g is None or h is None or len(g) == 0 or len(h) == 0: 
-            g = [0] * 136
-            h = [0] * 136
-        return 0, g, h
+
+        if g is None or h is None or len(g) == 0 or len(h) == 0:
+            g = [0] * ((new_max_degree + 1) * (new_max_degree + 2) // 2)
+            h = [0] * ((new_max_degree + 1) * (new_max_degree + 2) // 2)
+
+        # Trim to requested degree
+        n_coeffs = (new_max_degree + 1) * (new_max_degree + 2) // 2
+        g = g[:n_coeffs]
+        h = h[:n_coeffs]
+
+        return 0, new_max_degree, g, h
+
     elif internalmag == "IGRF":
+        new_max_degree = max_degree
+
         coeffs = compute_gauss_coefficients(DateArray)
         g = coeffs['G_coefficients']
         h = coeffs['H_coefficients']
-        if len(g) == 0 or len(h) == 0: 
-            g = [0] * 136
-            h = [0] * 136
-        return 1, g, h
+
+        if g is None or h is None or len(g) == 0 or len(h) == 0:
+            g = [0] * ((new_max_degree + 1) * (new_max_degree + 2) // 2)
+            h = [0] * ((new_max_degree + 1) * (new_max_degree + 2) // 2)
+
+        # Trim 15th-order arrays to 13th order
+        n_coeffs = (new_max_degree + 1) * (new_max_degree + 2) // 2
+        g = g[:n_coeffs]
+        h = h[:n_coeffs]
+
+        return 1, new_max_degree, g, h
+
+    # "IGRF14" disabled for now, uncomment this for reinclusion.
+    # elif internalmag == "IGRF14":
+    #     # Standalone IGRF14 synthesis with its own hard-coded coefficient tables,
+    #     # independent of the interpolation pipeline used by "IGRF". Used to cross-check
+    #     # the "IGRF" (geopack-based) results. g/h are unused by this model but are still
+    #     # computed so the return contract matches the other branches.
+    #     new_max_degree = max_degree
+    #
+    #     coeffs = compute_gauss_coefficients(DateArray)
+    #     g = coeffs['G_coefficients']
+    #     h = coeffs['H_coefficients']
+    #
+    #     if g is None or h is None or len(g) == 0 or len(h) == 0:
+    #         g = [0] * ((new_max_degree + 1) * (new_max_degree + 2) // 2)
+    #         h = [0] * ((new_max_degree + 1) * (new_max_degree + 2) // 2)
+    #
+    #     n_coeffs = (new_max_degree + 1) * (new_max_degree + 2) // 2
+    #     g = g[:n_coeffs]
+    #     h = h[:n_coeffs]
+    #
+    #     return 5, new_max_degree, g, h
+
     elif internalmag == "Dipole":
+        new_max_degree = 1
+
         coeffs = compute_gauss_coefficients(DateArray)
         g = coeffs['G_coefficients']
         h = coeffs['H_coefficients']
-        if len(g) == 0 or len(h) == 0: 
-            g = [0] * 136
-            h = [0] * 136
-        return 2, g, h
+
+        if g is None or h is None or len(g) == 0 or len(h) == 0:
+            g = [0] * ((new_max_degree + 1) * (new_max_degree + 2) // 2)
+            h = [0] * ((new_max_degree + 1) * (new_max_degree + 2) // 2)
+
+        # Trim to dipole (1st order)
+        n_coeffs = (new_max_degree + 1) * (new_max_degree + 2) // 2
+        g = g[:n_coeffs]
+        h = h[:n_coeffs]
+
+        return 2, new_max_degree, g, h
+
     elif internalmag == "Custom Gauss":
-        G, H = create_custom_coefficient_arrays(g, h, max_degree=15)
-        G_norm, H_norm = schmidt_normalize(G, H, 15)
-        g = G_norm[1:137]  # Extract indices 2-137 to match IGRF format (skip indices 0,1)
-        h = H_norm[1:137]  # Extract indices 2-137 to match IGRF format (skip indices 0,1)
+        new_max_degree = max_degree
+
+        G, H = create_custom_coefficient_arrays(g, h, max_degree=new_max_degree)
+        G_norm, H_norm = schmidt_normalize(G, H, max_degree)
+
+        n_coeffs = (new_max_degree + 1) * (new_max_degree + 2) // 2
+
+        g = G_norm[1:n_coeffs + 1]
+        h = H_norm[1:n_coeffs + 1]
+
         if g is None or h is None:
-                print("Please enter values for the g and h Gaussian coefficients to use the Custom Gauss option")
-                exit()
-        elif len(g) != 136:
-                print(f"There should be 136 g coefficents in the inputted list, you have entered {len(g)}")
-                exit()
-        elif len(h) != 136:
-                print(f"There should be 136 h coefficents in the inputted list, you have enetered {len(h)}")
-        return 4, g, h
+            print("Please enter values for the g and h Gaussian coefficients to use the Custom Gauss option")
+            exit()
+
+        return 4, new_max_degree, g, h
+
+    elif internalmag == "CHAOS":
+         new_max_degree = max_degree
+
+         check_chaos_exists()
+
+         dt= date.convert_to_datetime(DateArray)
+
+         g, h = get_chaos_g_h(dt, nmax=new_max_degree)
+
+         return 4, new_max_degree, g, h
+
     else:
-        print("Please enter a valid internalmag model: ""NONE"",""IGRF"",""Dipole"", or ""Custom Gauss""")
+        print('Please enter a valid internalmag model: "NONE", "IGRF", "Dipole", "Custom Gauss", or "CHAOS"')
         exit()
 
 def externalmag_check(externalmag: str, MHDfile: str) -> int:
@@ -204,7 +282,7 @@ def asymptotic_check(asymptotic: str, unit: str) -> None:
         exit()
 
 def DataCheck(ServerData: int, LiveData: int, EventDate: datetime):
-       current_date = datetime.utcnow()
+       current_date = datetime.now(timezone.utc).replace(tzinfo=None)
        if (ServerData == 1 or LiveData == 1) and EventDate > current_date:
         print("ERROR: Future date entered. No valid data available. \nOTSO program will now terminate.")
         exit()
@@ -218,11 +296,15 @@ def ParamCheck(Alt: float, EndParams: list[float]) -> None:
         exit()
 
 def DateCheck(Date):
-     current_date = datetime.utcnow()
-     seven_days_ago = current_date - timedelta(days=7)
+     current_date = datetime.now(timezone.utc).replace(tzinfo=None)
+     twentyfour_hours_ago = current_date - timedelta(hours=24)
 
-     if Date < seven_days_ago:
-         print("ERROR: Inputed date is over 7 days ago from current time (" + str(current_date) + ").\n live data only available for the last week. \nOTSO will now terminate.")
+     if Date < twentyfour_hours_ago:
+         print("ERROR: Inputed date is over 24 hours ago from current time (" + str(current_date) + ").\n live data only available for the last 24 hours. \nOTSO will now terminate.")
+         exit()
+
+     if Date > current_date:
+         print("ERROR: Inputed date is in the future from current time (" + str(current_date) + ").\n live data only available for the last 24 hours. \nOTSO will now terminate.")
          exit()
 
      return
@@ -249,8 +331,50 @@ def BobergCheck(boberg: bool, bobergtype: str) -> tuple | int:
           bobtype = 2
      elif bobergtype == "DST_DEPENDENT":
           bobtype = 3
+     elif bobergtype == "DST_MIDPOINT":
+          bobtype = 4
      else:
-          print("Please enter a valid bobergtype: ""EXTENSION"", ""CONTINUOUS"", or ""DST_DEPENDENT"" ")
+          print("Please enter a valid bobergtype: ""EXTENSION"", ""CONTINUOUS"", ""DST_DEPENDENT"", or ""DST_MIDPOINT""")
           exit()
 
      return Bobon, bobtype
+
+def core_and_thread_check(corenum: int, threadnum: int):
+    
+    total_cores = psutil.cpu_count(logical=True)
+
+    if corenum * threadnum > total_cores:
+        print(f"ERROR: The product of corenum ({corenum}) and threadnum ({threadnum}) exceeds the total number of available CPU cores ({total_cores}).")
+        print("Please adjust the values of corenum and threadnum to ensure their product does not exceed the available cores.")
+        exit()
+
+    return 
+
+def generate_ZA(zenithstep, azimuthstep, maxzenith,
+                minzenith, maxazimuth, minazimuth):
+
+    # maxzenith is the smaller angle (closest to zenith)
+    if maxzenith > minzenith:
+        maxzenith, minzenith = minzenith, maxzenith
+
+    if minazimuth > maxazimuth:
+        minazimuth, maxazimuth = maxazimuth, minazimuth
+
+    ZA_pairs = []
+
+    zenith = maxzenith
+    while zenith <= minzenith:
+
+        # At zenith poles, azimuth does not change the direction
+        if zenith == 0 or zenith == 180:
+            ZA_pairs.append([zenith, minazimuth])
+        else:
+            azimuth = minazimuth
+            while azimuth <= maxazimuth:
+                ZA_pairs.append([zenith, azimuth])
+                azimuth += azimuthstep
+
+        zenith += zenithstep
+
+    random.shuffle(ZA_pairs)
+    return ZA_pairs

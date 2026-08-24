@@ -19,13 +19,15 @@
 !
 !----OUTPUT PARAMETERS: BX,BY,BZ - GSM COMPONENTS OF THE MODEL MAGNETIC
 !                        FIELD IN NANOTESLAS
+
+      USE TSY89module !contains threadsafe A, and IOP
 !
       IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 PARMOD,PS,X,Y,Z,BX,BY,BZ,DST,Kp,PredictedDst
+      REAL*8 PARMOD,PS,X,Y,Z,BX,BY,BZ,DST,Kp
       REAL*8 Zscore, DSTmeanval, DSTstdval
       INTEGER*4 IOPT
       INTEGER*4 model(4)
-      DIMENSION PARAM(30,7),A(30),PARMOD(10)
+      DIMENSION PARAM(30,7),PARMOD(10)
       DIMENSION DSTMEAN(10),DSTSTD(10)
       DATA A02,XLW2,YN,RPI,RT/25.D0,170.D0,30.D0,0.31830989D0,30.D0/
       DATA XD,XLD2/0.D0,40.D0/
@@ -82,13 +84,9 @@
      -183.18D0/
 
 
-     DATA DSTSTD/12.28D0, 13.04D0, 15.28D0, 18.41D0, &
-     21.59D0, 28.59D0, 40.32D0, 57.68D0, 75.97D0, &
-     86.24D0/
-
-       DATA IOP/1000/
-
-       SAVE
+       DATA DSTSTD/12.28D0, 13.04D0, 15.28D0, 18.41D0, &
+       21.59D0, 28.59D0, 40.32D0, 57.68D0, 75.97D0, &
+       86.24D0/
 
        DSTmeanval = DSTMEAN(Kp + 1)
        DSTstdval = DSTSTD(Kp + 1)
@@ -106,7 +104,6 @@
        A(I)=PARAM(I,IOPT)
 1      END DO
       
-
        DYC=A(30)
        DYC2=DYC**2
        DX=A(18)
@@ -174,10 +171,7 @@
        YNP=RPI/YN*0.5D0
        YND=2.D0*YN
 
-       ENDIF
-
        AK5= A(5)
-       PredictedDst = -(0.13)*(kp**(3.38))-9.93
 
        IF (model(3) == 1) THEN
        IF (model(4) == 1) THEN
@@ -199,7 +193,20 @@
        AK5= -13081+(1034.9*DST)
        END IF
        END IF
+
+       IF (model(4) == 4) THEN
+       IF (Zscore .GT. 1.2D0) THEN
+       !print *, "DST is much higher than expected for this Kp, using refit parameters"
+       AK5= A(5)
+       ELSE
+       !print *, "DST is within expected range or below for the given Kp."
+       AK5 = ((-13081+(1034.9*DST)) + A(5)) / 2
        END IF
+       END IF
+
+       END IF
+
+       ENDIF
 
        SPS = DSIN(PS)
        CPS = DCOS(PS)

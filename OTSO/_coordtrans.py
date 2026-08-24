@@ -12,6 +12,6 @@ def coordtrans(Locations,dates,CoordIN,CoordOUT,corenum=None, Verbose=True):
        if arguments[arg] is None:
           arguments[arg] = []
 
-    coordtrans = otso_coordtrans.OTSO_coordtrans(Locations,dates,CoordIN,CoordOUT,corenum, Verbose)
+    coordtrans = otso_coordtrans.OTSO_coordtrans(Locations,dates,CoordIN,CoordOUT,corenum,Verbose)
     
     return coordtrans

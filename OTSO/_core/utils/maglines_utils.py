@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 def Lshell(Trace: pd.DataFrame, CoordSystem: str) -> tuple[float, float]:
-        
+
     Bx = Trace["Bx_GSM [nT]"]
     By = Trace["By_GSM [nT]"]
     Bz = Trace["Bz_GSM [nT]"]

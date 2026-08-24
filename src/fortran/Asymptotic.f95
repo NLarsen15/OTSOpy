@@ -13,31 +13,33 @@
 ! long - asymptotic longitude
 !
 ! ************************************************************************************************************************************
-subroutine AsymptoticDirection(Lat, Long,CoordSystem)
-USE Particle
+subroutine AsymptoticDirection(PositionArray, VelocityArray, secondTotal, &
+CoordSystem, Lat, Long)
+use SharedParameters
 implicit none
-real(8) :: Lat, Long, E, top, bottom, GSE(3)
+real(8) :: E, top, bottom, GSE(3)
 real(8) :: THETAtemp, PHItemp, Alttemp, XGSEsph(3)
 real(8) :: Xtemp, Ytemp, Ztemp, tempSPH(3), tempSPH2(3)
 real(8) :: GSW(3), GEO(3), XGEO(3), theta, XGSE(3)
 real(8) :: GEOsph(3), NewLat, tr, tTHETA, tPHI, tempposition(3), tempposition2(3)
 real(8) :: Alttemp2, latnew, longnew
 real(8), parameter :: pi  = 4 * atan(1.0_8)
-character(len=3) :: CoordSystem
+
+character(len=3), intent(in) :: CoordSystem
+real(8), intent(in) :: PositionArray(3,3), VelocityArray(2,3), secondTotal
+real(8), intent(out) :: Lat, Long
 
 
-call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, Position, XGEO)
+call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, PositionArray(1,:), XGEO)
 
-call GSWGSM_08 (Velocity(1),Velocity(2),Velocity(3),GSW(1),GSW(2),GSW(3),-1)
+call GSWGSM_08 (VelocityArray(1,1),VelocityArray(1,2),VelocityArray(1,3),GSW(1),GSW(2),GSW(3),-1)
 
 call GEOGSW_08(GEO(1),GEO(2),GEO(3),GSW(1),GSW(2),GSW(3),-1)
 
 call SPHCAR_08(GEOsph(1),GEOsph(2),GEOsph(3),XGEO(1), XGEO(2), XGEO(3), -1)
 
-if (model(1) == 4) then
-    GEO(1) = Velocity(1)
-    GEO(2) = Velocity(2)
-    GEO(3) = Velocity(3)
+if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
+    GEO = VelocityArray(1,:)
 end if
 
 call BCARSP_08(XGEO(1),XGEO(2),XGEO(3),GEO(1),GEO(2),GEO(3),tr,tTHETA,tPHI)

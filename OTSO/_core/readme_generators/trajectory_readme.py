@@ -13,14 +13,15 @@ def READMETrajectory(Data: TrajectoryData, EventDate: date, Printtime: float) ->
 
   IntegrationMethod = IntegrationMethodCheck(Data.integrationmodel)
 
-  Internal = InternalModelCheck(Data.model)
+  Internal = InternalModelCheck(Data.internalmag)
 
   External = ExternalModelCheck(Data.model)
 
-  PauseModel = MagnetopauseModelCheck(Data.magnetopause)
+  PauseModel = MagnetopauseModelCheck(Data.magnetopauseinput, Data.spheresize)
   
   today = date.today()
   result.append(f"\n")
+  result.append(f"OTSO Version: {OTSOVersion()}\n")
   result.append(f"Date of OTSO computation: {today}\n")
   result.append(f"Total computation time: {Printtime} seconds\n\n")
   result.append(f"Output Coordinate System:\n{Data.coordsystem}\n\n")
@@ -33,7 +34,7 @@ def READMETrajectory(Data: TrajectoryData, EventDate: date, Printtime: float) ->
     result.append("\n")
   result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
   result.append(f"Max Time Step [% of gyrofrequency]: {Data.maxsteppercent*100}\n")
-  result = beta_readme_section(result, Data.totalbetacheck, Data.Berr, Data.adapt)
+  result = beta_readme_section(result, Data.totalbetacheck, Data.betaerror, Data.adaptivestep, Data.fixedstep)
   result = end_conditions_readme_section(result, Data.endparams)
   result.append(f"Start Altitude = {Data.station_array[0][3]}km \n")
   result.append(f"Zenith = {Data.station_array[0][4]}\n")
@@ -43,7 +44,7 @@ def READMETrajectory(Data: TrajectoryData, EventDate: date, Printtime: float) ->
   result = solar_wind_readme_section(result, Data.windarray)
   result.append(f"Atomic Number = {Data.particlearray[0]}\n\n")
   result.append(f"Particle Type = {particle}\n\n")
-  result = field_models_readme_section(result, Internal, External, PauseModel)
+  result = field_models_readme_section(result, Internal, External, PauseModel, Data.max_degree)
   result = boberg_readme_section(result, Data.boberg, Data.bobergtype)
   result.append(f"Rigidity = {Data.rigidity}\n\n")
   result.append(f"Stations:\n")

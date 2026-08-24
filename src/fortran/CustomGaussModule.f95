@@ -2,8 +2,10 @@ module CUSTOMGAUSS
 implicit none
 save
 
-REAL(8), dimension(136) :: CUSTG,CUSTH,Ginput,Hinput
+REAL(8), dimension(136) :: CUSTG,CUSTH
+REAL(8), allocatable :: Ginput(:), Hinput(:)
 INTEGER(4) :: CUSTGAUSSINT,Gausschoice
+INTEGER(4) :: Gaussianlen, degreemax
 
 
 !Currently set to 1970 IGRF coefficents as an example. To change, please replace

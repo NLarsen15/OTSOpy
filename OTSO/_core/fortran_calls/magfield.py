@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 import multiprocessing as mp
 
-from ..libs import MiddleMan as OTSOLib
+from ..libs.MiddleMan import Middleman as OTSOLib
 from ..utils import mhd_utils
+from ..utils import fortran_data_utils
 from ..data_classes.magfield_data import MagfieldData
 
 def FortranMagfield(Data: list, MagfieldDataInstance: MagfieldData, queue: mp.Queue) -> None:
@@ -19,17 +20,15 @@ def FortranMagfield(Data: list, MagfieldDataInstance: MagfieldData, queue: mp.Qu
     else:
           Position = x  # Use original position for non-GDZ coordinates
 
-    DateArray = MagfieldDataInstance.datearray
-    model = MagfieldDataInstance.model
-    IOPT = MagfieldDataInstance.IOPT
-    WindArray = MagfieldDataInstance.windarray
     CoordinateSystem = MagfieldDataInstance.inputcoord
     CoordOUT = MagfieldDataInstance.coordout
-    MHDCoordSys = MagfieldDataInstance.MHDcoordsys
-    g = MagfieldDataInstance.g
-    h = MagfieldDataInstance.h
+
+    FortranData = fortran_data_utils.prepare_fortran_magfield(MagfieldDataInstance)
+
+    Bfield = np.zeros(3, dtype=np.float64)
     
-    Bfield = OTSOLib.magstrength(Position, DateArray, model, IOPT, WindArray, CoordinateSystem, CoordOUT, MHDCoordSys, g, h)
+    OTSOLib.magstrength(Position, FortranData, CoordinateSystem, CoordOUT, 
+                        MagfieldDataInstance.g, MagfieldDataInstance.h, Bfield)
     Bfield = Bfield*10**9
     
     # For GDZ coordinates, replace the transformed altitude with original altitude

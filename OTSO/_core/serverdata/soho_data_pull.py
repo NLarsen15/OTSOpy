@@ -1,9 +1,10 @@
 import requests
 import zipfile
-import io
 import pandas as pd
 import re
 import os
+
+from .scratch_dir import SCRATCH_DIR
 
 def celias_url_exists(year: int) -> bool:
     data_url = f"https://l1.umd.edu/data/{year}_CELIAS_Proton_Monitor_5min.zip"
@@ -16,9 +17,9 @@ def celias_url_exists(year: int) -> bool:
 def download_and_unpack_celias(YEAR: int) -> None:
         
     data_url = f"https://l1.umd.edu/data/{YEAR}_CELIAS_Proton_Monitor_5min.zip"
-    response = requests.get(data_url)
+    response = requests.get(data_url, timeout=30)
     response.raise_for_status()
-    script_dir = os.path.join(os.path.dirname(__file__))
+    script_dir = SCRATCH_DIR
 
     # Save ZIP file to script directory
     zip_filename = os.path.basename(data_url)
@@ -63,8 +64,6 @@ def download_and_unpack_celias(YEAR: int) -> None:
         try:
             year = int(row['YY'])
             year += 1900 if year > 50 else 2000
-            month = month_map.get(row['MON'].title(), 1)
-            day = int(row['DY'])
             doy, hour, minute, second = map(int, re.split('[:]', row['DOY:HH:MM:SS']))
             from datetime import datetime, timedelta
             dt = datetime(year, 1, 1) + timedelta(days=doy-1, hours=hour, minutes=minute, seconds=second)

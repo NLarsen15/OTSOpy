@@ -5,9 +5,12 @@ from ..utils import input_utils, tsy_params_utils
 from ..custom_classes import date, solar_wind
 from ..livedata import pull_live_data
 from ..serverdata import server
+from ..citation_generator import get_citations
 from ..data_classes.magfield_data import MagfieldData
 
 def MagFieldInputs(Data: MagfieldData) -> None:
+
+     get_citations.generate_citation_mag_array(Data)
     
      EventDate = datetime(Data.year,Data.month,Data.day,Data.hour,Data.minute,Data.second)
      DateCreate = date.Date(EventDate)
@@ -17,8 +20,11 @@ def MagFieldInputs(Data: MagfieldData) -> None:
 
      LiveData = input_utils.livedata_check(Data.livedata)
     
-     Internal, Data.g, Data.h = input_utils.internalmag_check(Data.internalmag, Data.datearray, Data.g, Data.h)
+     Internal, new_max_degree, Data.g, Data.h = input_utils.internalmag_check(Data.internalmag, Data.datearray,
+                                                               Data.max_degree, Data.g, Data.h)
 
+     Data.max_degree = new_max_degree
+     
      External = input_utils.externalmag_check(Data.externalmag, Data.MHDfile)
 
      Bobon, bobtype = input_utils.BobergCheck(Data.boberg, Data.bobergtype)

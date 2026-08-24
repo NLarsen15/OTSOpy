@@ -202,9 +202,8 @@ def compute_gauss_coefficients(date_array):
     
     G, H, actual_year_used = interpolate_coefficients(df, original_target_year)
 
-
     G, H = schmidt_normalize(G, H, max_n=15)
-    
+
     G_10 = abs(G[2])  # g(1,0) magnitude
     G_11 = G[3]       # g(1,1)
     H_11 = H[3]       # h(1,1)
@@ -225,47 +224,106 @@ def compute_gauss_coefficients(date_array):
     }
 
 
-def create_custom_coefficient_arrays(g_coeffs, h_coeffs, max_degree=15) -> Tuple[np.ndarray, np.ndarray]:
+def create_custom_coefficient_arrays(
+    g_coeffs, h_coeffs, max_degree=13
+) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Convert custom coefficient lists to IGRF-compatible G,H arrays using geopack indexing.
-    
+    Convert custom coefficient lists to IGRF-compatible G,H arrays
+    using geopack indexing.
+
     Args:
-        g_coeffs: List of g coefficients in order: g(0,0), g(1,0), g(1,1), g(2,0), g(2,1), g(2,2), ...
-        h_coeffs: List of h coefficients in order: h(0,0), h(1,0), h(1,1), h(2,0), h(2,1), h(2,2), ...
-        max_degree: Maximum spherical harmonic degree
-    
+        g_coeffs: List of g coefficients in order:
+                  g(0,0), g(1,0), g(1,1), g(2,0), g(2,1), g(2,2), ...
+
+        h_coeffs: List of h coefficients in order:
+                  h(0,0), h(1,0), h(1,1), h(2,0), h(2,1), h(2,2), ...
+
+        max_degree: Maximum spherical harmonic degree.
+
     Returns:
-        Tuple of G, H arrays with geopack indexing
+        Tuple of G, H arrays with geopack indexing.
     """
-    G = np.zeros(137)  # Index 0-136 for 15th order
-    H = np.zeros(137)
-    
+
+    # Number of coefficients through max_degree
+    n_coeffs = (max_degree + 1) * (max_degree + 2) // 2
+
+    # Index 0 is unused by geopack, so array needs n_coeffs + 1 elements
+    G = np.zeros(n_coeffs + 1)
+    H = np.zeros(n_coeffs + 1)
+
     coeff_idx = 0
+
     for degree in range(max_degree + 1):
         for order in range(degree + 1):
+
             if coeff_idx < len(g_coeffs):
                 index = geopack_index(degree, order)
-                if 1 <= index <= 136:
+
+                if 1 <= index <= n_coeffs:
                     G[index] = g_coeffs[coeff_idx]
-                    if order > 0 and coeff_idx < len(h_coeffs):  # h coefficients only exist for m > 0
+
+                    # H coefficients only exist for order > 0
+                    if order > 0 and coeff_idx < len(h_coeffs):
                         H[index] = h_coeffs[coeff_idx]
+
             coeff_idx += 1
-    
+
     return G, H
 
 
-def schmidt_normalize(G, H, max_n=15):
+import numpy as np
+
+
+def schmidt_normalize(G, H, max_n=14):
+    """
+    GEOPACK Schmidt quasi-normalization.
+
+    This is a direct translation of the Fortran routine:
+
+        S=1.D0
+        DO 250 N=2,14
+           MN=N*(N-1)/2+1
+           S=S*DFLOAT(2*N-3)/DFLOAT(N-1)
+           G(MN)=G(MN)*S
+           H(MN)=H(MN)*S
+           P=S
+           DO 250 M=2,N
+              AA=1.D0
+              IF (M.EQ.2) AA=2.D0
+              P=P*DSQRT(AA*DFLOAT(N-M+1)/DFLOAT(N+M-2))
+              MNN=MN+M-1
+              G(MNN)=G(MNN)*P
+              H(MNN)=H(MNN)*P
+    """
+
+    G = np.asarray(G, dtype=float).copy()
+    H = np.asarray(H, dtype=float).copy()
+
     S = 1.0
+
     for N in range(2, max_n + 1):
+
         MN = N * (N - 1) // 2 + 1
-        S *= (2 * N - 3) / (N - 1)
+
+        S *= (2.0 * N - 3.0) / (N - 1.0)
+
         G[MN] *= S
         H[MN] *= S
+
         P = S
+
         for M in range(2, N + 1):
+
             AA = 2.0 if M == 2 else 1.0
-            P *= np.sqrt(AA * (N - M + 1) / (N + M - 2))
+
+            P *= np.sqrt(
+                AA * (N - M + 1.0)
+                / (N + M - 2.0)
+            )
+
             MNN = MN + M - 1
+
             G[MNN] *= P
             H[MNN] *= P
+
     return G, H

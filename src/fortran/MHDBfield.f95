@@ -1,10 +1,11 @@
-subroutine MHDField(InputPosition,outputBfield)
+subroutine MHDField(InputPosition,secondTotal,outputBfield)
     USE Interpolation
-    USE particle
+    USE SharedParameters
     implicit none
     real(8) :: x_target, y_target, z_target, InputPosition(3),InputPositionTEMP(3)
     real(8) :: Bx_target, By_target, Bz_target, outputBfieldTemp(3)
     real(8) :: outputBfield(3),targetposition(3)
+    real(8) :: secondTotal
     integer, allocatable :: x_values(:), y_values(:), z_values(:)
     character(len=3) :: CoordIN
 
@@ -31,7 +32,6 @@ subroutine MHDField(InputPosition,outputBfield)
     outputBfieldTemp(3) = Bz_target
 
     call CoordinateTransformVec(CoordINMHD, CoordOUTMHD, year, day, secondTotal, outputBfieldTemp, outputBfield)
-
 
 end subroutine MHDField
   

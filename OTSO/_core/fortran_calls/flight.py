@@ -1,124 +1,117 @@
-import csv
 import pandas as pd
 import multiprocessing as mp
+import numpy as np
+import json
 
 from ..custom_classes import date
-from ..libs import MiddleMan as OTSOLib
+from ..libs.MiddleMan import Middleman as OTSOLib
 from ..utils import mhd_utils
+from ..utils import fortran_data_utils
+from ..utils import cutoff_utils as cu
+from ..utils import transmission_utils as tu
+from ..utils import cpus_utils as cpu_util
 from ..data_classes.flight_data import FlightData
 
 def FortranFlight(Data: list, DateArray: list, IOPT: list, WindArray: list, GArray: list, HArray: list,
-                  FlightFile: str, FlightDataInstance: FlightData, queue: mp.Queue) -> None:
-  
-  with open(FlightFile, mode='a', newline='', encoding='utf-8') as file:
-    if FlightDataInstance.asymptotic == "YES":
-        asymlevels_with_units = [f"{level} [{FlightDataInstance.unit}]" for level in FlightDataInstance.asymlevels]
-        default_headers = ["Date","Latitude","Longitude","Altitude","Rc GV","Rc Asym"]
-        headers = default_headers + asymlevels_with_units
-    else:
-        headers = ["Date","Latitude", "Longitude","Altitude", "Ru", "Rc", "Rl"]
+                  JsonFile: str, FData: FlightData, queue: mp.Queue, cpus) -> None:
 
-    writer = csv.writer(file)
-    writer.writerow(headers)
+    cpu_util.set_process_affinity(cpus)
 
-    if FlightDataInstance.model[1] == 99:
-      mhd_utils.MHDinitialise(FlightDataInstance.MHDfile)
+    if FData.model[1] == 99:
+      mhd_utils.MHDinitialise(FData.MHDfile)
 
 
     for x,y,z,I,G,H in zip(Data,DateArray,WindArray,IOPT,GArray,HArray):
         
         Position = [x[3],x[1],x[2],x[4],x[5]]
         Station = x[0]
+
+        FortranData = fortran_data_utils.prepare_fortran_flight(x,  
+                                                                FData,
+                                                                y,z,I,G,H)
+
+        if FData.cutoff_comp == "Apparent":
+            returnvalues = cu.Apparent_cutoff(Position, FortranData, G, H, FData)
+        else:
+            returnvalues = cu.standard_cutoff(FortranData, G, H, FData)
         
         datetimeobj = date.convert_to_datetime(y)
-        Wind = z
-  
-        StartRigidity = FlightDataInstance.rigidityarray[0]
-        EndRigidity = FlightDataInstance.rigidityarray[1]
-        RigidityStep = FlightDataInstance.rigidityarray[2]
-        AtomicNum = FlightDataInstance.particlearray[0]
-        AntiCheck = FlightDataInstance.particlearray[1]
-        AtomicNum = FlightDataInstance.particlearray[0]
-        AntiCheck = FlightDataInstance.particlearray[1]
 
-        CoordinateSystem = FlightDataInstance.coordsystem
-        MaxStepPercent = FlightDataInstance.maxsteppercent
-        EndParams = FlightDataInstance.endparams
-        Magnetopause = FlightDataInstance.magnetopause
-        Rcomp = FlightDataInstance.Rcomp
-        Rscan = FlightDataInstance.Rscan
-        model = FlightDataInstance.model
-        IntModel = FlightDataInstance.integrationmodel
-        g = G
-        h = H
-        MHDCoordSys = FlightDataInstance.MHDcoordsys
-        spheresize = FlightDataInstance.spheresize
-        inputcoord = FlightDataInstance.inputcoord
-        trapdist = FlightDataInstance.mindist
-        adapt = FlightDataInstance.adapt
-        Berr = FlightDataInstance.Berr
-        totalbetacheck = FlightDataInstance.totalbetacheck
-  
-        NMname = Station
-        Rigidities = [0,0,0]
-  
-        FileName = NMname + ".csv"
-        Rigidities = Rigidities = OTSOLib.cutoff(Position, StartRigidity, EndRigidity, RigidityStep, y, 
-                                                 model, IntModel, AtomicNum, AntiCheck, I, Wind, Magnetopause, 
-                                                 CoordinateSystem, MaxStepPercent, EndParams, Rcomp, Rscan, g, h, 
-                                                 MHDCoordSys,spheresize, inputcoord, trapdist, adapt, Berr, totalbetacheck)
-  
-        lat_long_pairs = []
-        P_List = []
-  
-        if FlightDataInstance.asymptotic == "YES":
-          Energy_List = FlightDataInstance.asymlevels.copy()
-          if FlightDataInstance.unit == "GeV":   
-            E_0 = 0.938
-            for i in Energy_List:
-              R = (i**2 + 2*i*E_0)**(0.5)
-              P_List.append(R)
-            P_List.insert(0, round(Rigidities[1], 5))
+        R_high, R_eff, R_low, transparency = returnvalues
+
+        if FData.transmission:
+            Transmissiondf = tu.transmission(FortranData, R_high, R_low, Station, FData)
+            # Save transmission dataframe to CSV
+            #print(Transmissiondf)
+
+        if FData.asymptotic == "YES":
+          Energy_List = FData.asymlevels.copy()
+          P_List = []
+          if FData.unit == "GeV":   
+              E_0 = 0.938  # Rest mass energy of proton in GeV
+              for i in Energy_List:
+                  R = (i**2 + 2*i*E_0)**(0.5)
+                  P_List.append(R)
           else:
-            if FlightDataInstance.unit == "GV": 
-              P_List = Energy_List.copy()
-            P_List.insert(0, Rigidities[1])
-          for P in P_List:
-              if P == P_List[0]:
-                  while True:
-                      bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, 
-                                                           I, Wind, Magnetopause, 
-                                                           CoordinateSystem, MaxStepPercent, EndParams, g, h, 
-                                                           MHDCoordSys,spheresize, inputcoord, trapdist, adapt, Berr, totalbetacheck)
-                      P += RigidityStep
-                      if bool == 1:
-                          lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
-                          break 
-              else:
-                  bool, Lat, Long = OTSOLib.trajectory(Position, P, y, model, IntModel, AtomicNum, AntiCheck, I, 
-                                                       Wind, Magnetopause, 
-                                                       CoordinateSystem, MaxStepPercent, EndParams, g, h, 
-                                                       MHDCoordSys,spheresize, inputcoord, trapdist, adapt, Berr, totalbetacheck)
-                  lat_long_pairs.append([bool, round(Lat, 3), round(Long, 3)])
-          
-          asymlevels_with_units = [f"{level} [{FlightDataInstance.unit}]" for level in FlightDataInstance.asymlevels]
-          default_headers = ["Date","Latitude","Longitude","Altitude","Rc GV","Rc Asym"]
-          headers = default_headers + asymlevels_with_units
-  
-          formatted_list = [f"{bool}{FlightDataInstance.delim}{lat}{FlightDataInstance.delim}{long}" for bool, lat, long in lat_long_pairs]
-  
-          formatted_list.insert(0, datetimeobj)
-          formatted_list.insert(1, round(float(Position[1]),5))
-          formatted_list.insert(2, round(float(Position[2]),5))
-          formatted_list.insert(3, round(float(Position[0]),5))
-          formatted_list.insert(4, round(Rigidities[1],5))
-          writer.writerow(formatted_list)
-          queue.put(1)
-  
+              if FData.unit == "GV": 
+                  P_List = Energy_List.copy()
+
+          AsyAllowed = np.zeros(len(P_List), dtype=np.int32)
+          AsyLat = np.zeros(len(P_List), dtype=np.float64)
+          AsyLong = np.zeros(len(P_List), dtype=np.float64)
+          Plist_array = np.array(P_List, dtype=np.float64)
+          OTSOLib.trajectory(FortranData, G, H, Plist_array, 
+                             len(P_List), AsyAllowed, AsyLat, AsyLong)
+
+        if FData.inputcoord == "GDZ":
+            altunit = "km"
         else:
-           headers = ["Date","Latitude", "Longitude","Altitude", "Ru", "Rc", "Rl"]
-           data = [datetimeobj,x[1],x[2],x[3],Rigidities[0],Rigidities[1], Rigidities[2]]
-           writer.writerow(data)
-           queue.put(1)
-    file.close()
-  return
+            altunit = "Re"
+            
+        record = {
+            "Date": datetimeobj.strftime("%Y-%m-%d %H:%M:%S"),
+            "Latitude": x[1],
+            "Longitude": x[2],
+            f"Altitude [{altunit}]": x[3],
+            "Ru [GV]": R_high,
+            "Rc [GV]": R_eff,
+            "Rl [GV]": R_low,
+            "PTF": transparency
+          }
+
+        # Optional asymptotic
+        if FData.asymptotic == "YES":
+            asymlevels_with_units = [
+                      f"{level} [{FData.unit}]"
+                      for level in FData.asymlevels
+                  ]
+        
+            formatted_asymptotic_data = [
+                      f"{AsyAllowed[i]}{FData.delim}"
+                      f"{round(AsyLat[i], 4)}{FData.delim}"
+                      f"{round(AsyLong[i], 4)}"
+                      for i in range(len(AsyAllowed))
+                  ]
+        
+            asymptotic_df = pd.DataFrame(
+                      [[Station] + formatted_asymptotic_data],
+                      columns=["Station"] + asymlevels_with_units,
+                  )
+        
+            record["asymptotic"] = asymptotic_df.to_dict(orient="records")
+        
+              # Optional transmission
+        if FData.transmission:
+            transmission = {}
+            tf_column = Transmissiondf.columns[1]
+            for _, row in Transmissiondf.iterrows():
+                transmission[f'{row["R [GV]"]} [GV]'] = row[tf_column]
+        
+            record["transmission"] = transmission
+
+        with open(JsonFile, "a", encoding="utf-8") as f:
+              json.dump(record, f)
+              f.write("\n")
+
+        queue.put(1)
+    return

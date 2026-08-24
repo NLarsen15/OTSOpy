@@ -13,6 +13,7 @@ plugins:
             show_source: false
             show_signature_annotations: true
             separate_signature: true
+            line_length: 80
             show_root_heading: true
             show_root_toc_entry: false
 
@@ -21,11 +22,14 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Parameters: Parameters.md
   - Cutoff: Cutoff.md
   - Cone: Cone.md
   - Trajectory: Trajectory.md
   - Planet: Planet.md
   - Flight: Flight.md
+  - Transmission: Transmission.md
+  - Skymap: Skymap.md
   - Magfield: Magfield.md
   - Trace: Trace.md
   - Coordtrans: Coordtrans.md

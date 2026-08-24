@@ -37,24 +37,26 @@ C  IOPT    1     2      3       4      5        6         7      8
 C   KP    0,0+  1-,1   1+,2-   2,2+  3-,3,3+   4-,4,4+   >=5-   >=5+
 C-----------------------------------------------------------------------
       
+      USE TSY87module
       IMPLICIT NONE
 
-C Input
-      REAL*8 x, y, z, ps,tilt
+      ! Input
+      REAL*8 x, y, z, ps
       INTEGER*4 IOPT
-C Output
+
+      ! Output
       REAL*8 bx, by, bz
-C Local
-      REAL*8 GA(24,8), PA(24), HPI, FC, RT
-      REAL*8 C1, RRC2, DSTR, XN, RH, X1, DY, B0, B1, XN21, SPS, CPS, RPS
+
+      ! Local
+      REAL*8 GA(24,8), HPI
+      REAL*8 SPS, CPS, RPS
       REAL*8 ZS, ZP, ZM, FY, XNX, XNX2, XC1, XC12, B20, B2P, B2M, B, BP
       REAL*8 BM, XA1, XAP1, XAM1, XNA, XNAP, XNAM, XLN1, XLNP1, XLNM1
       REAL*8 ALN, S0, S0P, S0M, S1, S1P, S1M, G1, G1P, G1M, EX, Y2, Z2
       REAL*8 YZ, XSM, ZSM, RR, RR2, ZN, BRSM, BZSM, BY1, BXSM
-      INTEGER*4 I, IP
-      SAVE IP,PA,C1,RRC2,DSTR,XN,RH,X1,DY,B0,B1,XN21
-C
-      COMMON /dip_ang/tilt
+
+      INTEGER*4 I
+
 C    &12.72,-.00867,-.001953,-.3437,-.002903,-.000999,18.41,-270.3,
 C
 C errata 1.29.90 D.P. Stern
@@ -87,7 +89,6 @@ C
      :-.1051d0,.6321d0,2*0.d0,28.11d0,-330.1d0,-86.82d0,4.d0,-3.d0,
      :1.73d0,12.56d0,5.11d0,4.d0,7.866d0/
 
-      DATA IP, FC, RT /100, 0.3183099031D0, 30.0D0/
       ps=tilt*4.D0*ATAN(1.D0)/180.d0
 
       HPI = 2.0D0 * DATAN(1.0D0)

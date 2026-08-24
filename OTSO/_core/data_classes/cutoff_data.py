@@ -59,7 +59,8 @@ class CutoffData:
     rigidityscan: str
     coordsystem: str
     gyropercent: float
-    mpause: str
+    fixedstep: float
+    magnetopause: str
     corenum: int
     azimuth: float
     zenith: float
@@ -71,15 +72,21 @@ class CutoffData:
     inputcoord: str
     Verbose: bool
     AdaptiveExternalModel: bool
-    mindist: float
+    mintrapdist: float
     unit: str
     asymptotic: bool
     asymlevels: Sequence[float]
     delim: str
-    adapt: bool
-    Berr: float
+    adaptivestep: bool
+    betaerror: float
     totalbetacheck: bool
     maxsteps: int
+    transmissionsamples: int
+    transmissionRstep: float
+    max_degree: int
+
+
+    transmission: Optional[bool] = field(default=False)
 
     rigidityarray: Optional[Sequence[float]] = field(default=None)
     datearray: Optional[Sequence[int]] = field(default=None)
@@ -88,7 +95,7 @@ class CutoffData:
     particlearray: Optional[Sequence[int]] = field(default=None)
     IOPT: Optional[int] = field(default=None)
     windarray: Optional[Sequence[float]] = field(default=None)
-    magnetopause: Optional[int] = field(default=None)
+    magnetopauseinput: Optional[int] = field(default=None)
     coordinatesystem: Optional[str] = field(default=None)
     maxsteppercent: Optional[float] = field(default=None)
     endparams: Optional[Sequence[float]] = field(default=None)
@@ -96,3 +103,6 @@ class CutoffData:
     Rcomp: Optional[int] = field(default=None)
     Rscan: Optional[int] = field(default=None)
     Kp: Optional[float] = field(default=None)
+    threadnum: Optional[int] = field(default=None)
+    citationlist: list = field(default_factory=list)
+    citationstring: Optional[str] = field(default=None)

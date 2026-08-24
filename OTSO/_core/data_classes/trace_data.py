@@ -45,8 +45,7 @@ class TraceData:
     externalmag: str
     boberg: bool
     bobergtype: str
-    gyropercent: float
-    mpause: str
+    magnetopause: str
     corenum: int
     latstep: float
     longstep: float
@@ -61,8 +60,9 @@ class TraceData:
     spheresize: float
     inputcoord: str
     Verbose: bool
-    mindist: float
     maxsteps: int
+    max_degree: int
+
 
     datearray: Optional[Sequence[int]] = field(default=None)
     model: Optional[Sequence[int]] = field(default=None)
@@ -70,7 +70,7 @@ class TraceData:
     particlearray: Optional[Sequence[int]] = field(default=None)
     IOPT: Optional[int] = field(default=None)
     windarray: Optional[Sequence[float]] = field(default=None)
-    magnetopause: Optional[int] = field(default=None)
+    magnetopauseinput: Optional[int] = field(default=None)
     coordinatesystem: Optional[str] = field(default=None)
     maxsteppercent: Optional[float] = field(default=None)
     endparams: Optional[Sequence[float]] = field(default=None)
@@ -81,8 +81,11 @@ class TraceData:
     minaltitude: float = field(default=0.0)
     maxdistance: float = field(default=1000.0)
     maxtime: float = field(default=0.0)
+    fixedstep: float = field(default=0.0)
     latitudelist: Sequence[np.ndarray] = field(default=None)
     longitudelist: Sequence[np.ndarray] = field(default=None)
     rigidity: Optional[float] = field(default=None)
     zenith: Optional[float] = field(default=None)
     azimuth: Optional[float] = field(default=None)
+    citationlist: list = field(default_factory=list)
+    citationstring: Optional[str] = field(default=None)

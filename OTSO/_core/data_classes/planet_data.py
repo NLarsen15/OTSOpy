@@ -55,7 +55,8 @@ class PlanetData:
     rigiditystep: float
     rigidityscan: str
     gyropercent: float
-    mpause: str
+    fixedstep: float
+    magnetopause: str
     corenum: int
     azimuth: float
     zenith: float
@@ -78,13 +79,19 @@ class PlanetData:
     AdaptiveExternalModel: bool
     array_of_lats_and_longs: Optional[Sequence[float]]
     grid_params_user_set: Optional[bool]
-    mindist: float
+    mintrapdist: float
     delim: str
-    adapt: bool
-    Berr: float
+    adaptivestep: bool
+    betaerror: float
     totalbetacheck: bool
     maxsteps: int
+    threadnum: int
+    coordsystem: str
+    transmissionsamples: int
+    transmissionRstep: float
+    max_degree: int
 
+    transmission: Optional[bool] = field(default=False)
     rigidityarray: Optional[Sequence[float]] = field(default=None)
     datearray: Optional[Sequence[int]] = field(default=None)
     model: Optional[Sequence[int]] = field(default=None)
@@ -92,7 +99,7 @@ class PlanetData:
     particlearray: Optional[Sequence[int]] = field(default=None)
     IOPT: Optional[int] = field(default=None)
     windarray: Optional[Sequence[float]] = field(default=None)
-    magnetopause: Optional[int] = field(default=None)
+    magnetopauseinput: Optional[int] = field(default=None)
     coordinatesystem: Optional[str] = field(default=None)
     maxsteppercent: Optional[float] = field(default=None)
     endparams: Optional[Sequence[float]] = field(default=None)
@@ -104,3 +111,5 @@ class PlanetData:
     LongitudeList_meta: Optional[Sequence[float]] = field(default=None)
     coordinate_pairs: Optional[Sequence[Sequence[float]]] = field(default=None)
     custom_coords_provided: bool = field(default=False)
+    citationlist: list = field(default_factory=list)
+    citationstring: Optional[str] = field(default=None)

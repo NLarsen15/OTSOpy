@@ -19,7 +19,7 @@
 !
 ! ************************************************************************************************************************************
 module MagneticFieldFunctions
-USE Particle
+USE SharedParameters
 USE GEOPACK1
 USE GEOPACK2
 USE SolarWind
@@ -33,9 +33,10 @@ function funcInternal(DUMMY1)
    real(8) :: funcInternal(3)
    real(8), intent (in) :: DUMMY1(3)
 end function funcInternal
-function funcExternal(DUMMY2)
+function funcExternal(DUMMY2, DUMMY3)
     real(8) :: funcExternal(3)
     real(8), intent (in) :: DUMMY2(3)
+    real(8), intent (in) :: DUMMY3
  end function funcExternal
 end interface
 
@@ -54,15 +55,28 @@ end interface
     return
   end function functionNoInt
 
-  function functionIGRF(x) ! Internal IGRF model
-    real(8) :: functionIGRF(3), INTERNALGSW(3), INTERNALGSM(3)
+  function functionIGRF(x) ! Internal IGRF model (GEO-native synthesis via GAUSSCUSTOM, no GSW round-trip)
+    real(8) :: functionIGRF(3), INTERNALGEO(3)
     real(8), intent (in) :: x(3)
-  
-    call IGRF_GSW_08(x(1), x(2), x(3), INTERNALGSW(1), INTERNALGSW(2), INTERNALGSW(3))
-    call GSWGSM_08(INTERNALGSM(1), INTERNALGSM(2), INTERNALGSM(3), INTERNALGSW(1), INTERNALGSW(2), INTERNALGSW(3), 1)
-    functionIGRF = INTERNALGSM
+
+    call GAUSSCUSTOM(x(1), x(2), x(3), INTERNALGEO(1), INTERNALGEO(2), INTERNALGEO(3))
+
+    functionIGRF = INTERNALGEO
     return
   end function functionIGRF
+
+  function functionIGRF14(x) ! Internal IGRF model (standalone IGRF14, from official IGRF source)
+    real(8) :: functionIGRF14(3), INTERNALGEO(3), decimalyear
+    real(8), intent (in) :: x(3)
+
+    decimalyear = dble(year) + (dble(day) + &
+                  (dble(hour)*3600.d0 + dble(minute)*60.d0 + dble(secondINT))/86400.d0 &
+                  - 1.d0)/365.25d0
+
+    call IGRF14_GEO(decimalyear, x(1), x(2), x(3), INTERNALGEO(1), INTERNALGEO(2), INTERNALGEO(3))
+    functionIGRF14 = INTERNALGEO
+    return
+  end function functionIGRF14
 
   function functionDIP(x) ! Internal dipole model
     real(8) :: functionDIP(3), INTERNALGSW(3), INTERNALGSM(3)
@@ -75,22 +89,24 @@ end interface
     return
   end function functionDIP
 
-  function functionCustom(x) ! Custom Spherical Haormincs model
-    real(8) :: functionCustom(3), INTERNALSPH(3), INTERNALGSW(3), INTERNALGEO(3) 
-    real(8) :: INTERNALGSM(3), GEOPosition(3), GEOSPHPosition(3)
-    real(8) :: R, Theta, Phi
-    real(8), intent (in) :: x(3)
-
-    call CoordinateTransform("GSM", "GEO", year, day, secondTotal, x, GEOPosition)
-
-    call GAUSSCUSTOM(GEOPosition(1), GEOPosition(2), GEOPosition(3), INTERNALGEO(1), INTERNALGEO(2), INTERNALGEO(3))
-
-    call GEOGSW_08(INTERNALGEO(1),INTERNALGEO(2),INTERNALGEO(3),INTERNALGSW(1),INTERNALGSW(2),INTERNALGSW(3),1)
-    call GSWGSM_08(INTERNALGSM(1), INTERNALGSM(2), INTERNALGSM(3), INTERNALGSW(1), INTERNALGSW(2), INTERNALGSW(3), 1)
-
-    functionCustom = INTERNALGSM
-    return
-  end function functionCustom
+  !function functionCustom(x, secondTotal) ! Custom Spherical Haormincs model
+  !  real(8) :: functionCustom(3), INTERNALSPH(3), INTERNALGSW(3), INTERNALGEO(3) 
+  !  real(8) :: INTERNALGSM(3), GEOPosition(3), GEOSPHPosition(3)
+  !  real(8) :: R, Theta, Phi
+  !  real(8), intent (in) :: x(3)
+  !  real(8), intent (in) :: secondTotal
+  !
+  !
+  !  call CoordinateTransform("GSM", "GEO", year, day, secondTotal, x, GEOPosition)
+  !
+  !  call GAUSSCUSTOM(GEOPosition(1), GEOPosition(2), GEOPosition(3), INTERNALGEO(1), INTERNALGEO(2), INTERNALGEO(3))
+  !
+  !  call GEOGSW_08(INTERNALGEO(1),INTERNALGEO(2),INTERNALGEO(3),INTERNALGSW(1),INTERNALGSW(2),INTERNALGSW(3),1)
+  !  call GSWGSM_08(INTERNALGSM(1), INTERNALGSM(2), INTERNALGSM(3), INTERNALGSW(1), INTERNALGSW(2), INTERNALGSW(3), 1)
+  !
+  !  functionCustom = INTERNALGSM
+  !  return
+  !end function functionCustom
 
   function functionCustomNonStandard(x) ! Custom Spherical Haormincs model
     real(8) :: functionCustomNonStandard(3), INTERNALSPH(3), INTERNALGSW(3), INTERNALGEO(3) 
@@ -104,29 +120,31 @@ end interface
     return
   end function functionCustomNonStandard
 
-  function functionNoEx(x) !No external field
+  function functionNoEx(x, secondTotal) !No external field
     real(8) :: functionNoEx(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
   
-    TSYGSM(1) = 0
-    TSYGSM(2) = 0
-    TSYGSM(3) = 0
+    TSYGSM(1) = 0.0
+    TSYGSM(2) = 0.0
+    TSYGSM(3) = 0.0
 
     functionNoEx = TSYGSM
   
     return
   end function functionNoEx
 
- function function87S(x) ! Tsyganenko 1987 short
+ function function87S(x, secondTotal) ! Tsyganenko 1987 short
    real(8) :: function87S(3), TSYGSM(3), TSYGSM1(3)
    real(8), intent (in) :: x(3)
+   real(8), intent (in) :: secondTotal
 
-   if (model(1) == 4) then
+   if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
     call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
    end if
  
    call TSY87S(IOPT, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
-   if (model(1) == 4) THEN
+   if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
    call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
    else
    TSYGSM=TSYGSM1
@@ -136,16 +154,17 @@ end interface
    return
  end function function87S
  
-  function function87L(x) ! Tsyganenko 1987 long
+  function function87L(x, secondTotal) ! Tsyganenko 1987 long
     real(8) :: function87L(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
   
     call TSY87L(IOPT, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -155,16 +174,17 @@ end interface
     return
   end function function87L
 
-  function function89a(x) ! Tsyganenko 1989a
+  function function89a(x, secondTotal) ! Tsyganenko 1989a
     real(8) :: function89a(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
 
     call T89a(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -174,16 +194,17 @@ end interface
     return
   end function function89a
 
-  function function89c(x) ! Tsyganenko 1989c
+  function function89c(x, secondTotal) ! Tsyganenko 1989c
     real(8) :: function89c(3), TSYGSM(3), TSYGSM1(3), test(3)
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
 
     call T89c(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -193,16 +214,17 @@ end interface
     return
   end function function89c
 
-  function function89_refit(x) ! Tsyganenko 1989 refit
+  function function89_refit(x, secondTotal) ! Tsyganenko 1989 refit
     real(8) :: function89_refit(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
 
     call T89_refit(IOPT, parmod, PSI, DSTBob, KpIndex, model, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -212,13 +234,15 @@ end interface
     return
   end function function89_refit
 
-  function function96(x) ! Tsyganenko 1996
+
+function function96(x, secondTotal) ! Tsyganenko 1996
     real(8) :: function96(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
     real(8), dimension(10) :: parmod2
     real(8) :: GSMx(3), PSItemp, TSYfield(3)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
 
@@ -232,7 +256,7 @@ end interface
     TSYGSM1(1) = TSYfield(1)
     TSYGSM1(2) = TSYfield(2)
     TSYGSM1(3) = TSYfield(3)
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -240,15 +264,16 @@ end interface
     function96 = TSYGSM
   
     return
-  end function function96
+end function function96
 
-  function function01(x) ! Tsyganenko 2001
+function function01(x, secondTotal) ! Tsyganenko 2001
     real(8) :: function01(3), TSYGSM(3), TSYGSM1(3)
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
     real, dimension(10) :: parmod2
     real :: GSMx(3), PSItemp, TSYfield(3)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
 
@@ -262,7 +287,7 @@ end interface
     TSYGSM1(1) = TSYfield(1)
     TSYGSM1(2) = TSYfield(2)
     TSYGSM1(3) = TSYfield(3)
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -270,21 +295,22 @@ end interface
     function01 = TSYGSM
     
     return
-  end function function01
+end function function01
 
-  function function01S(x) ! Tsyganenko 2001 storm-time variation
+function function01S(x, secondTotal) ! Tsyganenko 2001 storm-time variation
     real(8) :: function01S(3), TSYGSM(3), TSYGSM1(3)
     real(8) :: PSItemp
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
 
     PSItemp = real(PSI,8)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
   
     call T01_S(parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -292,21 +318,22 @@ end interface
     function01S = TSYGSM
   
     return
-  end function function01S
+end function function01S
 
-  function function04(x) ! Tsyganenko 2004 
+function function04(x, secondTotal) ! Tsyganenko 2004 
     real(8) :: function04(3), TSYGSM(3), TSYGSM1(3)
     real(8) :: PSItemp
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
 
     PSItemp = real(PSI,8)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
   
     call T04_S(parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -314,23 +341,24 @@ end interface
     function04 = TSYGSM
   
     return
-  end function function04
+end function function04
 
 
-  function function15N(x) ! Tsyganenko 2015 N-index 
+function function15N(x, secondTotal) ! Tsyganenko 2015 N-index 
     real(8) :: function15N(3), TSYGSM(3), TSYGSM1(3)
     real(8) :: PSItemp
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
   
     PSItemp = real(PSI,8)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
-  
+
     call TA_2015_N(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
-    
-    if (model(1) == 4) THEN
+
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -338,23 +366,23 @@ end interface
     function15N = TSYGSM
   
     return
-  end function function15N
+end function function15N
 
-
-  function function15B(x) ! Tsyganenko 2015 B-index 
+function function15B(x, secondTotal) ! Tsyganenko 2015 B-index 
     real(8) :: function15B(3), TSYGSM(3), TSYGSM1(3)
     real(8) :: PSItemp
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
   
     PSItemp = real(PSI,8)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
   
     call TA_2015_B(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -362,22 +390,23 @@ end interface
     function15B = TSYGSM
   
     return
-  end function function15B
+end function function15B
 
-  function function16(x) ! Tsyganenko 2015 B-index 
+function function16(x, secondTotal) ! Tsyganenko 2016  
     real(8) :: function16(3), TSYGSM(3), TSYGSM1(3)
     real(8) :: PSItemp
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
 
     PSItemp = real(PSI,8)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
      call CoordinateTransform("GEO", "GSM", year, day, secondTotal, x, x)
     end if
   
     call RBF_MODEL_2016(0, parmod, PSItemp, x(1), x(2), x(3), TSYGSM1(1), TSYGSM1(2), TSYGSM1(3))
     
-    if (model(1) == 4) THEN
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) THEN
     call CoordinateTransformVec("GSM", "GEO", year, day, secondTotal, TSYGSM1, TSYGSM)
     else
     TSYGSM=TSYGSM1
@@ -385,30 +414,35 @@ end interface
     function16 = TSYGSM
   
     return
-  end function function16
+end function function16
 
-  function functionMHD(x) ! MHD 
-    real(8) :: functionMHD(3), MHDexternal(3), PositionMAG
+
+function functionMHD(x, secondTotal) ! MHD 
+    real(8) :: functionMHD(3), MHDexternal(3)
     real(8), intent (in) :: x(3)
+    real(8), intent (in) :: secondTotal
   
-    call MHDField(x, MHDexternal)
+    call MHDField(x, secondTotal, MHDexternal)
     
     functionMHD = MHDexternal
   
-    PositionMAG = ((x(1)**2)+(x(2)**2)+(x(3)**2))*(1/2)
-  
     IF (ISNAN(functionMHD(1))) THEN
       functionMHD(1) = 0.0
+      !print *, "NaN field1"
     END IF
     IF (ISNAN(functionMHD(2))) THEN
       functionMHD(2) = 0.0
+      !print *, "NaN field2"
     END IF
     IF (ISNAN(functionMHD(3))) THEN
       functionMHD(3) = 0.0
+      !print *, "NaN field3"
     END IF
     
     return
-  end function functionMHD
+end function functionMHD
+
+
 
 ! ************************************************************************************************************************************
 ! subroutine MagneticFieldAssign:
@@ -434,10 +468,10 @@ end interface
     InternalMagPointer => functionIGRF ! IGRF
   ELSE IF (mode(1) == 2) THEN
     InternalMagPointer => functionDIP  ! DIPOLE
-  ELSE IF (mode(1) == 3) THEN
-    InternalMagPointer => functionCustom ! Custom Gauss
   ELSE IF (mode(1) == 4) THEN
     InternalMagPointer => functionCustomNonStandard ! Custom Gauss Non-Standard
+  ELSE IF (mode(1) == 5) THEN
+    InternalMagPointer => functionIGRF14 ! Standalone IGRF14 (independent coefficient tables, for cross-checking IGRF)
   ELSE
     print *, "Please enter valid internal magnetic field model"
   END IF
@@ -463,7 +497,7 @@ end interface
   ELSE IF (mode(2) == 9) THEN
     ExternalMagPointer => function15N  ! TSYGANENKO 15 N-index
   ELSE IF (mode(2) == 10) THEN
-    ExternalMagPointer => function15B  ! TSYGANENKO 15 B-index
+    ExternalMagPointer => function15B  ! TSYGANENKO 15 B-ind
   ELSE IF (mode(2) == 11) THEN
     ExternalMagPointer => function16  ! TSYGANENKO 16 RBF
   ELSE IF (mode(2) == 99) THEN

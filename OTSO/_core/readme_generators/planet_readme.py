@@ -13,11 +13,11 @@ def READMEPlanet(Data: 'PlanetData', EventDate, Printtime, custom_coords_provide
 
     IntegrationMethod = IntegrationMethodCheck(Data.integrationmodel)
 
-    Internal = InternalModelCheck(Data.model)
+    Internal = InternalModelCheck(Data.internalmag)
 
     External = ExternalModelCheck(Data.model)
     
-    PauseModel = MagnetopauseModelCheck(Data.magnetopause)
+    PauseModel = MagnetopauseModelCheck(Data.magnetopauseinput, Data.spheresize)
 
     CutoffComp = CutoffCompCheck(Data.Rcomp)
 
@@ -25,6 +25,7 @@ def READMEPlanet(Data: 'PlanetData', EventDate, Printtime, custom_coords_provide
 
     today = date.today()
     result.append(f"\n")
+    result.append(f"OTSO Version: {OTSOVersion()}\n")
     result.append(f"Date of OTSO computation: {today}\n")
     result.append(f"Total computation time: {Printtime} seconds\n\n")
     result.append(f"Cutoff Computed: {CutoffComp}\n\n")
@@ -38,11 +39,11 @@ def READMEPlanet(Data: 'PlanetData', EventDate, Printtime, custom_coords_provide
       result.append("\n")
     result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
     result.append(f"Max Time Step [% of gyrofrequency]: {Data.maxsteppercent*100}\n")
-    result = beta_readme_section(result, Data.totalbetacheck, Data.Berr, Data.adapt)
+    result = beta_readme_section(result, Data.totalbetacheck, Data.betaerror, Data.adaptivestep, Data.fixedstep)
     result = end_conditions_readme_section(result, Data.endparams)
     
     result.append(f"Start Altitude = {Data.startaltitude}km \n")
-    if Data.Rcomp == "Apparent":
+    if Data.Rcomp == 1:
         result.append(f"\n\n")
     else:
         result.append(f"Zenith = {Data.zenith}\n")
@@ -52,7 +53,7 @@ def READMEPlanet(Data: 'PlanetData', EventDate, Printtime, custom_coords_provide
     result.append(f"IOPT = {Data.IOPT}\n\n")
     result = solar_wind_readme_section(result, Data.windarray)
     result.append(f"Particle Type = {particle}\n\n")
-    result = field_models_readme_section(result, Internal, External, PauseModel)
+    result = field_models_readme_section(result, Internal, External, PauseModel, Data.max_degree)
     result = boberg_readme_section(result, Data.boberg, Data.bobergtype)
     result.append(f"Rigidity:\n")
     result.append(f"Start = {Data.rigidityarray[0]} [GV]\n")
@@ -75,5 +76,8 @@ def READMEPlanet(Data: 'PlanetData', EventDate, Printtime, custom_coords_provide
        result.append("Asymptotic Directions: " + str(Data.asymptotic) + " \n")
        result.append("Asymptotic Levels: " + str(Data.asymlevels) + " \n")
        result.append("Asymptotic Levels Unit: " + str(Data.unit) + " \n")
+
+    result.append(Data.citationstring)
+    result.append("\n")
   
     return "".join(result)

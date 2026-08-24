@@ -1,0 +1,313 @@
+name: Build Fortran Extensions
+
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.architecture == 'arm64' && 'ubuntu-22.04-arm' || matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-latest, windows-latest]
+        #os: [ubuntu-22.04]
+        architecture: [x64, arm64]
+        # 3.10 excluded: numpy's f2py has a derived-type wrapper bug (getpydocsign
+        # KeyError 'void') that's fixed in numpy>=2.3, but numpy dropped cp310
+        # wheels around the same release, so no numpy version supports both.
+        python-version: ["3.11","3.12","3.13","3.14"]
+        exclude:
+          # Exclude arm64 for macOS, as GitHub Actions only supports x64 runners for macOS
+          - os: macos-latest
+            architecture: arm64
+          # Exclude arm64 for Windows, as GitHub Actions only supports x64 runners for Windows
+          - os: windows-latest
+            architecture: arm64
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+
+    - name: Set up Miniconda (Windows only)
+      if: runner.os == 'Windows'
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
+        activate-environment: buildenv
+        environment-file: ''
+        auto-activate: true
+        channels: conda-forge,defaults
+        channel-priority: flexible
+
+    - name: Set up Python (Linux/macOS)
+      if: runner.os != 'Windows'
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install R-tools (Windows only)
+      if: runner.os == 'Windows'
+      run: |
+        # Download and install R-tools40 to match local environment
+        Invoke-WebRequest -Uri "https://cran.r-project.org/bin/windows/Rtools/rtools40-x86_64.exe" -OutFile "rtools40.exe"
+        Start-Process -Wait -FilePath "rtools40.exe" -ArgumentList "/SILENT"
+        # Add R-tools to PATH (same path as local environment)
+        echo "C:\\rtools40\\mingw64\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "C:\\rtools40\\usr\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        # Verify installation
+        C:\rtools40\mingw64\bin\gcc --version
+
+
+    - name: Install gfortran (Linux only)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y gfortran
+
+    - name: Install gfortran (macOS only)
+      if: runner.os == 'macOS'
+      run: |
+        brew update
+        brew install gcc
+        # Symlink gfortran-<version> to gfortran for Meson compatibility
+        GFORTRAN_PATH=$(brew --prefix)/bin/gfortran-$(brew list gcc | grep -Eo 'gfortran-[0-9]+' | head -n1 | cut -d'-' -f2)
+        if [ -f "$GFORTRAN_PATH" ]; then
+          ln -sf "$GFORTRAN_PATH" /usr/local/bin/gfortran
+        else
+          # Fallback: symlink the first gfortran-* found
+          GFORTRAN_BIN=$(ls $(brew --prefix)/bin/gfortran-* | head -n1)
+          ln -sf "$GFORTRAN_BIN" /usr/local/bin/gfortran
+        fi
+        which gfortran
+        gfortran --version
+
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      shell: bash -l {0}
+      run: |
+        conda install -y numpy pandas ninja meson pip
+        python -m pip install --upgrade pip
+        echo "==== Debug: conda list ===="
+        conda list
+        echo "==== Debug: pip list ===="
+        pip list
+        echo "==== Debug: where meson ===="
+        where meson || which meson
+        echo "==== Debug: where python ===="
+        where python || which python
+
+    - name: Install dependencies (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy pandas ninja meson f90wrap setuptools wheel meson-python
+
+
+
+
+    - name: Build Fortran extension with build script (Windows)
+      if: runner.os == 'Windows'
+      shell: bash -l {0}
+      run: |
+        echo "Setting up build environment to match local R-tools setup..."
+        
+        # Change to workspace directory first
+        cd "$GITHUB_WORKSPACE"
+        echo "DEBUG: Changed to workspace directory: $(pwd)"
+        echo "DEBUG: Listing workspace contents:"
+        ls -la
+        
+        # Ensure we're using R-tools compilers
+        export PATH="/c/rtools40/mingw64/bin:/c/rtools40/usr/bin:$PATH"
+        which gcc
+        gcc --version
+        which gfortran  
+        gfortran --version
+        which python
+        python --version
+        
+        echo "Running Windows build script for Python ${{ matrix.python-version }}..."
+        echo "DEBUG: Checking if src directory exists:"
+        ls -la src/ || echo "src directory not found"
+        echo "DEBUG: Listing all directories that contain 'build':"
+        find . -name "*build*" -type d || echo "No build directories found"
+        cd "src/build scripts"
+        cmd //c "build_middleman.bat ${{ matrix.python-version }}"
+        echo "Build script completed. Checking for built extension..."
+        
+        cd "$GITHUB_WORKSPACE"
+        echo "Creating build_artifacts directory..."
+        mkdir -p OTSO/_core/libs/build_artifacts
+        echo "Directory created. Listing contents:"
+        ls -l OTSO/_core/libs/
+        
+        echo "Searching for built .pyd file in OTSO/_core/libs..."
+        EXTNAME=$(python -c "import sysconfig; ext = sysconfig.get_config_var('EXT_SUFFIX'); soabi = sysconfig.get_config_var('SOABI'); print(f'_MiddleMan{ext}' if ext else f'_MiddleMan.{soabi}.pyd')")
+        echo "EXTNAME is $EXTNAME"
+        
+        # The bat file moves the extension to OTSO/_core/libs
+        if [[ -f "OTSO/_core/libs/$EXTNAME" ]]; then
+          echo "Found built extension, copying to build_artifacts..."
+          cp "OTSO/_core/libs/$EXTNAME" OTSO/_core/libs/build_artifacts/
+        else
+          echo "Searching for any MiddleMan extension files..."
+          find OTSO/_core/libs -name "_MiddleMan.*" -type f | head -n1 | while read file; do
+            if [[ -n "$file" ]]; then
+              echo "Found $file, copying to build_artifacts..."
+              cp "$file" OTSO/_core/libs/build_artifacts/
+            fi
+          done
+        fi
+        
+        echo "Library copied. Listing build_artifacts contents:"
+        ls -l OTSO/_core/libs/build_artifacts/
+
+        echo "Writing python requirements file..."
+        PYVER=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        pip freeze > OTSO/_core/libs/build_artifacts/python_requirements_py${PYVER}.txt
+        echo "Requirements file written. Listing build_artifacts contents:"
+        ls -l OTSO/_core/libs/build_artifacts/
+
+    - name: Build Fortran extension with f2py (Linux/macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        cd src/fortran
+        echo "Building MiddleMan extension with meson backend..."
+        python -c "import sys; print(f'Python version: {sys.version}')"
+        python -c "import numpy; print(f'NumPy version: {numpy.__version__}')"
+        
+        # Use meson backend for all builds
+        f90wrap -m MiddleMan MiddleMan.f95
+        WRAPPERS=$(ls f90wrap*.f90 2>/dev/null)
+        python -m numpy.f2py \
+        -c \
+        --backend=meson \
+        --opt="-O3" \
+        --f90flags="-O3 -fopenmp -fautomatic -frecursive -fno-fast-math -ffp-contract=off" \
+        --f77flags="-O3 -fopenmp -fautomatic -frecursive -fno-fast-math -ffp-contract=off" \
+        MiddleMan.f95 \
+        SolarWindModule.f95 \
+        SharedParameters.f95 \
+        GEOPACK_DP.f \
+        GeopackModule.f95 \
+        CustomGaussModule.f95 \
+        old_commonsModule.f95 \
+        Particle.f95 \
+        Conversion.f95 \
+        Velocity.f95 \
+        CoordinateTransforms.f95 \
+        CoordTrans.for \
+        onera_desp_lib.f \
+        init_nouveau.f \
+        heliospheric_transformation.f \
+        date_util.f \
+        igrf_coef.f \
+        MagneticFieldFunctions.f95 \
+        Tsyganenko87l.f \
+        Tsyganenko87s.f \
+        TSY89_refit.f95 \
+        TSY89a.f95 \
+        TSY89c.f95 \
+        MagneticField.f95 \
+        MagnetopauseFunctions.f95 \
+        MagnetopauseModule.f95 \
+        IntegrationFunctions.f95 \
+        VectorCalc.f95 \
+        integration_utils.f95 \
+        LorentzRelativity.f95 \
+        Asymptotic.f95 \
+        Termination_checks.f95 \
+        Acceleration.f95 \
+        TSYmodules.f95 \
+        T96.f \
+        Tsyg_01.for \
+        t01_s.f \
+        Tsyganenko04.f \
+        TSY15_N.f \
+        TSY15_B.f \
+        TA16_RBF.f \
+        MHDModule.f95 \
+        MHDBfield.f95 \
+        betachecking.f95 \
+        igrf14.f \
+        4RK.f95 \
+        5RK.f95 \
+        6RK.f95 \
+        Boris_Buneman.f95 \
+        Vay.f95 \
+        HC.f95 \
+        field_trace_boris.f95 \
+        ${WRAPPERS} \
+        -m "_MiddleMan" \
+        -lgomp
+        
+        echo "Build complete. Listing generated files:"
+        ls -la _MiddleMan.*
+        cd "$GITHUB_WORKSPACE"
+        echo "Creating build_artifacts directory..."
+        mkdir -p OTSO/_core/libs/build_artifacts
+        echo "Directory created. Getting extension filename..."
+        EXTNAME=$(python -c "import sysconfig; ext = sysconfig.get_config_var('EXT_SUFFIX'); soabi = sysconfig.get_config_var('SOABI'); print(f'_MiddleMan{ext}' if ext else f'_MiddleMan.{soabi}.so')")
+        echo "EXTNAME is $EXTNAME"
+        echo "Copying built extension to build_artifacts..."
+        cp "src/fortran/$EXTNAME" OTSO/_core/libs/build_artifacts/
+        echo "Library copied. Listing build_artifacts contents:"
+        ls -l OTSO/_core/libs/build_artifacts/
+        echo "Writing python requirements file..."
+        PYVER=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        pip freeze > OTSO/_core/libs/build_artifacts/python_requirements_py${PYVER}.txt
+        echo "Requirements file written. Listing build_artifacts contents:"
+        ls -l OTSO/_core/libs/build_artifacts/
+
+    - name: Code sign macOS library
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        echo "Code signing macOS library to prevent malware warnings..."
+        cd OTSO/_core/libs/build_artifacts/
+        # Find the .so file for macOS
+        SOFILE=$(ls _MiddleMan*.so 2>/dev/null | head -n 1)
+        if [[ -n "$SOFILE" && -f "$SOFILE" ]]; then
+          echo "Found library file: $SOFILE"
+          echo "Before signing:"
+          ls -la "$SOFILE"
+          # Code sign with ad-hoc signature (no developer certificate needed)
+          codesign --force --sign - "$SOFILE"
+          echo "Code signing completed successfully."
+          echo "Verifying signature:"
+          codesign --verify --verbose "$SOFILE"
+          echo "After signing:"
+          ls -la "$SOFILE"
+        else
+          echo "Warning: No .so file found for macOS code signing"
+          ls -la
+        fi
+
+    - name: Upload compiled library
+      uses: actions/upload-artifact@v4
+      with:
+        name: MiddleMan-${{ matrix.os }}-${{ matrix.architecture }}-py${{ matrix.python-version }}
+        path: OTSO/_core/libs/build_artifacts/
+
+  combine-artifacts:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: combined_artifacts
+
+      - name: List downloaded artifacts
+        run: ls -R combined_artifacts
+
+      - name: Upload combined artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-python-builds
+          path: combined_artifacts

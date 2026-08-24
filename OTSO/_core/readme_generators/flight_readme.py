@@ -19,14 +19,15 @@ def READMEFlight(Data: FlightData, Printtime: float) -> str:
    
    IntegrationMethod = IntegrationMethodCheck(Data.integrationmodel)
 
-   Internal = InternalModelCheck(Data.model)
+   Internal = InternalModelCheck(Data.internalmag)
 
    External = ExternalModelCheck(Data.model)
 
-   PauseModel = MagnetopauseModelCheck(Data.magnetopause)
+   PauseModel = MagnetopauseModelCheck(Data.magnetopauseinput, Data.spheresize)
 
    today = date.today()
    result.append(f"\n")
+   result.append(f"OTSO Version: {OTSOVersion()}\n")
    result.append(f"Date of OTSO computation: {today}\n")
    result.append(f"Total computation time: {Printtime} seconds\n\n")
    result.append(f"Cutoff Computed: {CutoffComp}\n\n")
@@ -39,12 +40,12 @@ def READMEFlight(Data: FlightData, Printtime: float) -> str:
    else:
      result.append("\n")
    result.append(f"Max Time Step [% of gyrofrequency]: {Data.maxsteppercent*100}\n")
-   result = beta_readme_section(result, Data.totalbetacheck, Data.Berr, Data.adapt)
+   result = beta_readme_section(result, Data.totalbetacheck, Data.betaerror, Data.adaptivestep, Data.fixedstep)
    result = end_conditions_readme_section(result, Data.endparams)
    result.append(f"Zenith = {Data.zenith}\n")
    result.append(f"Azimuth = {Data.azimuth}\n\n")
    result.append(f"Particle Type = {particle}\n\n")
-   result = field_models_readme_section(result, Internal, External, PauseModel)
+   result = field_models_readme_section(result, Internal, External, PauseModel, Data.max_degree)
    result = boberg_readme_section(result, Data.boberg, Data.bobergtype)
    result.append(f"Rigidity:\n")
    result.append(f"Start = {Data.rigidityarray[0]} [GV]\n")

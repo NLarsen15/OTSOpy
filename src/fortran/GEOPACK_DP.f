@@ -84,6 +84,7 @@ C     AUTHOR: N. A. TSYGANENKO
 C
 C
       USE GEOPACK2
+      USE CUSTOMGAUSS
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 :: XGSW, YGSW, ZGSW, HXGSW,HYGSW,HZGSW
 
@@ -113,7 +114,7 @@ C      ON THE VALUE OF THE RADIAL DISTANCE R:
 C
       IRP3=INT(R+2,4)
       NM=3+30/IRP3
-      IF (NM.GT.13) NM=13
+      IF (NM.GT.degreemax) NM=degreemax
 
       K=NM+1
       DO 150 N=1,K
@@ -216,6 +217,7 @@ C     AUTHOR: N. LARSEN
 C
 C
       USE GEOPACK2
+      USE CUSTOMGAUSS
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 :: XGEO, YGEO, ZGEO, HXGEO,HYGEO,HZGEO
 
@@ -243,7 +245,7 @@ C  ON THE VALUE OF THE RADIAL DISTANCE R:
 C
       IRP3=INT(R+2,4)
       NM=3+30/IRP3
-      IF (NM.GT.13) NM=13
+      IF (NM.GT.degreemax) NM=degreemax
 
       K=NM+1
       DO 150 N=1,K
@@ -641,7 +643,11 @@ C  CALCULATE THE ARRAY REC, CONTAINING COEFFICIENTS FOR THE RECURSION RELATIONS,
 C  USED IN THE IGRF SUBROUTINE FOR CALCULATING THE ASSOCIATE LEGENDRE POLYNOMIALS
 C  AND THEIR DERIVATIVES:
 c
-      DO 20 N=1,16
+      if (.not. allocated(REC)) allocate(REC(Gaussianlen))
+      if (.not. allocated(G))   allocate(G(Gaussianlen))
+      if (.not. allocated(H))   allocate(H(Gaussianlen))
+
+      DO 20 N=1,degreemax+1
          N2=2*N-1
          N2=N2*(N2-2)
          DO 21 M=1,N
@@ -650,18 +656,18 @@ c
 21    ENDDO
 20    ENDDO
 
-
-4000  DO 40001 N=1,136
+4000  DO 40001 N=1,Gaussianlen
         G(N)=Ginput(N)
         H(N)=Hinput(N)
 40001 ENDDO
+      
 C
 C   COEFFICIENTS FOR A GIVEN YEAR HAVE BEEN CALCULATED; NOW MULTIPLY
 C   THEM BY SCHMIDT NORMALIZATION FACTORS:
 C
-           G_10=-G(2)
-           G_11= G(3)
-           H_11= H(3)
+      G_10=-G(2)
+      G_11= G(3)
+      H_11= H(3)
 C
 C  NOW CALCULATE GEO COMPONENTS OF THE UNIT VECTOR EzMAG, PARALLEL TO GEODIPOLE AXIS:
 C   SIN(TETA0)*COS(LAMBDA0), SIN(TETA0)*SIN(LAMBDA0), AND COS(TETA0)
@@ -791,7 +797,7 @@ C
       E33=DZ1*Z1+DZ2*Z2+DZ3*Z3
 C
 C   GEODIPOLE TILT ANGLE IN THE GSW SYSTEM: PSI=ARCSIN(DIP,EXGSW)
-C
+C  
       SPS=DIP1*X1+DIP2*X2+DIP3*X3
       CPS=DSQRT(1.D0-SPS**2)
       PSI=DASIN(SPS)

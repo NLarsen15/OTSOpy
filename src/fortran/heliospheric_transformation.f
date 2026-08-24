@@ -54,16 +54,16 @@
 !---------------------------------------------------------------------------------------------------
 c
         SUBROUTINE hae2heeq1(iyr,idoy,secs,xHAE,xHEEQ)
+
+		USE sunMAH
 c
         IMPLICIT NONE
 c
 	INTEGER*4 iyr,idoy
 	REAL*8    secs
 	REAL*8    xHAE(3),xHEEQ(3)
-	REAL*8    T0,Lamda0,st,ct,sl,cl,so,co
 	 
 c
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
 C
         CALL SUN2(iyr,idoy,secs, T0,  Lamda0,st,ct,sl,cl,so,co)
         CALL HAE_HEEQ(xHAE,xHEEQ)
@@ -88,13 +88,12 @@ C
 ! CALLING SEQUENCE: HAE_HEEQ(xHAE,xHEEQ)
 !---------------------------------------------------------------------------------------------------
 	SUBROUTINE HAE_HEEQ(xHAE,xHEEQ)
+
+	USE sunMAH
 c
         IMPLICIT NONE
 c
 	REAL*8 xHAE(3),xHEEQ(3)
-	REAL*8 T0,Lamda0,st,ct,sl,cl,so,co
-c	
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
 c
 ! c	xHEEQ(1) =  (ct*co-st*cl*so)*xHAE(1) + (ct*so+st*cl*co)*xHAE(2)	!old
 ! 	xHEEQ(1) =  (co*ct-so*cl*st)*xHAE(1) + (-co*st-so*cl*ct)*xHAE(2)
@@ -144,16 +143,14 @@ C
 !---------------------------------------------------------------------------------------------------
 c
         SUBROUTINE heeq2hae1(iyr,idoy,secs,xHEEQ,xHAE)
+
+		USE sunMAH
 c
         IMPLICIT NONE
 c
 	INTEGER*4 iyr,idoy
 	REAL*8    secs
 	REAL*8    xHAE(3),xHEEQ(3)
-	REAL*8    T0,Lamda0,st,ct,sl,cl,so,co
-	
-c
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
 C
         CALL SUN2(iyr,idoy,secs, T0, Lamda0,st,ct,sl,cl,so,co)
         CALL HEEQ_HAE(xHEEQ,xHAE)
@@ -178,13 +175,12 @@ C
 ! CALLING SEQUENCE: HEEQ_HAE(xHEEQ,xHAE)
 !---------------------------------------------------------------------------------------------------
 	SUBROUTINE HEEQ_HAE(xHEEQ,xHAE)
+
+	USE sunMAH
 c
         IMPLICIT NONE
 c
 	REAL*8 xHAE(3),xHEEQ(3)
-	REAL*8 T0,Lamda0,st,ct,sl,cl,so,co
-c	
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
 c
 	xHAE(1) =  (ct*co-st*cl*so)*xHEEQ(1) + (-st*co-ct*cl*so)*xHEEQ(2)
      &              + so*sl*xHEEQ(3)
@@ -217,13 +213,12 @@ c
 !---------------------------------------------------------------------------------------------------
 c
         SUBROUTINE hae2hee1(iyr,idoy,secs,xHAE,xHEE)
+	
+	USE sunMAH
+
 	INTEGER*4 iyr,idoy
 	REAL*8    secs
 	REAL*8    xHAE(3),xHEE(3)
-	REAL*8    T0,Lamda0,st,ct,sl,cl,so,co
-	 
-c
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
 C
         CALL SUN2(iyr,idoy,secs, T0, Lamda0,st,ct,sl,cl,so,co)
         CALL HAE_HEE(xHAE,xHEE)
@@ -248,13 +243,14 @@ C
 ! CALLING SEQUENCE: HAE_HEE(xHAE,xHEE)
 !---------------------------------------------------------------------------------------------------
 	SUBROUTINE HAE_HEE(xHAE,xHEE)
+
+	USE sunMAH
 c
         IMPLICIT NONE
 c
 	REAL*8 xHAE(3),xHEE(3)
-	REAL*8 T0,Lamda0,rad,angle,st,ct,sl,cl,so,co
-c	
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
+	REAL*8 rad,angle,ang
+c
 	DATA rad /57.29577951308D0/
 c
         !angle=(Lamda0+180.0D0)/rad
@@ -287,12 +283,10 @@ C
 !---------------------------------------------------------------------------------------------------
 c
         SUBROUTINE hee2hae1(iyr,idoy,secs,xHEE,xHAE,TT)
+	USE sunMAH
 	INTEGER*4 iyr,idoy
 	REAL*8    secs
 	REAL*8    xHAE(3),xHEE(3)
-	REAL*8    T0,Lamda0,st,ct,sl,cl,so,co
-c
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
 C
         CALL SUN2(iyr,idoy,secs, T0, Lamda0,st,ct,sl,cl,so,co)
         CALL HEE_HAE(xHEE,xHAE)
@@ -317,14 +311,14 @@ C
 ! CALLING SEQUENCE: HEE_HAE(xHEE,xHAE)
 !---------------------------------------------------------------------------------------------------
 	SUBROUTINE HEE_HAE(xHEE,xHAE)
+	USE sunMAH
 c
         IMPLICIT NONE
 c
 	REAL*8 xHAE(3),xHEE(3)
-	REAL*8 T0,Lamda0,rad,angle,st,ct,sl,cl,so,co, ang
+	REAL*8 rad,angle,ang
 	REAL*8 pi
-	 
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co        
+c
 	DATA rad /57.29577951308D0/
 		pi = ACOS(0.0D0)*2.0D0
 		angle=-(Lamda0+180)			!Kellerman
@@ -356,16 +350,13 @@ C
 !---------------------------------------------------------------------------------------------------
 c
         SUBROUTINE gse2hee1(iyr,idoy,secs,xGSE,xHEE)
+
+		USE GENER
+		USE sunMAH
 	INTEGER*4 iyr,idoy
 	REAL*8    secs
-	REAL*8    xGSE(3),xHEE(3)
-        REAL*8    ERA,AQUAD,BQUAD
-	REAL*8    T0,Lamda0,st,ct,sl,cl,so,co
-	 
+	REAL*8    xGSE(3),xHEE(3)	 
 c
-        COMMON/GENER/ERA,AQUAD,BQUAD
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
-C
         CALL INITIZE
 	do i=1,3
 	   xGSE(i)=xGSE(i)*ERA
@@ -398,15 +389,11 @@ C
 !---------------------------------------------------------------------------------------------------
 c
         SUBROUTINE hee2gse1(iyr,idoy,secs,xHEE,xGSE)
+		USE GENER
+		USE sunMAH
 	INTEGER*4 iyr,idoy
 	REAL*8    secs
 	REAL*8    xGSE(3),xHEE(3)
-        REAL*8    ERA,AQUAD,BQUAD
-	REAL*8    T0,Lamda0,st,ct,sl,cl,so,co
-	 
-c
-        COMMON/GENER/ERA,AQUAD,BQUAD
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
 C
 	do i=1,3
 	   xHEE(i)=xHEE(i)*1.495985D8
@@ -437,15 +424,15 @@ C
 ! CALLING SEQUENCE: GSE_HEE(xGSE,xHEE)
 !---------------------------------------------------------------------------------------------------
 	SUBROUTINE GSE_HEE(xGSE,xHEE)
+
+	USE sunMAH
 c
         IMPLICIT NONE
 c
 	REAL*8 xGSE(3),xHEE(3)
-	REAL*8 T0,Lamda0,rad,st,ct,sl,cl,so,co
 	REAL*8 r0,e,nu
-	
-c	
-        COMMON /sunMAH/T0,Lamda0,st,ct,sl,cl,so,co
+	REAL*8 rad
+c
 	DATA rad /57.29577951308D0/
 C
 c
@@ -513,7 +500,8 @@ C
 ! 		month=1
 !        MJD=JULDAY(month,dom,iyr)+(idoy-1)-2400001 !2400001=julday(11,17,1858)    old
 
-	CALL DOY_AND_UT2DATE_AND_TIME(iyr,idoy,secs,month,day,hour,mt,sc)
+		CALL DOY_AND_UT2DATE_AND_TIME(iyr,idoy,secs,month,day,
+     &hour,mt,sc)
 	TT=QCDFTDB(iyr,month,day,hour,mt,sc,0)
 	!T0=(MJD-51544.5D0)/36525.0D0   !equation (3)
 	

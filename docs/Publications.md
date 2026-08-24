@@ -6,6 +6,11 @@ This page lists scientific publications utilising **OTSO**.
 
 ## 2026
 
+- **Väisänen, P., Larsen, N., Koldobskiy, S., Similä, M., Pelosi, D., & Orcinha, M. (2026)**
+  *Near-earth cosmic ray modulation index ϕ and neutron monitor cutoff rigidities at hourly cadence: Toward an improved monitoring of solar-terrestrial radiation environment, space weather, and space climate.*
+  Journal of Geophysical Research: Space Physics, 131.
+  https://doi.org/10.1029/2026JA035445
+
 - **Larsen, N., Usoskin, I., Mishev, A., Koldobskiy, S., & Väisänen, P. (2026)**  
   *Reduced Geomagnetic Shielding During the Laschamps Excursion and Its Impact on Cosmic‐Ray‐Induced Atmospheric Radiation.*  
   Journal of Geophysical Research: Space Physics, 131(2).  

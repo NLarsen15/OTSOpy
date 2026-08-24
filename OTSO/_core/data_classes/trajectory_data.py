@@ -57,7 +57,8 @@ class TrajectoryData:
     intmodel: str
     coordsystem: str
     gyropercent: float
-    mpause: str
+    fixedstep: float
+    magnetopause: str
     corenum: int
     g: Sequence[float]
     h: Sequence[float]
@@ -67,11 +68,13 @@ class TrajectoryData:
     inputcoord: str
     Verbose: bool
     AdaptiveExternalModel: bool
-    mindist: float
-    adapt: bool
-    Berr: float
+    mintrapdist: float
+    adaptivestep: bool
+    betaerror: float
     totalbetacheck: bool
     maxsteps: int
+    threadnum: int
+    max_degree: int
 
     datearray: Optional[Sequence[int]] = field(default=None)
     model: Optional[Sequence[int]] = field(default=None)
@@ -79,9 +82,11 @@ class TrajectoryData:
     particlearray: Optional[Sequence[int]] = field(default=None)
     IOPT: Optional[int] = field(default=None)
     windarray: Optional[Sequence[float]] = field(default=None)
-    magnetopause: Optional[int] = field(default=None)
+    magnetopauseinput: Optional[int] = field(default=None)
     coordinatesystem: Optional[str] = field(default=None)
     maxsteppercent: Optional[float] = field(default=None)
     endparams: Optional[Sequence[float]] = field(default=None)
     station_array: Optional[Sequence[np.ndarray]] = field(default=None)
     Kp: Optional[float] = field(default=None)
+    citationlist: list = field(default_factory=list)
+    citationstring: Optional[str] = field(default=None)

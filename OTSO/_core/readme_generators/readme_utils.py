@@ -1,4 +1,11 @@
+from importlib.metadata import version, PackageNotFoundError
 
+
+def OTSOVersion() -> str:
+    try:
+        return version("OTSO")
+    except PackageNotFoundError:
+        return "Unknown"
 
 def OnlineDataStatus(LiveData, serverdata) -> str:
     if LiveData == 1:
@@ -13,13 +20,27 @@ def ParticleCheck(AntiCheck: int) -> str:
     return "anti-particle" if AntiCheck == 1 else "Normal Particle"
 
 def IntegrationMethodCheck(IntModel: int) -> str:
-    IntegrationMethods = ["4th Order Runge-Kutta Method", "Boris Method", "Vay Method", "Higuera-Cary Method"]
-    return IntegrationMethods[IntModel-1] if 0 <= IntModel <= 4 else "Unknown Integration Method"
+    IntegrationMethods = [
+        "4th Order Runge-Kutta Method",
+        "Vay Method",
+        "Higuera-Cary Method",
+        "6th Order Runge-Kutta Method",
+        "5th Order Runge-Kutta Method",
+        "Boris-Buneman Method",
+    ]
+    return IntegrationMethods[IntModel-1] if 1 <= IntModel <= len(IntegrationMethods) else "Unknown Integration Method"
 
-def InternalModelCheck(model: list) -> str:
-    InternalModels = ["None", "IGRF", "Dipole", "Custom Gaussian Coefficients", "Custom Gaussian Coefficients"]
-    return InternalModels[model[0]] if 0 <= model[0] <= 4 else "Unknown Internal Model"
+def InternalModelCheck(model: str) -> str:
+    InternalModels = [
+        "NONE",
+        "IGRF",
+        "Dipole",
+        "Custom Gauss",
+        "CHAOS"
+    ]
 
+    return model if model in InternalModels else "Unknown Internal Model"
+    
 def ExternalModelCheck(model: list) -> str:
         ExternalModels = [
         "No External Field", "Tsyganenko 87 Short", "Tsyganenko 87 Long", "Tsyganenko 89a",
@@ -33,13 +54,16 @@ def ExternalModelCheck(model: list) -> str:
              External = "Tsyganenko 89 Refit"
         return External
 
-def MagnetopauseModelCheck(Magnetopause: int) -> str:
-    PauseModels = [
-        "25Re Sphere", "Aberrated Formisano Model", "Sibeck Model", "Kobel Model","Lin 2010 Model",
-        "Tsyganenko 96 Magnetopause Model", "Tsyganenko 01 Magnetopause Model",
-        "Tsyganenko 01 Storm Magnetopause Model", "Tsyganenko 04 Magnetopause Model",
-    ]
-    return PauseModels[Magnetopause] if 0 <= Magnetopause <= 8 else "Unknown Magnetopause Model"
+def MagnetopauseModelCheck(Magnetopause: int, spheresize: float) -> str:
+    PauseModels = {
+        0: f"{spheresize}Re Sphere",
+        1: "Aberrated Formisano Model",
+        2: "Sibeck Model",
+        3: "Kobel Model",
+        4: "Lin 2010 Model",
+        99: "No Magnetopause Model",
+    }
+    return PauseModels.get(Magnetopause, "Unknown Magnetopause Model")
 
 def CutoffCompCheck(Rcomp: str) -> str:
     if Rcomp == "Vertical" or Rcomp == 0:
@@ -80,9 +104,10 @@ def solar_wind_readme_section(result: str, WindArray: list) -> str:
     result.append(f"SYM-H = {round(WindArray[24], 3)}\n\n")
     return result
 
-def field_models_readme_section(result: str, Internal: str, External: str, PauseModel: str) -> str:
+def field_models_readme_section(result: str, Internal: str, External: str, PauseModel: str, max_degree: int) -> str:
     result.append(f"Magnetic Field Models:\n")
     result.append(f"Internal Model = {Internal}\n")
+    result.append(f"Max Spherical Harmonics Order/Degree = {max_degree}\n")
     result.append(f"External Model = {External}\n\n")
     result.append(f"Magnetopause Model = {PauseModel}\n\n")
     return result
@@ -96,7 +121,7 @@ def boberg_readme_section(result: str, Boberg: bool, BobergType: str) -> str:
 
 
 def beta_readme_section(result: str, TotalBetaCheck: bool, betaerror: float,
-                        adaptivestep: bool) -> str:
+                        adaptivestep: bool, fixedstep: float = 0) -> str:
     if TotalBetaCheck:
         result.append(f"Total Beta Error Check Applied: Yes\n")
     else:
@@ -104,6 +129,8 @@ def beta_readme_section(result: str, TotalBetaCheck: bool, betaerror: float,
 
     if adaptivestep:
         result.append(f"Adaptive Step Size Used\n")
+    elif fixedstep and fixedstep > 0:
+        result.append(f"Fixed Step Size Used: {fixedstep}s\n")
     else:
         result.append(f"Fixed Step Size Used\n")
 

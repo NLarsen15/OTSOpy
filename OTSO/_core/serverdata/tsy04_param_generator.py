@@ -4,27 +4,41 @@ from tqdm import tqdm
 import os
 from numba import njit
 
+from .scratch_dir import SCRATCH_DIR
+from .prior_year import load_prior_year_tail
+
 def TSY04_param_generator(YEAR: int) -> None:
 
-    # --- Read parameters.csv and assign variables dynamically ---
     param_path = os.path.join(os.path.dirname(__file__), 'parameters.csv')
     params_df = pd.read_csv(param_path, delimiter='\t')
     params_df.columns = [c.strip() for c in params_df.columns]
     params = {str(row['Parameter']).strip(): row['Value'] for _, row in params_df.iterrows()}
-    
-    # Assign parameters
+
     DT = [params[f'DT{i+1}']/60 for i in range(6)]
     Bs = [params[f'Bs{i+1}'] for i in range(6)]
     FAC_lam = [params[f'FAC{i+1}_gam'] for i in range(6)]
     FAC_beta = [params[f'FAC{i+1}_beta'] for i in range(6)]
-    
-    # --- Read *_TSY_Inputs.csv file ---
-    tsy_inputs_path = os.path.join(os.path.dirname(__file__), f'{YEAR}_TSY_Inputs.csv')
+
+    tsy_inputs_path = os.path.join(SCRATCH_DIR, f'{YEAR}_TSY_Inputs.csv')
     df = pd.read_csv(tsy_inputs_path)
     df['SYM_H'] = pd.to_numeric(df['SYM_H'], errors='coerce')
-    
-    # --- Find valid intervals ---
-    
+
+    raw_dt_per_hour = [params[f'DT{i+1}'] for i in range(6)]
+    warmup_hours = min(30 * 24, (10 / min(raw_dt_per_hour)) * 1.1)
+    prior_tail = load_prior_year_tail(YEAR, hours=warmup_hours)
+    n_warmup = 0
+    if prior_tail is not None and not prior_tail.empty:
+        warmup_df = pd.DataFrame({
+            'Date': prior_tail['Date'].dt.strftime('%Y-%m-%d %H:%M:%S'),
+            'V': prior_tail['V'],
+            'Density': prior_tail['Density'],
+            'Bz': prior_tail['Bz'],
+            'Pdyn': prior_tail['Pdyn'],
+            'SYM_H': pd.to_numeric(prior_tail['SYM_H'], errors='coerce'),
+        })
+        n_warmup = len(warmup_df)
+        df = pd.concat([warmup_df, df], ignore_index=True)
+
     window_size = 24
     valid_intervals = []
     in_interval = False
@@ -37,7 +51,6 @@ def TSY04_param_generator(YEAR: int) -> None:
         if not (window_bz >= 0).all():
             continue
         avg_symh = window_symh.mean()
-        # Check for invalid values in the current row
         v_invalid = 'V' in df.columns and (df['V'].iloc[idx] == 9999.0 or np.isnan(df['V'].iloc[idx]))
         density_invalid = 'Density' in df.columns and (df['Density'].iloc[idx] == 999.9 or np.isnan(df['Density'].iloc[idx]))
         pdyn_invalid = 'Pdyn' in df.columns and (df['Pdyn'].iloc[idx] == 99.99 or np.isnan(df['Pdyn'].iloc[idx]))
@@ -58,20 +71,11 @@ def TSY04_param_generator(YEAR: int) -> None:
     if in_interval:
         valid_intervals.append((interval_start, len(df)-1))
     
-    # --- Prepare arrays for numba ---
     V = df['V'].values
     Density = df['Density'].values
     Bz = df['Bz'].values
     Date = df['Date'].values
 
-    # Print out any invalid input parameters and their times
-    #for idx in range(len(df)):
-    #    v_invalid = 'V' in df.columns and (df['V'].iloc[idx] == 9999.0 or np.isnan(df['V'].iloc[idx]))
-    #    density_invalid = 'Density' in df.columns and (df['Density'].iloc[idx] == 999.9 or np.isnan(df['Density'].iloc[idx]))
-    #    bz_invalid = 'Bz' in df.columns and np.isnan(df['Bz'].iloc[idx])
-    #    if v_invalid or density_invalid or bz_invalid:
-    #        print(f"Invalid input at idx={idx}, Date={df['Date'].iloc[idx]}: V_invalid={v_invalid}, Density_invalid={density_invalid}, Bz_invalid={bz_invalid}")
-    
     @njit
     def compute_Ws(V, Density, Bz, DT, Bs, FAC_lam, FAC_beta, start_idx, end_idx):
         n = end_idx - start_idx + 1
@@ -106,16 +110,16 @@ def TSY04_param_generator(YEAR: int) -> None:
     
     results = []
     for start_idx, end_idx in valid_intervals:
-        nrows = end_idx - start_idx + 1
         for i, ind in enumerate(range(start_idx, end_idx+1)):
             if i == 0:
                 Wmat = compute_Ws(V, Density, Bz, np.array(DT), np.array(Bs), np.array(FAC_lam), np.array(FAC_beta), start_idx, end_idx)
+            if ind < n_warmup:
+                continue
             results.append({
                 'Date': Date[ind],
                 'W1': round(Wmat[i,0], 2), 'W2': round(Wmat[i,1], 2), 'W3': round(Wmat[i,2], 2),
                 'W4': round(Wmat[i,3], 2), 'W5': round(Wmat[i,4], 2), 'W6': round(Wmat[i,5], 2)
             })
             
-    base_dir = os.path.join(os.path.dirname(__file__))
-    output_filename = os.path.join(base_dir, f'TSY04_W_parameters_{YEAR}.csv')
+    output_filename = os.path.join(SCRATCH_DIR, f'TSY04_W_parameters_{YEAR}.csv')
     pd.DataFrame(results).to_csv(output_filename, index=False)

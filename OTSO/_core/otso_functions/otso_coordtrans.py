@@ -37,6 +37,8 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
     LocationsList = np.array_split(Locations, corenum)
     DateArrayList = np.array_split(DateArrayList, corenum)
 
+    maxdegree = 13
+
 
     start = time.time()
 
@@ -67,7 +69,7 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
         processed = 0
         
         for Data, Date, g, h in zip(LocationsList, DateArrayList, glist, hlist):
-            coordtrans.FortranCoordtrans(Data, Date, CoordIN, CoordOUT, simple_queue, g, h)
+            coordtrans.FortranCoordtrans(Data, Date, CoordIN, CoordOUT, simple_queue, maxdegree, g, h)
             
             processed += len(Data)
             if Verbose:

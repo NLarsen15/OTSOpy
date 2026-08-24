@@ -1,0 +1,96 @@
+{
+  "citations": {
+    "Larsen2023": {
+      "citation": "Larsen, N., Mishev, A., and Usoskin, I., A new open-source geomagnetosphere propagation tool (OTSO) and its applications, Journal of Geophysical Research: Space Physics, Volume 128, e2022JA031061, 2023.",
+      "doi": "10.1029/2022JA031061"
+    },
+    "TSY87": {
+      "citation": "Tsyganenko, N., Global quantitative models of the geomagnetic field in the cislunar magnetosphere for different disturbance levels, Planetary and Space Science, Volume 35(11), pp. 1347-1358, 1987.",
+      "doi": "10.1016/0032-0633(87)90046-8"
+    },
+    "T89": {
+      "citation": "Tsyganenko, N. A., A magnetospheric magnetic field model with a warped tail current sheet, Planetary and Space Science, Volume 37(1), pp. 5-20, 1989.",
+      "doi": "10.1016/0032-0633(89)90066-4"
+    },
+    "T89c": {
+      "citation": "Peredo, M., Stern, D. P., and Tsyganenko, N. A., Are existing magnetospheric models excessively stretched?, Journal of Geophysical Research: Space Physics, Volume 98, p. 15343, 1993.",
+      "doi": "10.1029/93JA01150"
+    },
+    "T89_refit": {
+      "citation": "Placeholder",
+      "doi": "Placeholder"
+    },
+    "T96": {
+      "citation": "Tsyganenko, N., Modeling the Earth's magnetospheric magnetic field confined within a realistic magnetopause, Journal of Geophysical Research: Space Physics, Volume 100(A4), pp. 5599-5612, 1995.",
+      "doi": "10.1029/94JA03193"
+    },
+    "T01a": {
+      "citation": "Tsyganenko, N., A model of the near magnetosphere with a dawn-dusk asymmetry 1. Mathematical structure, Journal of Geophysical Research: Space Physics, Volume 107(A8), pp. SMP 12-1-SMP 12-15, 2002.",
+      "doi": "10.1029/2001JA000219"
+    },
+    "T01b": {
+      "citation": "Tsyganenko, N., A model of the near magnetosphere with a dawn-dusk asymmetry 2. Parameterization and fitting to observations, Journal of Geophysical Research: Space Physics, Volume 107(A8), pp. SMP 10-1-SMP 10-17, 2002.",
+      "doi": "10.1029/2001JA000220"
+    },
+    "T01S": {
+      "citation": "Tsyganenko, N., Singer, H., and Kasper, J., Storm-time distortion of the inner magnetosphere: How severe can it get, Journal of Geophysical Research, Volume 108, 2003.",
+      "doi": "10.1029/2002JA009808"
+    },
+    "T04": {
+      "citation": "Tsyganenko, N. and Sitnov, M., Modeling the dynamics of the inner magnetosphere during strong geomagnetic storms, Journal of Geophysical Research: Space Physics, Volume 110(A3), 2005.",
+      "doi": "10.1029/2004JA010798"
+    },
+    "T15": {
+      "citation": "Tsyganenko, N. and Andreeva, V., A forecasting model of the magnetosphere driven by an optimal solar wind coupling function, Journal of Geophysical Research: Space Physics, Volume 120(10), pp. 8401-8425, 2015.",
+      "doi": "10.1002/2015JA021641"
+    },
+    "T16": {
+      "citation": "Andreeva, V. A., and Tsyganenko, N. A., Reconstructing the magnetosphere from data using radial basis functions, Journal of Geophysical Research: Space Physics, Volume 121, pp. 2249-2263, 2016.",
+      "doi": "10.1002/2015JA022242"
+    },
+    "IGRF14": {
+      "citation": "Beggan, C. D., Kloss, C., Amblard, P. et al., International geomagnetic reference field: the fourteenth generation, Earth, Planets and Space, Volume 78, Article 127, 2026.",
+      "doi": "10.1186/s40623-025-02360-0"
+    },
+    "Formisano79": {
+      "citation": "Formisano, V., Domingo, V., and Wenzel, K.-P., The three-dimensional shape of the magnetopause, Planetary and Space Science, Volume 27(9), pp. 1137-1149, 1979.",
+      "doi": "10.1016/0032-0633(79)90134-X"
+    },
+    "Sibeck1991": {
+      "citation": "Sibeck, D. G., Lopez, R. E., and Roelof, E. C., Solar wind control of the magnetopause shape, location, and motion, Journal of Geophysical Research, Volume 96(A4), pp. 5489-5495, 1991.",
+      "doi": "10.1029/91JA00561"
+    },
+    "Kobel1994": {
+      "citation": "Kobel, E., and Flückiger, E. O., A model of the steady state magnetic field in the magnetosheath, Journal of Geophysical Research, Volume 99(A12), pp. 23617-23622, 1994.",
+      "doi": "10.1029/94JA01778"
+    },
+    "Lin2010": {
+      "citation": "Lin, R. L., Zhang, X. X., Liu, S. Q., Wang, Y. L., and Gong, J. C., A three-dimensional asymmetric magnetopause model, Journal of Geophysical Research: Space Physics, Volume 115(A4), 2010.",
+      "doi": "10.1029/2009JA014235"
+    },
+    "Vay2008": {
+      "citation": "Vay, J.-L., Simulation of beams or plasmas crossing at relativistic velocity, Physics of Plasmas, Volume 15(5), Article 056701, 2008.",
+      "doi": "10.1063/1.2837054"
+    },
+    "Boris1970": {
+      "citation": "Boris, J., Proceedings of the Fourth Conference on Numerical Simulation of Plasmas, Naval Research Laboratory, Washington DC, 1970.",
+      "doi": "N/A"
+    },
+    "HigueraCary2017": {
+      "citation": "Higuera, A. V., and Cary, J. R., Structure-preserving second-order integration of relativistic charged particle trajectories in electromagnetic fields, Physics of Plasmas, Volume 24(5), Article 052104, 2017.",
+      "doi": "10.1063/1.4979989"
+    },
+    "RKa": {
+      "citation": "Runge, C., Über die numerische Auflösung von Differentialgleichungen, Mathematische Annalen, Volume 46(2), pp. 167-178, 1895.",
+      "doi": "10.1007/BF01446807"
+    },
+    "RKb": {
+      "citation": "Kutta, M. W., Beitrag zur näherungsweisen Integration totaler Differentialgleichungen, Zeitschrift für Mathematik und Physik, Volume 46, pp. 435-453, 1901.",
+      "doi": "N/A"
+    },
+    "Boberg1995": {
+      "citation": "Boberg, P. R., Tylka, A. J., Adams Jr., J. H., Flückiger, E. O., and Kobel, E., Geomagnetic transmission of solar energetic protons during the geomagnetic disturbances of October 1989, Geophysical Research Letters, Volume 22(9), pp. 1133-1136, 1995.",
+      "doi": "10.1029/95GL00948"
+    }
+  }
+}

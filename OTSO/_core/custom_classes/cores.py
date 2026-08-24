@@ -12,7 +12,6 @@ class Cores:
         self.SplitPositions()
 
 
-
    def CheckCoreNum(self):
            if(psutil.cpu_count(logical=True) < self.CoreNum):
 

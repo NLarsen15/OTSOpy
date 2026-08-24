@@ -40,6 +40,7 @@ sources = [
   'date_util.f',
   'dipole.f',
   'heliospheric_transformation.f',
+  'igrf14.f',
   'igrf_coef.f',
   'init_nouveau.f',
   'onera_desp_lib.f',

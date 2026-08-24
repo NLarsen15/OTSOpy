@@ -31,12 +31,12 @@
 !  to the epoch of iyr
 !
 !
-       subroutine get_igrf_coeffs(year,gnew,hnew,ierr)
+       subroutine get_igrf_coeffs(year,gnew,hnew)
        USE CUSTOMGAUSS
        USE GEOPACK2
 C
       IMPLICIT NONE
-      REAL*8 year, ierr
+      REAL*8 year
       REAL*8 Gnew(136),Hnew(136)
       INTEGER *4 N
        

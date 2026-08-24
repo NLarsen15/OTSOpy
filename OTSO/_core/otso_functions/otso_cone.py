@@ -5,6 +5,9 @@ import pandas as pd
 import sys
 import queue
 from tqdm import tqdm
+import os
+import tempfile
+import json
 
 from ..custom_classes import cores
 from ..livedata import file_clean
@@ -14,90 +17,63 @@ from ..readme_generators import cone_readme
 from ..data_classes.cone_data import ConeData
 
 
-def OTSO_cone(CoreDataInstance: ConeData) -> list:
+def OTSO_cone(ConeDataInstance: ConeData) -> list:
 
-    cone_inputs.ConeInputs(CoreDataInstance)
+    File = tempfile.NamedTemporaryFile(delete=False, suffix=".json").name
+    lock = mp.Lock()
+
+    cone_inputs.ConeInputs(ConeDataInstance)
 
     ChildProcesses = []
     results = []
 
-    UsedCores = cores.Cores(CoreDataInstance.station_array, CoreDataInstance.corenum)
+    total_cpus = os.cpu_count()
+
+    next_cpu = 0
+
+    UsedCores = cores.Cores(ConeDataInstance.station_array, ConeDataInstance.corenum)
     Positionlists = UsedCores.getPositions()
 
     start = time.time()
 
-    if CoreDataInstance.Verbose:
+    if ConeDataInstance.Verbose:
         print("OTSO Cone Computation Started")
 
-    total_stations = len(CoreDataInstance.station_array)
+    total_stations = len(ConeDataInstance.station_array)
     results = []
 
-    if CoreDataInstance.corenum == 1:
-        num_batches = len(Positionlists)
-        
-        progress_bar = None
-        if CoreDataInstance.Verbose and tqdm is not None:
-            progress_bar = tqdm(total=num_batches, desc="OTSO Running", unit=" batch")
-        elif CoreDataInstance.Verbose:
-            print(f"Processing {total_stations} stations...")
 
-        class SimpleQueue:
-            def __init__(self):
-                self.items = []
-            def put(self, item):
-                self.items.append(item)
-            def get_all(self):
-                return self.items
+    try:
+        if not mp.get_start_method(allow_none=True):
+            mp.set_start_method('spawn')
+    except RuntimeError:
+        pass
+    
+    ProcessQueue = mp.Manager().Queue()
+    for Data in Positionlists:
+        threads = ConeDataInstance.threadnum
+        cpus = set(range(next_cpu, next_cpu + threads))
+        next_cpu += threads
+        Child = mp.Process(target=cone.FortranCone,  args=(Data, ConeDataInstance, ProcessQueue, cpus, File, lock))
+        ChildProcesses.append(Child)
 
-        simple_queue = SimpleQueue()
-        processed = 0
-        for Data in Positionlists:
-            cone.FortranCone(Data, CoreDataInstance, simple_queue)
-            
-            processed += 1
-            if CoreDataInstance.Verbose:
-                if progress_bar is not None:
-                    progress_bar.update(1)
-                else:
-                    percent_complete = (processed / num_batches) * 100
-                    sys.stdout.write(f"\r{percent_complete:.2f}% complete")
-                    sys.stdout.flush()
-        
-        results = simple_queue.get_all()
-        
-        if progress_bar is not None:
-            progress_bar.close()
+    for a in ChildProcesses:
+        a.start()
 
-    else:
+    processed = 0
+
+    progress_bar = None
+    if ConeDataInstance.Verbose and tqdm is not None:
+        progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" cone")
+    elif ConeDataInstance.Verbose:
+        print(f"Processing {total_stations} stations...")
+
+    while processed < total_stations:
         try:
-            if not mp.get_start_method(allow_none=True):
-                mp.set_start_method('spawn')
-        except RuntimeError:
-            pass
-        
-        ProcessQueue = mp.Manager().Queue()
-        for Data in Positionlists:
-            Child = mp.Process(target=cone.FortranCone,  args=(Data, CoreDataInstance, ProcessQueue))
-            ChildProcesses.append(Child)
-
-        for a in ChildProcesses:
-            a.start()
-
-        processed = 0
-
-        progress_bar = None
-        if CoreDataInstance.Verbose and tqdm is not None:
-            progress_bar = tqdm(total=total_stations, desc="OTSO Running", unit=" cone")
-        elif CoreDataInstance.Verbose:
-            print(f"Processing {total_stations} stations...")
-
-        while processed < total_stations:
-          try:
-            result_df = ProcessQueue.get(timeout=0.001)
-            results.append(result_df)
+            ProcessQueue.get(timeout=0.001)
             processed += 1
 
-            if CoreDataInstance.Verbose:
+            if ConeDataInstance.Verbose:
                 if progress_bar is not None:
                     progress_bar.update(1)
                 else:
@@ -105,23 +81,41 @@ def OTSO_cone(CoreDataInstance: ConeData) -> list:
                     sys.stdout.write(f"\r{percent_complete:.2f}% complete")
                     sys.stdout.flush()
 
-          except queue.Empty:
+        except queue.Empty:
             pass
-          
-          time.sleep(0.0001)
 
-        if progress_bar is not None:
-            progress_bar.close()
+        time.sleep(0.0001)
 
-        for b in ChildProcesses:
-            b.join()
+    if progress_bar is not None:
+        progress_bar.close()
+
+    for b in ChildProcesses:
+        b.join()
 
     conedf_list = []
     Rigiditylist = []
 
-    for x in results:
-        conedf_list.append(x[0])
-        Rigiditylist.append(x[1])
+    with open(File, "r", encoding="utf-8") as f:
+        for line in f:
+            record = json.loads(line)
+
+            conerec = record["cone"]
+            conedf_list.append(
+                pd.DataFrame(
+                    conerec["data"],
+                    index=conerec["index"],
+                    columns=conerec["columns"],
+                )
+            )
+
+            rig = record["rigidities"]
+            Rigiditylist.append(
+                pd.DataFrame(
+                    rig["data"],
+                    index=rig["index"],
+                    columns=rig["columns"],
+                )
+            )
 
     merged_cone_df = conedf_list[0]
     for df in conedf_list[1:]:
@@ -137,15 +131,18 @@ def OTSO_cone(CoreDataInstance: ConeData) -> list:
     stop = time.time()
     Printtime = round((stop-start),3)
 
-    if CoreDataInstance.Verbose:
+    if ConeDataInstance.Verbose:
         print("\nOTSO Cone Computation Complete")
         print("Whole Program Took: " + str(Printtime) + " seconds")
     
-    EventDate = datetime(CoreDataInstance.year,CoreDataInstance.month,CoreDataInstance.day,
-                         CoreDataInstance.hour,CoreDataInstance.minute,CoreDataInstance.second)
-    README = cone_readme.READMECone(CoreDataInstance, EventDate, Printtime)
+    EventDate = datetime(ConeDataInstance.year,ConeDataInstance.month,ConeDataInstance.day,
+                         ConeDataInstance.hour,ConeDataInstance.minute,ConeDataInstance.second)
+    README = cone_readme.READMECone(ConeDataInstance, EventDate, Printtime)
 
-    if CoreDataInstance.livedata == "ON" or CoreDataInstance.livedata == 1:
+    if ConeDataInstance.livedata == "ON" or ConeDataInstance.livedata == 1:
         file_clean.remove_files()
+
+    if os.path.exists(File):
+        os.remove(File)
     
     return [merged_cone_df, merged_R_df, README]

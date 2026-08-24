@@ -1,19 +1,20 @@
 import pandas as pd
+import numpy as np
 import csv
 from datetime import datetime, timedelta
 import shutil
 import os
 import requests
 
-from ..utils.tsy_params_utils import OMNI_TSY01_Constants, Pdyn_comp
+from ..utils.tsy_params_utils import Pdyn_comp
 from . import soho_data_pull
+from .scratch_dir import SCRATCH_DIR
+from .prior_year import load_prior_year_tail
 
 def download_omni_data(year):
     url = f"https://spdf.gsfc.nasa.gov/pub/data/omni/high_res_omni/omni_5min{year}.asc"
-    
-    # Get the directory of the current script
-    script_dir = os.path.join(os.path.dirname(__file__))
-    save_path = os.path.join(script_dir, f'omni_5min_{year}.lst')
+
+    save_path = os.path.join(SCRATCH_DIR, f'omni_5min_{year}.lst')
 
     #print(f"Downloading OMNI 5-minute data for year {year}...")
     #print(f"URL: {url}")
@@ -29,7 +30,7 @@ def download_omni_data(year):
                     f.write(chunk)
 
         #print(f"Downloaded successfully: {save_path}")
-        parse_and_convert_to_csv_high_res(save_path, f'omni_{year}_high_res.csv')
+        parse_and_convert_to_csv_high_res(save_path, f'omni_{year}_high_res.csv', year=year)
 
     except requests.exceptions.RequestException as e:
         print(f"Error downloading file: {e}")
@@ -44,10 +45,8 @@ def download_omni_low_res_data(year):
     endfile_name = f'omni2_{year}.dat'
     endfile_name2 = f'omni2_{year+1}.dat'
 
-    script_dir = os.path.dirname(__file__)
-
-    file_path = os.path.join(script_dir, endfile_name)
-    file_path2 = os.path.join(script_dir, endfile_name2)
+    file_path = os.path.join(SCRATCH_DIR, endfile_name)
+    file_path2 = os.path.join(SCRATCH_DIR, endfile_name2)
 
 
     # Download primary year file
@@ -104,7 +103,7 @@ def convert_to_datetime(year, decimal_day, hour, minute):
 
     return datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
 
-def parse_and_convert_to_csv_high_res(input_file, output_file):
+def parse_and_convert_to_csv_high_res(input_file, output_file, year=None):
     """ Parse high-res OMNI data file and convert to CSV with specific columns. """
     with open(input_file, 'r') as datfile:
         lines = datfile.readlines()
@@ -117,8 +116,7 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
 
     output_headers = ["Date", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
 
-    script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)))
-    output_path = os.path.join(script_dir, output_file)
+    output_path = os.path.join(SCRATCH_DIR, output_file)
 
     with open(output_path, mode='w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
@@ -144,32 +142,45 @@ def parse_and_convert_to_csv_high_res(input_file, output_file):
             except (IndexError, ValueError):
                 continue
 
-    add_rolling_averages(output_path)
+    add_rolling_averages(output_path, year=year)
 
-def add_rolling_averages(csv_file_path):
+def add_rolling_averages(csv_file_path, year=None):
     """
     Add 30-minute rolling averages for By and Bz columns to the CSV file.
     OMNI 5-minute data: 30 minutes = 6 data points for rolling average.
+
+    Warm-starts the rolling window from the tail of the previous year's cached data
+    (if available) so the first ~30 minutes of the year aren't computed from a
+    truncated window - see prior_year.load_prior_year_tail.
     """
     try:
         df = pd.read_csv(csv_file_path)
-        
+
         df['Date'] = pd.to_datetime(df['Date'])
-        
+
         df = df.sort_values('Date')
 
         df['By'] = pd.to_numeric(df['By'], errors='coerce')
         df['Bz'] = pd.to_numeric(df['Bz'], errors='coerce')
-        
-        df['By_avg'] = df['By'].rolling(window=6, min_periods=1, center=False).mean()
-        df['Bz_avg'] = df['Bz'].rolling(window=6, min_periods=1, center=False).mean()
-        
- 
+
+        prior_tail = load_prior_year_tail(year, hours=1) if year is not None else None
+        if prior_tail is not None and not prior_tail.empty:
+            warmup = prior_tail[['Date', 'By', 'Bz']].copy()
+            warmup['By'] = pd.to_numeric(warmup['By'], errors='coerce')
+            warmup['Bz'] = pd.to_numeric(warmup['Bz'], errors='coerce')
+            combined_By = pd.concat([warmup['By'], df['By']], ignore_index=True)
+            combined_Bz = pd.concat([warmup['Bz'], df['Bz']], ignore_index=True)
+            df['By_avg'] = combined_By.rolling(window=6, min_periods=1, center=False).mean().iloc[len(warmup):].values
+            df['Bz_avg'] = combined_Bz.rolling(window=6, min_periods=1, center=False).mean().iloc[len(warmup):].values
+        else:
+            df['By_avg'] = df['By'].rolling(window=6, min_periods=1, center=False).mean()
+            df['Bz_avg'] = df['Bz'].rolling(window=6, min_periods=1, center=False).mean()
+
         df['By_avg'] = df['By_avg'].round(2)
         df['Bz_avg'] = df['Bz_avg'].round(2)
-        
+
         df.to_csv(csv_file_path, index=False)
-        
+
     except Exception as e:
         print(f"Error adding rolling averages: {e}")
         print("Continuing without rolling averages...")
@@ -183,8 +194,7 @@ def parse_and_convert_to_csv_low_res(input_file, output_file):
         
     output_headers = ["Date", "Kp", "Kp_raw", "Dst", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
 
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    output_path = os.path.join(script_dir, output_file)
+    output_path = os.path.join(SCRATCH_DIR, output_file)
     
     with open(output_path, mode='w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
@@ -199,40 +209,6 @@ def parse_and_convert_to_csv_low_res(input_file, output_file):
                 Bx_value = row[12]  # Word 13: Bx GSE
                 By_value = row[15]  # Word 16: By GSM
                 Bz_value = row[16]  # Word 17: Bz GSM
-                V_value = row[24]   # Word 25: Plasma speed
-                Density_value = row[23]  # Word 24: Proton Density
-                Pdyn_value = row[28]  # Word 29: Flow Pressure
-
-                csv_writer.writerow([datetime_str, kp_value, kp_raw_value, dst_value, Bx_value, By_value, Bz_value, V_value, Density_value, Pdyn_value])
-            
-            except (IndexError, ValueError):
-                continue
-
-def parse_and_convert_to_csv(input_file, output_file):
-    """ Parse the data file and convert it to a CSV with only specific columns. """
-    with open(input_file, 'r') as datfile:
-        lines = datfile.readlines()
-        
-        rows = [line.split() for line in lines]
-        
-    output_headers = ["Date", "Kp", "Kp_raw", "Dst", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
-
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    output_path = os.path.join(script_dir, output_file)
-    
-    with open(output_path, mode='w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(output_headers)
-
-        for row in rows:
-            try:
-                datetime_str = convert_to_datetime(row[0], row[1], row[2],0)
-                kp_value = process_kp_value(row[38])  # Word 39: Kp
-                kp_raw_value = get_raw_kp_value(row[38])  # Word 39: Kp raw
-                dst_value = row[40]  # Word 41: DST Index
-                Bx_value = row[12]  # Word 13: Bx GSE
-                By_value = row[13]  # Word 14: By GSE
-                Bz_value = row[14]  # Word 15: Bz GSE
                 V_value = row[24]   # Word 25: Plasma speed
                 Density_value = row[23]  # Word 24: Proton Density
                 Pdyn_value = row[28]  # Word 29: Flow Pressure
@@ -258,26 +234,6 @@ def get_raw_kp_value(kp_value):
     except ValueError:
         return kp_value
 
-def extract_row_from_csv(output_file_path, target_datetime):
-    target_datetime_str = target_datetime.strftime('%d/%m/%y %H:00:00')
-
-    with open(output_file_path, 'r') as csvfile:
-        csv_reader = csv.DictReader(csvfile)
-
-        for row in csv_reader:
-            if row['Datetime'] == target_datetime_str:
-                validate_row(row)
-                return row
-
-    print(f"No matching row found for the given datetime: {target_datetime_str}")
-    return None
-
-def validate_row(row):
-    for key in row:
-        if row[key] == 'NaN' or row[key] == '9999.' or row[key] == '999.9':
-            print("ERROR: No valid OMNI data found for given date. Please check other sources. \nOTSO will now terminate.")
-            exit()
-
 def PullOMNI(year):
     download_omni_data(year)
     download_omni_low_res_data(year)
@@ -285,83 +241,67 @@ def PullOMNI(year):
 def PullOMNILowRes(year):
     download_omni_low_res_data(year)
 
-def OMNI_to_csv(year):
-    headers = [
-        'BXGSM', 'By', 'Bz', 'V', 
-        'VYGSE', 'VZGSE', 'Density', 'TEMP', 'IMFFLAG', 'ISWFLAG', 'TILT', 
-        'Pdyn', 'Date'
-    ]
-
-    file = os.path.join(os.path.dirname(__file__), f'{year}_OMNI_5m_with_TS05_variables.dat')
-
-    # If the year is 2010, skip the last line of the file
-    if year == 2010:
-        with open(file, 'r') as f:
-            lines = f.readlines()
-        with open(file, 'w') as f:
-            f.writelines(lines[:-1])
-
-    data = pd.read_csv(file, sep=r'\s+', header=None)
-
-    IYEAR = data[0]
-    IDAY = data[1]
-    IHOUR = data[2]
-    MIN = data[3]
-
-    def split_column(value):
-       if '*' in str(value):
-           return value.split('*')[0], 0.0
-       return float(value), None
-
-    split_values = data[13].apply(split_column)
-    data[13] = split_values.apply(lambda x: x[0])
-
-    if split_values.apply(lambda x: x[1]).notna().any():
-        data.insert(14, 'new_column', split_values.apply(lambda x: x[1]).fillna(0.0))
-
-    data[13] = data[13].astype(float)
-    
-    data['Date'] = [
-        datetime(int(year), 1, 1) + pd.to_timedelta(int(day)-1 if int(day) > 0 else 0, unit='d') + \
-        pd.to_timedelta(int(hour), unit='h') + pd.to_timedelta(int(minute), unit='m')
-        for year, day, hour, minute in zip(IYEAR, IDAY, IHOUR, MIN)
-    ]
-
-    data = data.drop(columns=[0, 1, 2, 3])
-    data.columns = headers
-
-    columns_to_remove = ['BXGSM', 'VYGSE', 'VZGSE', 'TEMP', 'IMFFLAG', 'ISWFLAG', 'TILT']
-    data = data.drop(columns=columns_to_remove, errors='ignore')
-
-    remaining_columns = [col for col in headers if col != 'Date' and col not in columns_to_remove]
-    data = data[['Date'] + remaining_columns] 
-    
-    csv_filename = os.path.join(os.path.dirname(__file__), f'{year}_TSY_Data.csv')
-    data.to_csv(csv_filename, index=False)
-
-
 def TSY01(File):
-    filepath = os.path.join(os.path.dirname(__file__), File)
+    """
+    Computes rolling G1/G2/G3 (TSY01 storm-time indices) for each row from a trailing,
+    time-based window: up to 12 rows (~1h at 5-min resolution) further restricted to
+    Date > current_row_time - 1h. G1 and G2 are the window MEAN of a per-row term; G3
+    is the window SUM (not mean) of a different per-row term divided by 2000 - this
+    mirrors the original per-row implementation exactly (verified by fuzz-testing
+    against it across thousands of synthetic rows, including gaps, filler V==9999.0,
+    negative V, and the By==Bz==0 edge case).
+
+    Vectorized because the original ran a full Python loop with a fresh pandas window
+    slice per row - about 105k rows/year of 5-minute data, which made this the slowest
+    step in downloading a new year's server data.
+
+    One deliberate behavior change: if Bz is NaN, the original crashes with
+    UnboundLocalError (its if/elif on Bz<0 / Bz>=0 leaves `Bs` unassigned for NaN).
+    Here it propagates as NaN instead, poisoning just that row's window - NaN Bz is not
+    expected in practice (OMNI files always populate the field, filler value or not),
+    but crashing on it serves nothing.
+    """
+    filepath = os.path.join(SCRATCH_DIR, File)
     data = pd.read_csv(filepath)
 
     data['Date'] = pd.to_datetime(data['Date'])
 
-    results = []
-    G1_values = []
-    G2_values = []
-    G3_values = []
+    By = data['By'].to_numpy(dtype=float)
+    Bz = data['Bz'].to_numpy(dtype=float)
+    V = data['V'].to_numpy(dtype=float)
+    N = data['Density'].to_numpy(dtype=float)
 
-    for i in range(len(data)):
-        current_time = data['Date'].iloc[i]
-        start_index = max(0, i - 11)
-        relevant_rows = data.iloc[start_index:i + 1]
-        relevant_rows = relevant_rows[relevant_rows['Date'] > (current_time - pd.Timedelta(hours=1))]
-    
+    V = np.where(V == 9999.0, np.nan, np.abs(V))
 
-        G1,G2,G3 = OMNI_TSY01_Constants(relevant_rows)
-        G1_values.append(G1)
-        G2_values.append(G2)
-        G3_values.append(G3)
+    B = np.sqrt(By ** 2 + Bz ** 2)
+    h = (B / 40) ** 2 / (1 + B / 40)
+
+    phi = np.arctan2(By, Bz)
+    phi = np.where(phi <= 0, phi + 2 * np.pi, phi)
+    phi = np.where((By == 0) & (Bz == 0), 0.0, phi)
+
+    Bs = np.where(Bz < 0, np.abs(Bz), np.where(Bz >= 0, 0.0, np.nan))
+
+    term1 = V * h * np.sin(phi / 2) ** 3  # feeds G1 (window mean)
+    term2 = V * Bs                        # feeds G2 (window mean)
+    term3 = N * V * Bs                    # feeds G3 (window sum)
+
+    dt_index = pd.DatetimeIndex(data['Date'])
+    row_count = pd.Series(1.0, index=dt_index).rolling('1h', min_periods=1).sum()
+
+    def rolling_sum_poisoned(term):
+        s = pd.Series(term, index=dt_index)
+        window_sum = s.rolling('1h', min_periods=1).sum()
+        any_nan_in_window = s.isna().astype(float).rolling('1h', min_periods=1).max() > 0
+        return window_sum.where(~any_nan_in_window, np.nan)
+
+    sum1 = rolling_sum_poisoned(term1)
+    sum2 = rolling_sum_poisoned(term2)
+    sum3 = rolling_sum_poisoned(term3)
+
+    G1_values = np.round((sum1 / row_count).to_numpy(), 2)
+    G2_values = np.round((0.005 * sum2 / row_count).to_numpy(), 2)
+    G3_values = np.round((sum3 / 2000).to_numpy(), 2)
 
     pdyn_index = data.columns.get_loc('Pdyn') + 1
 
@@ -389,21 +329,20 @@ def CombineLowRes(input_file, year):
         if col not in ['Date', 'Kp', 'Kp_raw', 'Dst']:
             new_df[col] = 0
 
-    new_df.to_csv(os.path.join(os.path.dirname(__file__), f'{year}_TSY_Inputs.csv'), index=False)
-    source_file = os.path.join(os.path.dirname(__file__), f'{year}_TSY_Inputs.csv')
+    new_df.to_csv(os.path.join(SCRATCH_DIR, f'{year}_TSY_Inputs.csv'), index=False)
+    source_file = os.path.join(SCRATCH_DIR, f'{year}_TSY_Inputs.csv')
     destination_folder = os.path.join(os.path.dirname(__file__), "ServerData")
     os.makedirs(destination_folder, exist_ok=True)
     destination_file = os.path.join(destination_folder, os.path.basename(source_file))
     shutil.move(source_file, destination_file)
 
 def Combine(high_res_file, low_res_file, TSY15file, year):
-    base_dir = os.path.join(os.path.dirname(__file__))
+    base_dir = SCRATCH_DIR
     high_res_file = os.path.join(base_dir, high_res_file)
     low_res_file = os.path.join(base_dir, low_res_file)
     TSY15file = os.path.join(base_dir, TSY15file)
     futurefile = os.path.join(base_dir, f'omni_{year+1}_low_res.csv')
 
-    #partial_df = pd.read_csv(TSYfile, parse_dates=['Date']).set_index('Date')
     high_res_df = pd.read_csv(high_res_file, parse_dates=['Date']).set_index('Date')
     low_res_df = pd.read_csv(low_res_file, parse_dates=['Date']).set_index('Date')
     
@@ -433,12 +372,6 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
                 if 'N_index_normalised' in tsy15_df.columns:
                     tsy15_df = tsy15_df.rename(columns={'N_index_normalised': 'N_index'})
                 
-                #print(f"Loaded TSY15 data with columns: {available_columns}")
-                #if 'N_index_normalised' in available_columns:
-                    #print("Renamed N_index_normalised to N_index")
-            #else:
-                #print("Warning: No N_index, B_index, or SYM_H columns found in TSY15 file")
-                #tsy15_df = None
         except Exception as e:
             print(f"Error loading TSY15 file: {e}")
             tsy15_df = None
@@ -466,7 +399,6 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
     # Reindex and combine with priority: high_res > partial > low_res > tsy15
     combined_df = pd.DataFrame(index=full_index)
     combined_df = combined_df.combine_first(high_res_df)
-    #combined_df = combined_df.combine_first(partial_df)
     combined_df = combined_df.combine_first(low_res_5min)
     if tsy15_df is not None:
         combined_df = combined_df.combine_first(tsy15_df)
@@ -513,7 +445,6 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
     combined_df = combined_df[existing_columns]
     combined_df = combined_df.drop_duplicates(subset='Date', keep='first')
 
-    # Write output CSV
     output_file = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
     combined_df.to_csv(output_file, index=False)
     
@@ -521,13 +452,12 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
         if year >= 1996:
             SohoCombine(f'{year}_TSY_Inputs.csv', f'{year}_CELIAS_Proton_Monitor_5min.csv', year)
 
-    # --- Interpolate short data gaps (<1 hour) after SohoCombine, treating FILLER_VALUES as gaps ---
     tsy_inputs_path = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
     df = pd.read_csv(tsy_inputs_path, parse_dates=['Date'])
     df = df.set_index('Date')
     FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", "9999.0",
                      "9999.9", "999.9", "99999.0", "-1.00e+05", "999999", "999.99", "99.99"}
-    # Also include numeric versions of filler values
+
     FILLER_VALUES_NUMERIC = set()
     for val in FILLER_VALUES:
         try:
@@ -540,10 +470,10 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
         df[col] = df[col].replace(FILLER_VALUES, pd.NA)
         # Replace numeric versions
         df[col] = df[col].replace(list(FILLER_VALUES_NUMERIC), pd.NA)
-    # Convert all columns to numeric where possible (to allow interpolation)
+
     for col in df.columns:
         df[col] = pd.to_numeric(df[col], errors='coerce')
-    # For each column, interpolate only short gaps (max 36 consecutive NaNs)
+
     for col in df.columns:
         if df[col].isnull().any():
             isnan = df[col].isnull()
@@ -559,63 +489,57 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
                     else:
                         mask.iloc[start:end] = False
                     start = None
-            # Edge case: gap at end
+
             if start is not None:
                 end = len(isnan)
                 if end - start <= 36:
                     mask.iloc[start:end] = True
                 else:
                     mask.iloc[start:end] = False
-            # Interpolate only short gaps
+
             df.loc[mask, col] = df[col].interpolate(limit=36, limit_direction='both')[mask]
     df = df.reset_index()
     df.to_csv(tsy_inputs_path, index=False)
 
 def CombineTSY04(TSY04file, year):
-    base_dir = os.path.join(os.path.dirname(__file__))
+    base_dir = SCRATCH_DIR
     TSY04file = os.path.join(base_dir, TSY04file)
     mainfile = os.path.join(base_dir, f'{year}_TSY_Inputs.csv')
 
-    # Read both CSVs
+
     main_df = pd.read_csv(mainfile, parse_dates=['Date'])
     tsy04_df = pd.read_csv(TSY04file, parse_dates=['Date'])
 
-    # Merge on Date, keeping all rows from main_df
+
     merged = pd.merge(main_df, tsy04_df, on='Date', how='left', suffixes=('', '_TSY04'))
 
-    # Find where to insert W1-W6 (after G3)
     cols = list(merged.columns)
     try:
         g3_idx = cols.index('G3')
     except ValueError:
-        # If G3 not found, just append at the end
+
         g3_idx = len(cols) - 1
 
-    # Remove W1-W6 if already present in main_df
     for w in ['W1','W2','W3','W4','W5','W6']:
         if w in cols:
             cols.remove(w)
 
-    # Insert W1-W6 after G3
     for i, w in enumerate(['W1','W2','W3','W4','W5','W6']):
         if w in merged.columns:
             cols.insert(g3_idx + 1 + i, w)
 
-    # Reorder columns
     merged = merged[cols]
 
-    # Save back to mainfile
     merged.to_csv(mainfile, index=False)
 
 def move_to_server_data(file_name):
-    base_dir = os.path.join(os.path.dirname(__file__))
     destination_folder = os.path.join(os.path.dirname(__file__), "ServerData")
-    output_file = os.path.join(base_dir, file_name)
+    output_file = os.path.join(SCRATCH_DIR, file_name)
     os.makedirs(destination_folder, exist_ok=True)
     shutil.move(output_file, os.path.join(destination_folder, os.path.basename(output_file)))
 
 def SohoCombine(TSYfile, celias_file, year):
-    base_dir = os.path.join(os.path.dirname(__file__))
+    base_dir = SCRATCH_DIR
     TSYfile = os.path.join(base_dir, TSYfile)
     celias_file = os.path.join(base_dir, celias_file)
 
@@ -624,37 +548,24 @@ def SohoCombine(TSYfile, celias_file, year):
     celias_df = pd.read_csv(celias_file, parse_dates=['Date']).set_index('Date')
 
 
-    # Only update V and Density where they are 9999.0 or 999.9, respectively
+
     for idx, row in tsy_df.iterrows():
-        # Replace V and Density if needed
-        v_replaced = False
-        density_replaced = False
         if 'V' in tsy_df.columns and idx in celias_df.index:
             if row['V'] == 9999.0:
-                old_v = row['V']
                 new_v = celias_df.at[idx, 'V']
                 tsy_df.at[idx, 'V'] = new_v
-                v_replaced = True
-                #print(f"[SOHO REPLACE] {idx}: V replaced {old_v} -> {new_v}")
         if 'Density' in tsy_df.columns and idx in celias_df.index:
             if row['Density'] == 999.9:
-                old_density = row['Density']
                 new_density = celias_df.at[idx, 'Density']
                 tsy_df.at[idx, 'Density'] = new_density
-                density_replaced = True
-                #print(f"[SOHO REPLACE] {idx}: Density replaced {old_density} -> {new_density}")
-        # Recompute Pdyn if needed
         if 'Pdyn' in tsy_df.columns:
             if row['Pdyn'] == 99.99:
-                # Use the possibly updated V and Density
                 new_v = tsy_df.at[idx, 'V']
                 new_density = tsy_df.at[idx, 'Density']
-                # Only compute if both are not NaN
                 if pd.notna(new_v) and pd.notna(new_density):
                     try:
                         new_pdyn = Pdyn_comp(float(new_density), float(new_v))
                         tsy_df.at[idx, 'Pdyn'] = new_pdyn
-                        #print(f"[SOHO REPLACE] {idx}: Pdyn recomputed to {new_pdyn} using V={new_v}, Density={new_density}")
                     except Exception:
                         pass
 
@@ -667,17 +578,16 @@ def SohoCombine(TSYfile, celias_file, year):
 
 def Omnidelete(OMNIYEAR):
 
-    current_directory = os.path.join(os.path.dirname(__file__))
+    current_directory = SCRATCH_DIR
 
     filelist = [
-        f'{OMNIYEAR}_TSY_Data.csv',
         f'omni_{OMNIYEAR}_low_res.csv',
         f'omni_5min_{OMNIYEAR}.lst',
         f'omni2_{OMNIYEAR}.dat',
         f'{OMNIYEAR}_IMF_&_SW_gaps_le_3hrs_filled.txt',
         f'{OMNIYEAR}_IMF_gaps_le_3hrs_filled.txt',
         f'{OMNIYEAR}_Interval_list.txt',
-        f'{OMNIYEAR}_OMNI_5m_with_TS05_variables.dat',
+        f'{OMNIYEAR}_OMNI_5m_with_TA15_drivers.dat',
         f'omni_{OMNIYEAR+1}_low_res.csv',
         f'omni2_{OMNIYEAR+1}.dat',
         f'omni_{OMNIYEAR}_high_res.csv',
@@ -686,9 +596,10 @@ def Omnidelete(OMNIYEAR):
         f'omni_5min{OMNIYEAR}.asc',
         f'{OMNIYEAR}_CELIAS_Proton_Monitor_5min.csv',
         f'{OMNIYEAR}_CELIAS_Proton_Monitor_5min.zip',
-        f'TSY04_W_parameters_{OMNIYEAR}.csv'
+        f'TSY04_W_parameters_{OMNIYEAR}.csv',
+        f'{OMNIYEAR}_TSY_Inputs.csv',
     ]
- 
+
     for i in filelist:
         file_path = os.path.join(current_directory, i)
         if os.path.exists(file_path):
@@ -701,7 +612,7 @@ def Omnidelete(OMNIYEAR):
 
 def OmnideleteLowRes(OMNIYEAR):
 
-    current_directory = os.path.join(os.path.dirname(__file__))
+    current_directory = SCRATCH_DIR
 
     file2 = f'omni_{OMNIYEAR}_low_res.csv'
     file3 = f'omni_{OMNIYEAR+1}_low_res.csv'

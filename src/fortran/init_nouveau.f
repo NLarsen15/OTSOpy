@@ -18,20 +18,17 @@
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE INIT_DTD(year)
+
+       USE dipigrf
 C
        IMPLICIT NONE
 C
        INTEGER*4 ierr
        REAL*8    year
-       REAL*8    ga(136),ha(136)
-       REAL*8    xc,yc,zc                  
+       REAL*8    ga(136),ha(136)              
        REAL*8    thet,phit           
-       REAL*8    ct,st,cp,sp
-       REAL*8    Bo
 C
-       COMMON /dipigrf/Bo,xc,yc,zc,ct,st,cp,sp
-C
-       call get_igrf_coeffs(year,ga,ha,ierr)
+       call get_igrf_coeffs(year,ga,ha)
 c
        call get_terms(ga,ha,thet,phit,xc,yc,zc,Bo)
 c       write(6,*)Bo
@@ -49,27 +46,19 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE INIT_GSM(iyr,iday,secs,psi)
+
+       USE Soleil
+       USE dipigrf
+       USE sundip
 C
        IMPLICIT NONE
 C
        INTEGER*4   iyr,iday
        REAL*8      secs
-       REAL*8      gst,Slong,Srasn,Sdec
-       REAL*8      xS,yS,zS                     
+       REAL*8      gst,Slong,Srasn,Sdec                   
        REAL*8      xDip,yDip,zDip               
-       REAL*8      xD,yD,zD                     
-       REAL*8      xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
-       REAL*8      xc,yc,zc
-       REAL*8      ct,st,cp,sp
-       REAL*8      cgsta,sgsta
-       REAL*8      Bo
        REAL*8      norm
        REAL*8      psi
-C
-       COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-       COMMON /dipigrf/Bo,xc,yc,zc,ct,st,cp,sp
-       COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
 C
        CALL SUN(iyr,iday,secs,gst,Slong,Srasn,Sdec)
 C
@@ -126,19 +115,15 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE GEO_GSM(xGEO,xGSM)
+
+      USE Soleil
+      USE sundip
 C
       IMPLICIT NONE
 C
       REAL*8    xGEO(3)
       REAL*8    xGSM(3)
       REAL*8    xGEI,yGEI,zGEI
-        REAL*8    xS,yS,zS,cgsta,sgsta
-        REAL*8    xD,yD,zD                     
-        REAL*8    xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
-C
-      COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-      COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
 C
       xGEI =  cgsta*xGEO(1) - sgsta*xGEO(2)
       yGEI =  sgsta*xGEO(1) + cgsta*xGEO(2)
@@ -155,19 +140,15 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE GSM_GEO(xGSM,xGEO)
+
+      USE Soleil
+      USE sundip
 C
       IMPLICIT NONE
 C
       REAL*8    xGSM(3)
       REAL*8    xGEO(3)
       REAL*8    xGEI,yGEI,zGEI
-        REAL*8    xS,yS,zS,cgsta,sgsta
-        REAL*8    xD,yD,zD                     
-        REAL*8    xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
-C
-      COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-        COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
 C
       xGEI = xS*xGSM(1) + xSD*xGSM(2) + xSSD*xGSM(3)
       yGEI = yS*xGSM(1) + ySD*xGSM(2) + ySSD*xGSM(3)
@@ -183,14 +164,13 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE GEO_GEI(xGEO,xGEI)
+
+      USE Soleil
 C
       IMPLICIT NONE
 C
       REAL*8    xGEO(3)
       REAL*8    xGEI(3)
-        REAL*8    xS,yS,zS,cgsta,sgsta
-C
-      COMMON /Soleil/xS,yS,zS,cgsta,sgsta
 C
       xGEI(1) =  cgsta*xGEO(1) - sgsta*xGEO(2)
       xGEI(2) =  sgsta*xGEO(1) + cgsta*xGEO(2)
@@ -202,14 +182,13 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE GEI_GEO(xGEI,xGEO)
+
+      USE Soleil
 C
       IMPLICIT NONE
 C
       REAL*8    xGEI(3)
       REAL*8    xGEO(3)
-        REAL*8    xS,yS,zS,cgsta,sgsta
-C
-      COMMON /Soleil/xS,yS,zS,cgsta,sgsta
 C
       xGEO(1) =  cgsta*xGEI(1) + sgsta*xGEI(2)
       xGEO(2) = -sgsta*xGEI(1) + cgsta*xGEI(2)
@@ -221,19 +200,15 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE GEO_SM(xGEO,xSM)
+
+      USE Soleil
+      USE sundip
 C
       IMPLICIT NONE
 C
       REAL*8    xGEO(3)
       REAL*8    xSM(3)
       REAL*8    xGEI,yGEI,zGEI
-        REAL*8    xS,yS,zS,cgsta,sgsta
-        REAL*8    xD,yD,zD                     
-        REAL*8    xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
-C
-      COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-        COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
 C
       xGEI =  cgsta*xGEO(1) - sgsta*xGEO(2)
       yGEI =  sgsta*xGEO(1) + cgsta*xGEO(2)
@@ -249,19 +224,15 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE SM_GEO(xSM,xGEO)
+
+      USE Soleil
+      USE sundip
 C
       IMPLICIT NONE
 C
       REAL*8    xSM(3)
       REAL*8    xGEO(3)
       REAL*8    xGEI,yGEI,zGEI
-        REAL*8    xS,yS,zS,cgsta,sgsta
-        REAL*8    xD,yD,zD                     
-        REAL*8    xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
-C
-      COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-        COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
 C
       xGEI = xSDD*xSM(1) + xSD*xSM(2) + xD*xSM(3)
       yGEI = ySDD*xSM(1) + ySD*xSM(2) + yD*xSM(3)
@@ -277,19 +248,15 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE SM_GSM(xSM,xGSM)
+
+      USE Soleil
+      USE sundip
 C
       IMPLICIT NONE
 C
       REAL*8    xSM(3)
       REAL*8    xGSM(3)
       REAL*8    xGEI,yGEI,zGEI
-        REAL*8    xS,yS,zS,cgsta,sgsta
-        REAL*8    xD,yD,zD                     
-        REAL*8    xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
-C
-      COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-        COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
 C
       xGEI = xSDD*xSM(1) + xSD*xSM(2) + xD*xSM(3)
       yGEI = ySDD*xSM(1) + ySD*xSM(2) + yD*xSM(3)
@@ -305,19 +272,15 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE GSM_SM(xGSM,xSM)
+
+      USE Soleil
+      USE sundip
 C
       IMPLICIT NONE
 C
       REAL*8    xGSM(3)
       REAL*8    xSM(3)
       REAL*8    xGEI,yGEI,zGEI
-        REAL*8    xS,yS,zS,cgsta,sgsta
-        REAL*8    xD,yD,zD                   
-        REAL*8    xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
-C
-      COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-        COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
 C
       xGEI = xS*xGSM(1) + xSD*xGSM(2) + xSSD*xGSM(3)
       yGEI = yS*xGSM(1) + ySD*xGSM(2) + ySSD*xGSM(3)
@@ -333,16 +296,13 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE GEO_MAG(xGEO,xMAG)
+
+       USE dipigrf
 C
        IMPLICIT NONE
 C
        REAL*8    xGEO(3)
        REAL*8    xMAG(3)
-       REAL*8    xc,yc,zc                 
-       REAL*8    ct,st,cp,sp
-       REAL*8    Bo
-C
-       COMMON /dipigrf/Bo,xc,yc,zc,ct,st,cp,sp
 C
        xMAG(1) =  xGEO(1)*ct*cp + xGEO(2)*ct*sp - xGEO(3)*st
        xMAG(2) = -xGEO(1)*sp    + xGEO(2)*cp
@@ -354,16 +314,13 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE MAG_GEO(xMAG,xGEO)
+
+       USE dipigrf
 C
        IMPLICIT NONE
 C
        REAL*8    xGEO(3)
        REAL*8    xMAG(3)
-       REAL*8    xc,yc,zc                 
-       REAL*8    ct,st,cp,sp
-       REAL*8    Bo
-C
-       COMMON /dipigrf/Bo,xc,yc,zc,ct,st,cp,sp
 C
        xGEO(1) =  xMAG(1)*ct*cp - xMAG(2)*sp + xMAG(3)*st*cp
        xGEO(2) =  xMAG(1)*ct*sp + xMAG(2)*cp + xMAG(3)*st*sp
@@ -375,22 +332,18 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE GEO_GSE(xGEO,xGSE)
+
+       USE Soleil
+       USE sundip
 C
        IMPLICIT NONE
 C
       REAL*8    xGSE(3)
       REAL*8    xGEO(3)
       REAL*8    xGEI,yGEI,zGEI
-        REAL*8    xS,yS,zS,cgsta,sgsta
-        REAL*8    xD,yD,zD                   
-        REAL*8    xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
       REAL*8    aa,bb,y1,y2,y3
 C
-       COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-       COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
-C
-        aa = -0.3978D0
+      aa = -0.3978D0
       bb = 0.9175D0
 C
         y1 = aa*zS-bb*yS
@@ -411,20 +364,16 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE GSE_GEO(xGSE,xGEO)
+
+       USE Soleil
+       USE sundip
 C
        IMPLICIT NONE
 C
       REAL*8    xGSE(3)
       REAL*8    xGEO(3)
       REAL*8    xGEI,yGEI,zGEI
-        REAL*8    xS,yS,zS,cgsta,sgsta
-        REAL*8    xD,yD,zD                    
-        REAL*8    xSD,ySD,zSD,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
       REAL*8    aa,bb,y1,y2,y3,det
-C
-       COMMON /Soleil/xS,yS,zS,cgsta,sgsta
-       COMMON /sundip/xD,yD,zD,xSD,ySD,zSD
-     &      ,xSSD,ySSD,zSSD,xSDD,ySDD,zSDD
 C
         aa = -0.3978D0
       bb = 0.9175D0
@@ -454,14 +403,14 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE SPH_CAR(r,lati,longi,x)
+
+       USE rconst
 C
        IMPLICIT NONE
 C
        REAL*8     r,lati,longi
        REAL*8     colati
        REAL*8     x(3)
-        REAL*8     pi,rad
-        common /rconst/rad,pi
 C
         CALL INITIZE
        colati = pi/2.d0 - lati*rad
@@ -476,13 +425,13 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE CAR_SPH(x,r,lati,longi)
+
+       USE rconst
 C
        IMPLICIT NONE
        REAL*8     r,lati,longi
        REAL*8     SQ
        REAL*8     x(3)
-        REAL*8     pi,rad
-        common /rconst/rad,pi
 C
         CALL INITIZE
        SQ = x(1)*x(1) + x(2)*x(2)
@@ -505,6 +454,8 @@ C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE SPH_CAR_VECT(r,lati,longi,sph,x)
+
+       USE rconst
 C
        IMPLICIT NONE
 C
@@ -512,8 +463,6 @@ C
        REAL*8     colati
        REAL*8     st,ct,sp,cp
        REAL*8     sph(3),x(3)
-        REAL*8     pi,rad
-        common /rconst/rad,pi
 C
         CALL INITIZE
        colati = pi/2.d0 - lati*rad
@@ -534,14 +483,14 @@ C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
        SUBROUTINE CAR_SPH_VECT(r,lati,longi,x,sph)
 C
+       USE rconst
+
        IMPLICIT NONE
 C
        REAL*8     r,lati,longi
        REAL*8     colati
        REAL*8     st,ct,sp,cp
        REAL*8     sph(3),x(3)
-        REAL*8     pi,rad
-        common /rconst/rad,pi
 C
         CALL INITIZE
        colati = pi/2.d0 - lati*rad
@@ -560,6 +509,8 @@ C
 C
 C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       SUBROUTINE SUN(iyr,iday,secs,gst,Slong,Srasn,Sdec)
+
+      USE rconst
 C
       IMPLICIT NONE
 C
@@ -577,8 +528,7 @@ C
         REAL*8 aux
         REAL*8 dj,fday
       REAL*8 t,vl,g,obliq,slp,sind,cosd
-        REAL*8     pi,rad
-        common /rconst/rad,pi
+C
 C
       IF (iyr.LT.1900 .OR. iyr.GT.2099) RETURN
 C
@@ -1067,6 +1017,7 @@ c
       g22 = ga(6)
       h21 = ha(5)
       h22 = ha(6)
+
 c
       b02 = g10*g10 + g11*g11 + h11*h11
       b0 = sqrt(b02)
@@ -1091,16 +1042,16 @@ C
 C+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C
       SUBROUTINE calcul_GH1
+
+      USE MODEL
+      USE dgrf
 C
       IMPLICIT NONE
 C
       INTEGER*4  I,J,L,M,N
-      REAL*8     ga(66),ha(66)
-      REAL*8     GH1(144),GH(144)
+      REAL*8     GH(144)
       REAL*8     X,F,F0
-C
-      COMMON /MODEL/GH1
-      COMMON /dgrf/Ga,Ha
+
 C
       L = 0
       M = 0
@@ -1141,6 +1092,9 @@ C
 C*********************************************************************
       SUBROUTINE RLL_GDZ (rr,lati,longi,alti)
 C rr adimensionne, alti en km, longi en degres, lati en degres
+        
+        USE GENER
+        USE rconst
 C
         IMPLICIT NONE
 C
@@ -1149,11 +1103,6 @@ C
         REAL*8 CT,ST,CP,SP
         REAL*8 D
       REAL*8 bb,cc
-        REAL*8 ERA,AQUAD,BQUAD
-C
-        COMMON/GENER/ERA,AQUAD,BQUAD
-        REAL*8     pi,rad
-        common /rconst/rad,pi
 C
         CALL INITIZE
 C
@@ -1175,6 +1124,9 @@ C lati,longi en degres
 C x,y,z GEO en adimensionne
 C
         SUBROUTINE GDZ_GEO(lati,longi,alti,xx,yy,zz)
+
+        USE GENER
+        USE rconst
 C
         IMPLICIT NONE
 C
@@ -1182,11 +1134,6 @@ C
         REAL*8 alti,xx,yy,zz
         REAL*8 CT,ST,CP,SP
         REAL*8 D,RHO
-        REAL*8 ERA,AQUAD,BQUAD
-C
-        COMMON/GENER/ERA,AQUAD,BQUAD
-        REAL*8     pi,rad
-        common /rconst/rad,pi
 C
         CALL INITIZE
 C
@@ -1209,6 +1156,9 @@ C lati,longi en degres
 C alti en km
 C
       SUBROUTINE GEO_GDZ(xx,yy,zz,lati,longi,alti)
+
+      USE GENER
+      USE rconst
 C
       IMPLICIT NONE
 C
@@ -1218,12 +1168,8 @@ C
       REAL*8 lati,longi,lat0
         REAL*8 alti,xx,yy,zz,alt0
         REAL*8 D,RHO
-        REAL*8 ERA,AQUAD,BQUAD
         integer*4 i
-C
-        COMMON/GENER/ERA,AQUAD,BQUAD
-        REAL*8     pi,rad
-        common /rconst/rad,pi
+
 C
         CALL INITIZE
       longi = ATAN2(yy,xx)/rad
@@ -1276,11 +1222,12 @@ C
 C ERA, EREQU and ERPOL as recommended by the INTERNATIONAL
 C ASTRONOMICAL UNION .
 C-----------------------------------------------------------------
+        USE GENER
+        USE rconst
         IMPLICIT NONE
-      REAL*8 ERA,AQUAD,BQUAD,EREQU,ERPOL
-            COMMON/GENER/ERA,AQUAD,BQUAD
-      real*8 rad,pi
-      common/rconst/rad,pi
+
+        REAL*8 EREQU,ERPOL
+C
       ERA=6371.2D0
 c WGS84 World Geodetic System 84 (GPS)
       EREQU=6378.137D0

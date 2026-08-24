@@ -2,12 +2,15 @@ import numpy as np
 from datetime import datetime
 
 from ..utils import input_utils, tsy_params_utils
+from ..citation_generator import get_citations
 from ..custom_classes import date, solar_wind
 from ..livedata import pull_live_data
 from ..serverdata import server
 from ..data_classes.trace_data import TraceData
 
 def TraceInputs(Data: TraceData) -> None:
+
+     get_citations.generate_citation_mag_array(Data)
     
      EventDate = datetime(Data.year,Data.month,Data.day,Data.hour,Data.minute,Data.second)
      DateCreate = date.Date(EventDate)
@@ -15,14 +18,17 @@ def TraceInputs(Data: TraceData) -> None:
  
      input_utils.coordsystem_check(Data.coordsys, Data.inputcoord)
      
-     Data.magnetopause = input_utils.magnetopause_check(Data.mpause)
+     Data.magnetopauseinput = input_utils.magnetopause_check(Data.magnetopause)
  
      ServerData = input_utils.serverdata_check(Data.serverdata)
 
      LiveData = input_utils.livedata_check(Data.livedata)
  
-     Internal, Data.g, Data.h = input_utils.internalmag_check(Data.internalmag, Data.datearray, Data.g, Data.h)
-     
+     Internal, new_max_degree, Data.g, Data.h = input_utils.internalmag_check(Data.internalmag, Data.datearray,
+                                                               Data.max_degree, Data.g, Data.h)
+
+     Data.max_degree = new_max_degree
+          
      External = input_utils.externalmag_check(Data.externalmag, Data.MHDfile)
 
      Bobon, bobtype = input_utils.BobergCheck(Data.boberg, Data.bobergtype)
@@ -30,11 +36,11 @@ def TraceInputs(Data: TraceData) -> None:
      input_utils.DataCheck(ServerData,LiveData,EventDate)
 
      Data.minaltitude = 0
-     Data.maxdistance = 1000
+     Data.maxdistance = 10000
      Data.maxtime = 0
      AtomicNum = 1
      AntiCheck = 1
-     Data.integrationmodel = 2
+     Data.integrationmodel = 7
      Data.maxsteppercent = 20
      Data.rigidity = 1
      Data.zenith = 0

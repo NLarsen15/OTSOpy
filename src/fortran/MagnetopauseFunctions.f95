@@ -7,36 +7,43 @@
 !
 ! ************************************************************************************************************************************
 module MagnetopauseFunctions
-USE Particle
 USE GEOPACK1
 USE GEOPACK2
 USE SolarWind
 USE MagnetoPause
+USE SharedParameters
 implicit none
 
 procedure (funcPause), pointer :: PausePointer => null ()
 
 abstract interface
-function funcPause()
-   integer(4) :: funcPause
-end function funcPause
+subroutine funcPause(PositionArray, secondTotal, FinalStep, Escaped)
+   real(8), intent(in) :: PositionArray(3,3)
+   real(8), intent(in) :: secondTotal
+   logical, intent(inout) :: FinalStep
+   logical, intent(inout) :: Escaped
+end subroutine funcPause
 end interface
 
  
  contains
 
-  function functionSphere() ! Sphere
-    integer(4) :: functionSphere
-    real(8) :: GSEPosition(3), x1, y1, z1, TestResult
+  subroutine functionSphere(PositionArray, secondTotal, FinalStep, Escaped) ! Sphere
+    real(8) :: GSEPosition(3), Position(3), x1, y1, z1, TestResult
+    real(8), intent(in) :: PositionArray(3,3)
+    real(8), intent(in) :: secondTotal
+    logical, intent(inout) :: FinalStep
+    logical, intent(inout) :: Escaped
+
+    Position = PositionArray(1,:)
 
     call CoordinateTransform("GDZ", "GSE", year, day, secondTotal, Position, GSEPosition)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
       call CoordinateTransform("GDZ", "GEO", year, day, secondTotal, Position, GSEPosition)
     end if
     
     TestResult = -1
-    Result = 0
     x1 = GSEPosition(1)
     y1 = GSEPosition(2)
     z1 = GSEPosition(3)
@@ -44,35 +51,42 @@ end interface
     TestResult = (z1**2 + y1**2 + x1**2)**(0.5) - (spheresize)
 
     IF (TestResult < 0) THEN
-      functionSphere = 0
+      Escaped = .false.
     ELSE IF (TestResult >= 0) THEN
-      functionSphere = 1
-      IF (FinalStep == 0) THEN
-        FinalStep = 1
-        functionSphere = 0
+      Escaped = .true.
+      IF (.not. FinalStep) THEN
+        FinalStep = .true.
+        Escaped = .false.
       END IF
     END IF
     
     return
-  end function functionSphere
+  end subroutine functionSphere
 
-  function functionDisabled() ! No Magnetopause
-    integer(4) :: functionDisabled
+  subroutine functionDisabled(PositionArray, secondTotal, FinalStep, Escaped) ! No Magnetopause
+    real(8), intent(in) :: PositionArray(3,3)
+    real(8), intent(in) :: secondTotal
+    logical, intent(inout) :: FinalStep
+    logical, intent(inout) :: Escaped
 
-    functionDisabled = 0
+    Escaped = .false.
     
     return
-  end function functionDisabled
+  end subroutine functionDisabled
 
-  function functionAberratedFormisano() ! Aberrated Formisano Model
-    integer(4) :: functionAberratedFormisano
+  subroutine functionAberratedFormisano(PositionArray, secondTotal, FinalStep, Escaped) ! Aberrated Formisano Model
     real(8) :: a11, a22, a33, a13, a23, a34, a14, a12, a24, a44
-    real(8) :: GSEPosition(3), x1, y1, z1, TestResult
+    real(8) :: GSEPosition(3), Position(3), x1, y1, z1, TestResult
+    logical, intent(inout) :: FinalStep
+    real(8), intent(in) :: PositionArray(3,3)
+    logical, intent(inout) :: Escaped
+    real(8), intent(in) :: secondTotal
+
+    Position = PositionArray(1,:)
 
     call CoordinateTransform("GDZ", "GSE", year, day, secondTotal, Position, GSEPosition)
 
     TestResult = -1
-    Result = 0
     x1 = GSEPosition(1)
     y1 = GSEPosition(2)
     z1 = GSEPosition(3)
@@ -91,30 +105,34 @@ end interface
     TestResult = a11*(x1**2) + a22*(y1**2) + a33*(z1**2) + a12*(x1*y1) + a13*x1*z1 + a23*y1*z1 + a14*x1 + a24*y1 + a34*z1 + (a44)
     IF (x1 < -60) THEN
         TestResult = 1
-        IF (FinalStep == 0) THEN
-          FinalStep = 1
-          TestResult = -1
-        END IF
     END IF
 
     IF (TestResult < 0) THEN
-      functionAberratedFormisano = 0
+      Escaped = .false.
     ELSE IF (TestResult >= 0) THEN
-      functionAberratedFormisano = 1
+      Escaped = .true.
+      IF (.not. FinalStep) THEN
+        FinalStep = .true.
+        Escaped = .false.
+      END IF
     END IF
 
     return
-  end function functionAberratedFormisano
+  end subroutine functionAberratedFormisano
 
-  function functionSibeck() ! Sibeck Model
-    integer(4) :: functionSibeck
+  subroutine functionSibeck(PositionArray, secondTotal, FinalStep, Escaped) ! Sibeck Model
     real(8) :: a11, a22, a33, a14
-    real(8) :: GSMPosition(3), x1, y1, z1, TestResult, p, Rvalue
+    real(8) :: GSMPosition(3), Position(3), x1, y1, z1, TestResult, p, Rvalue
+    logical, intent(inout) :: FinalStep
+    real(8), intent(in) :: PositionArray(3,3)
+    real(8), intent(in) :: secondTotal
+    logical, intent(inout) :: Escaped
+
+    Position = PositionArray(1,:)
 
     call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, Position, GSMPosition)
     
     TestResult = -1
-    Result = 0
     x1 = GSMPosition(1)
     y1 = GSMPosition(2)
     z1 = GSMPosition(3)
@@ -160,30 +178,33 @@ end interface
 
     IF (x1 < -50) THEN
         TestResult = 1
-        IF (FinalStep == 0) THEN
-          FinalStep = 1
-          TestResult = -1
-        END IF
     END IF
 
     IF (TestResult < 0) THEN
-      functionSibeck = 0
+      Escaped = .false.
     ELSE IF (TestResult >= 0) THEN
-      functionSibeck = 1
+      Escaped = .true.
+      IF (.not. FinalStep) THEN
+        FinalStep = .true.
+        Escaped = .false.
+      END IF
     END IF
 
     return
-  end function functionSibeck
+  end subroutine functionSibeck
 
-  function functionKobel() ! Kobel Model
-    integer(4) :: functionKobel
+  subroutine functionKobel(PositionArray, secondTotal, FinalStep, Escaped) ! Kobel Model
     real(8) :: Ak, Bk(7), Fk(7), rho2, kpar, sink, cosk
     real(8) :: x1rot, y1rot, z1rot, rhorot
-    real(8) :: GSMPosition(3), x1, y1, z1, TestResult, DIP
+    real(8) :: GSMPosition(3), Position(3), x1, y1, z1, TestResult, DIP
     integer(4) :: IOPTtemp
+    logical, intent(inout) :: FinalStep
+    real(8), intent(in) :: PositionArray(3,3)
+    real(8), intent(in) :: secondTotal
+    logical, intent(inout) :: Escaped
 
     TestResult = -1
-    Result = 0
+
     dip = PSI
 
     if (IOPT > 7) then
@@ -209,7 +230,10 @@ end interface
     Fk(6) = 6.0
     Fk(7) = 6.0
 
+    Position = PositionArray(1,:)
+
     call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, Position, GSMPosition)
+    
     x1 = GSMPosition(1)
     y1 = GSMPosition(2)
     z1 = GSMPosition(3)
@@ -218,18 +242,10 @@ end interface
 
     if (rho2 > 900) THEN
         TestResult = 1
-        IF (FinalStep == 0) THEN
-          FinalStep = 1
-          TestResult = -1
-        END IF
     end if
 
     if (x1 < -60) THEN
         TestResult = 1
-        IF (FinalStep == 0) THEN
-          FinalStep = 1
-          TestResult = -1
-        END IF
     end if
 
     kpar = DIP/Fk(IOPTtemp)
@@ -242,37 +258,38 @@ end interface
 
     rhorot = y1rot*y1rot + z1rot*z1rot
 
-    
-
     IF (x1rot > Ak*rhorot + Bk(IOPTtemp)) THEN
         TestResult = 1
-        IF (FinalStep == 0) THEN
-          FinalStep = 1
-          TestResult = -1
-        END IF
     END IF
 
     IF (TestResult < 0) THEN
-      functionKobel = 0
+      Escaped = .false.
     ELSE IF (TestResult >= 0) THEN
-      functionKobel = 1
+      Escaped = .true.
+      IF (.not. FinalStep) THEN
+        FinalStep = .true.
+        Escaped = .false.
+      END IF
     END IF
 
     return
-  end function functionKobel
+  end subroutine functionKobel
 
-  function functionLin() !Lin et al 2010 Model
+  subroutine functionLin(PositionArray, secondTotal, FinalStep, Escaped) !Lin et al 2010 Model
   IMPLICIT NONE
 
-  integer(4) :: functionLin
-  real(8) :: GSEPosition(3)
+  real(8) :: GSEPosition(3), Position(3)
+  real(8), intent(in) :: PositionArray(3,3)
+  real(8), intent(in) :: secondTotal
+  logical, intent(inout) :: FinalStep
+  logical, intent(inout) :: Escaped
 
   DOUBLE PRECISION :: X, Y, Z, r_pos, theta, phi, r_mp, Bz
   DOUBLE PRECISION :: r0, Psum, tilt
   DOUBLE PRECISION :: b0, b1, b2, b3, b, inner, f_theta_phi
   DOUBLE PRECISION :: cn, cs, dn, ds, en, es, theta_n, theta_s
   DOUBLE PRECISION :: phi_n, phi_s, cos_yn, cos_ys, y_n, y_s, Qn, Qs, Q
-  DOUBLE PRECISION :: pi, TestResult, Result
+  DOUBLE PRECISION :: pi, TestResult
   
   ! Lin et al. (2010) coefficients
   DOUBLE PRECISION, PARAMETER :: a0=12.544, a1=-0.194, a2=0.305, a3=0.0573, a4=2.178
@@ -284,7 +301,8 @@ end interface
   pi = 4.0d0*ATAN(1.0d0)
 
   TestResult = -1
-  Result = 0
+
+  Position = PositionArray(1,:)
 
   call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, Position, GSEPosition)
 
@@ -357,10 +375,6 @@ end interface
   if (r_pos > r_mp) THEN
      TestResult = 1
      !PRINT *, '  Status: OUTSIDE magnetosphere (r_pos > r_mp)'
-     IF (FinalStep == 0) THEN
-         FinalStep = 1
-         TestResult = -1
-     END IF
   ELSE
      TestResult = -1
      !PRINT *, '  Status: INSIDE magnetosphere (r_pos <= r_mp)'
@@ -370,58 +384,62 @@ end interface
   IF (X < -60.0d0) THEN
      TestResult = 1
      !PRINT *, '  Status: OUTSIDE magnetosphere (X < -60 Re)'
-     IF (FinalStep == 0) THEN
-         FinalStep = 1
-         TestResult = -1
-     END IF
   END IF
 
   IF (TestResult < 0) THEN
-      functionLin = 0
+      Escaped = .false.
       !PRINT *, '  Final result: INSIDE (returning 0)'
   ELSE IF (TestResult >= 0) THEN
-      functionLin = 1
+      Escaped = .true.
+      IF (.not. FinalStep) THEN
+        FinalStep = .true.
+        Escaped = .false.
+      END IF
       !PRINT *, '  Final result: OUTSIDE (returning 1)'
   END IF
 
   return
-  end function functionLin
+  end subroutine functionLin
  
-  function functionTSY() ! Magnetopause models used within the Tsyganenko models
-    integer(4) :: functionTSY
-    real(8) :: GSMPosition(3), x1, y1, z1, TestResult
+  subroutine functionTSY(PositionArray, secondTotal, FinalStep, Escaped) ! Magnetopause models used within the Tsyganenko models
+    real(8) :: GSMPosition(3), Position(3), x1, y1, z1, TestResult
+    logical, intent(inout) :: FinalStep
+    real(8), intent(in) :: PositionArray(3,3)
+    real(8), intent(in) :: secondTotal
+    logical, intent(inout) :: Escaped
+
+    Position = PositionArray(1,:)
 
     call CoordinateTransform("GDZ", "GSM", year, day, secondTotal, Position, GSMPosition)
+
     TestResult = -1
-    Result = 0
+
     x1 = GSMPosition(1)
     y1 = GSMPosition(2)
     z1 = GSMPosition(3)
   
     IF (SubResult == 1) THEN
       TestResult = 1
-      IF (FinalStep == 0) THEN
-        FinalStep = 1
-        TestResult = -1
-      END IF
     END IF
 
     IF (x1 < -50) THEN
       TestResult = 1
-      IF (FinalStep == 0) THEN
-        FinalStep = 1
-        TestResult = -1
-      END IF
     END IF
 
     IF (TestResult < 0) THEN
-      functionTSY = 0
+      Escaped = .false.
     ELSE IF (TestResult >= 0) THEN
-      functionTSY = 1
+      Escaped = .true.
+      IF (.not. FinalStep) THEN
+        FinalStep = .true.
+        Escaped = .false.
+      END IF
     END IF
+
+    subresult = 0
   
     return
-  end function functionTSY
+  end subroutine functionTSY
 
 ! ************************************************************************************************************************************
 ! subroutine MagnetopuaseAssign:
@@ -436,7 +454,7 @@ end interface
 !
 ! ************************************************************************************************************************************
   subroutine MagnetopauseAssign(Pause)
-  USE Particle
+  USE SharedParameters
   implicit none
   integer(4) :: Pause
 
@@ -457,7 +475,7 @@ end interface
   END IF
 
   IF (Pause == 0) THEN
-    PausePointer => functionSphere ! 25Re Sphere
+    PausePointer => functionSphere ! Sphere
   ELSE IF (Pause == 1) THEN
     PausePointer => functionAberratedFormisano  ! Aberrated Formisano Model
   ELSE IF (Pause == 2) THEN

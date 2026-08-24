@@ -4,9 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
   deploy:
@@ -17,21 +15,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.x
 
       - name: Install dependencies
         run: |
-          pip install mkdocs-material mkdocstrings[python] numpy scipy matplotlib
-
-      - name: Build site
-        run: mkdocs build
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
+          pip install mkdocs-material
+          pip install mkdocstrings[python]
+          pip install ruff
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+        run: mkdocs gh-deploy --force

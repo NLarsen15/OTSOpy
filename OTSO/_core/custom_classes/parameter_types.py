@@ -41,7 +41,7 @@ class SolarWindParams(TypedDict, total=False):
     DEFAULTS = {
         "vx": -500, "vy": 0, "vz": 0, "bx": 0, "by": 5, "bz": 5, 
         "density": 1, "pdyn": 0, "by_avg": 0, "bz_avg": 0
-    }
+    } # type: ignore
 
 
 class GeomagneticParams(TypedDict, total=False):
@@ -65,7 +65,7 @@ class GeomagneticParams(TypedDict, total=False):
     # Default values
     DEFAULTS = {
         "Dst": 0, "kp": 0, "n_index": 0, "b_index": 0, "sym_h_corrected": 0
-    }
+    } # type: ignore
 
 
 class TsyganenkoParams(TypedDict, total=False):
@@ -98,7 +98,7 @@ class TsyganenkoParams(TypedDict, total=False):
     # Default values
     DEFAULTS = {
         "G1": 0, "G2": 0, "G3": 0, "W1": 0, "W2": 0, "W3": 0, "W4": 0, "W5": 0, "W6": 0
-    }
+    } # type: ignore
 
 
 class DateTimeParams(TypedDict, total=False):
@@ -124,14 +124,14 @@ class DateTimeParams(TypedDict, total=False):
     # Default values
     DEFAULTS = {
         "year": 2024, "month": 1, "day": 1, "hour": 12, "minute": 0, "second": 0
-    }
+    } # type: ignore
 
 
 class MagFieldParams(TypedDict, total=False):
     """Magnetic field model configuration parameters.
     
     Available keys (all optional):
-    • internalmag: str = "IGRF"           # "IGRF", "Dipole", "NONE", "Custom Gauss"
+    • internalmag: str = "IGRF"           # "IGRF", "Dipole", "NONE", "Custom Gauss", "CHAOS"
     • externalmag: str = "TSY89c"         # "TSY89c", "TSY01", "TSY15B", "NONE", etc.
     • boberg: bool = False                # Enable Boberg modification  
     • bobergtype: str = "EXTENSION"       # Boberg modification type
@@ -153,19 +153,19 @@ class MagFieldParams(TypedDict, total=False):
     DEFAULTS = {
         "internalmag": "IGRF", "externalmag": "TSY89c", "boberg": False, "bobergtype": "EXTENSION",
         "magnetopause": "Kobel", "spheresize": 25, "AdaptiveExternalModel": False
-    }
+    } # type: ignore
 
 
 class IntegrationParams(TypedDict, total=False):
     """Particle integration and tracing parameters.
     
     Example usage:
-        integration = {"intmodel": "Boris", "gyropercent": 10, "maxdistance": 50}
+        integration = {"intmodel": "Boris-Buneman", "gyropercent": 10, "maxdistance": 50}
         cutoff("DOMC", integration_params=integration)
-        
+
     Controls particle tracing algorithm and boundary conditions.
     """
-    intmodel: str  # Integration method (Boris, 4RK, Vay, HC)
+    intmodel: str  # Integration method (Boris-Buneman, 4RK, Vay, HC, 6RK, 5RK)
     gyropercent: float  # Gyration period percentage for time step
     minaltitude: float  # Minimum altitude (km or Re)
     maxdistance: float  # Maximum tracing distance (Re)
@@ -176,12 +176,14 @@ class IntegrationParams(TypedDict, total=False):
     totalbetacheck: bool  # Enable total beta check for whole trace
     adaptivestep: bool  # Enable adaptive time steps
     maxsteps: int  # Maximum number of integration steps
-    
+    fixedstep: float  # Fixed step size in seconds. Only used when adaptivestep=False; 0 (default) means fall back to gyropercent-derived step
+
     # Default values
     DEFAULTS = {
-        "intmodel": "Boris", "gyropercent": 15, "minaltitude": 20, 
+        "intmodel": "Boris-Buneman", "gyropercent": 10, "minaltitude": 20,
         "maxdistance": 100, "maxtime": 0, "mintrapdist": 0, "startaltitude": 20,
-        "betaerror": 0.001, "totalbetacheck": False, "adaptivestep": True, "maxsteps": 0}
+        "betaerror": 0.001, "totalbetacheck": False, "adaptivestep": False, "maxsteps": 0,
+        "fixedstep": 0.0} # type: ignore
     
 
 
@@ -200,8 +202,8 @@ class CoordinateParams(TypedDict, total=False):
     
     # Default values
     DEFAULTS = {
-        "coordsystem": "GEO", "inputcoord": "GDZ", "coordout": "GSM"
-    }
+        "coordsystem": "GSM", "inputcoord": "GDZ", "coordout": "GSM"
+    } # type: ignore
 
 
 class ParticleParams(TypedDict, total=False):
@@ -221,8 +223,8 @@ class ParticleParams(TypedDict, total=False):
     
     # Default values
     DEFAULTS = {
-        "Anum": 1, "anti": "YES","azimuth": 0, "zenith": 0, "rigidity": 1
-    }
+        "Anum": 1, "anti": "YES", "azimuth": 0, "zenith": 0, "rigidity": 1
+    } # type: ignore
 
 
 class RigidityParams(TypedDict, total=False):
@@ -242,7 +244,7 @@ class RigidityParams(TypedDict, total=False):
     # Default values
     DEFAULTS = {
         "startrigidity": 20, "endrigidity": 0, "rigiditystep": 0.01, "rigidityscan": "ON"
-    }
+    } # type: ignore
 
 
 class ComputationParams(TypedDict, total=False):
@@ -255,13 +257,14 @@ class ComputationParams(TypedDict, total=False):
     Controls parallel processing and output verbosity.
     """
     corenum: Optional[int]  # Number of CPU cores
+    threadnum: Optional[int]  # Number of threads per core
     Verbose: bool           # Enable verbose output
     delim: str              # Delimiter for output formatting
     
     # Default values
     DEFAULTS = {
-        "corenum": None, "Verbose": True, "delim": ";"
-    }
+        "corenum": None, "threadnum": 1, "Verbose": True, "delim": ";"
+    } # type: ignore
 
 
 class DataRetrievalParams(TypedDict, total=False):
@@ -279,7 +282,7 @@ class DataRetrievalParams(TypedDict, total=False):
     # Default values
     DEFAULTS = {
         "serverdata": "OFF", "livedata": "OFF"
-    }
+    } # type: ignore
 
 
 class CustomFieldParams(TypedDict, total=False):
@@ -295,11 +298,12 @@ class CustomFieldParams(TypedDict, total=False):
     h: Optional[Sequence[float]]  # Gauss coefficients h
     MHDfile: Optional[str]        # MHD simulation file path
     MHDcoordsys: Optional[str]    # MHD coordinate system
+    max_degree: Optional[int]
     
     # Default values
     DEFAULTS = {
-        "g": None, "h": None, "MHDfile": None, "MHDcoordsys": None
-    }
+        "g": None, "h": None, "MHDfile": None, "MHDcoordsys": None, "max_degree": 13
+    } # type: ignore
 
 
 class GridParams(TypedDict, total=False):
@@ -324,7 +328,31 @@ class GridParams(TypedDict, total=False):
     DEFAULTS = {
         "latstep": -5, "longstep": 5, "maxlat": 90, "minlat": -90,
         "maxlong": 360, "minlong": 0, "array_of_lats_and_longs": None
-    }
+    } # type: ignore
+
+
+class SkymapParams(TypedDict, total=False):
+    """Grid configuration parameters for field mapping.
+    
+    Example usage:
+        Params_skymap = {"zenithstep": -2.5, "azimuthstep": 2.5, "maxzenith": 0, "minzenith": 75,
+                "maxazimuth": 360, "minazimuth": 0}
+        skymap("DOMC", skymap_params=Params_skymap)
+        
+    Defines the spatial grid for magnetic field calculations.
+    """
+    zenithstep: float
+    azimuthstep: float
+    maxzenith: float
+    minzenith: float
+    maxazimuth: float
+    minazimuth: float
+    
+    # Default values
+    DEFAULTS = {
+        "zenithstep": 15, "azimuthstep": 45, "maxzenith": 75, "minzenith": 0,
+        "maxazimuth": 360, "minazimuth": 0
+    } # type: ignore
 
 class AsymptoticParams(TypedDict, total=False):
     """Asymptotic direction calculation parameters.
@@ -340,4 +368,18 @@ class AsymptoticParams(TypedDict, total=False):
     DEFAULTS = {
         "unit": "GeV","asymptotic": "NO", 
         "asymlevels": [0.1,0.3,0.5,1,2,3,4,5,6,7,8,9,10,15,20,30,50,70,100,300,500,700,1000]
-    }
+    } # type: ignore
+
+class TransmissionParams(TypedDict, total=False):
+    """Transmission function computing parameters.
+
+    Controls settings for the transmission function computations
+    """
+
+    transmission: bool
+    transmissionsamples: int
+    transmissionRstep: float
+
+    DEFAULTS = {
+        "transmission": False, "transmissionsamples": 20, "transmissionRstep": 0.001
+    } # type: ignore

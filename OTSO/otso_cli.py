@@ -3,6 +3,7 @@ import shutil
 import pandas as pd
 import urllib.request
 from typing import List, Tuple
+from ._core.utils.chaos_utils import chaos_download
 
 def clean():
     print("Cleaning OTSO...")
@@ -418,6 +419,13 @@ def serverdownload():
             print("Server data only valid for 1963 to present, please enter a valid date.")
     else:
         print("Invalid input. Please enter a year or 'all'.")
+
+
+def CHAOSdownload():
+    CHAOSDOI = "10.5281/zenodo.13950012"
+    chaos_download.download_mat_only(CHAOSDOI)
+
+
 
 
 

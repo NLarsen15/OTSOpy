@@ -1,7 +1,22 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Sequence, Optional, Union
+
+if TYPE_CHECKING:
+    from ._core.otso_functions.otso_flight import OTSO_flight
+
 def flight(**kwargs):
     import psutil    
+    from dataclasses import fields
     from ._core.otso_functions import otso_flight
-    from ._core.data_classes.flight_data import FlightData 
+    from ._core.data_classes.flight_data import FlightData
+
+    allowed = {f.name for f in fields(FlightData)}
+
+    unknown = set(kwargs) - allowed
+    if unknown:
+        raise TypeError(
+            f"Unexpected keyword arguments: {', '.join(sorted(unknown))}"
+    )
 
     # Set corenum if not provided in kwargs
     if 'corenum' not in kwargs or kwargs['corenum'] is None:
@@ -38,28 +53,80 @@ def flight(**kwargs):
                 kwargs[var_name] = default_value
 
     FlightDataInstance = FlightData(
-        kwargs["latitudes"], kwargs["longitudes"], kwargs["dates"], kwargs["altitudes"],
-        kwargs["cutoff_comp"], kwargs["minaltitude"], kwargs["maxdistance"], kwargs["maxtime"], 
-        kwargs["serverdata"], kwargs["livedata"], 
-        kwargs["vx"], kwargs["vy"], kwargs["vz"], 
-        kwargs["bx"], kwargs["by"], kwargs["bz"], 
-        kwargs["density"], kwargs["pdyn"], kwargs["Dst"], 
-        kwargs["G1"], kwargs["G2"], kwargs["G3"], 
-        kwargs["W1"], kwargs["W2"], kwargs["W3"], kwargs["W4"], 
-        kwargs["W5"], kwargs["W6"], kwargs["kp"], 
-        kwargs["by_avg"], kwargs["bz_avg"], kwargs["n_index"], 
-        kwargs["b_index"], kwargs["sym_h_corrected"], 
-        kwargs["Anum"], kwargs["anti"], 
-        kwargs["internalmag"], kwargs["externalmag"],
-        kwargs["boberg"], kwargs["bobergtype"], 
-        kwargs["intmodel"], kwargs["startrigidity"], kwargs["endrigidity"], kwargs["rigiditystep"], 
-        kwargs["rigidityscan"], kwargs["coordsystem"], kwargs["gyropercent"], kwargs["magnetopause"], 
-        kwargs["corenum"], kwargs["azimuth"], kwargs["zenith"], 
-        kwargs["g"], kwargs["h"], kwargs["asymptotic"], kwargs["asymlevels"], kwargs["unit"],
-        kwargs["MHDfile"], kwargs["MHDcoordsys"], kwargs["spheresize"], 
-        kwargs["inputcoord"], kwargs["Verbose"], kwargs["AdaptiveExternalModel"], kwargs["mintrapdist"],
-        kwargs["delim"],kwargs['adaptivestep'], kwargs['betaerror'], kwargs['totalbetacheck'],
-        kwargs['maxsteps']
+        latitudes = kwargs["latitudes"], 
+        longitudes = kwargs["longitudes"], 
+        dates = kwargs["dates"], 
+        altitudes = kwargs["altitudes"],
+        cutoff_comp = kwargs["cutoff_comp"], 
+        minaltitude = kwargs["minaltitude"], 
+        maxdistance = kwargs["maxdistance"], 
+        maxtime = kwargs["maxtime"], 
+        serverdata = kwargs["serverdata"], 
+        livedata = kwargs["livedata"], 
+        vx = kwargs["vx"], 
+        vy = kwargs["vy"], 
+        vz = kwargs["vz"], 
+        bx = kwargs["bx"], 
+        by = kwargs["by"], 
+        bz = kwargs["bz"], 
+        density = kwargs["density"], 
+        pdyn = kwargs["pdyn"], 
+        Dst = kwargs["Dst"], 
+        G1 = kwargs["G1"], 
+        G2 = kwargs["G2"], 
+        G3 = kwargs["G3"], 
+        W1 = kwargs["W1"], 
+        W2 = kwargs["W2"], 
+        W3 = kwargs["W3"], 
+        W4 = kwargs["W4"], 
+        W5 = kwargs["W5"], 
+        W6 = kwargs["W6"], 
+        kp = kwargs["kp"], 
+        by_avg = kwargs["by_avg"], 
+        bz_avg = kwargs["bz_avg"], 
+        n_index = kwargs["n_index"], 
+        b_index = kwargs["b_index"], 
+        sym_h_corrected = kwargs["sym_h_corrected"], 
+        Anum = kwargs["Anum"], 
+        anti = kwargs["anti"], 
+        internalmag = kwargs["internalmag"], 
+        externalmag = kwargs["externalmag"],
+        boberg = kwargs["boberg"], 
+        bobergtype = kwargs["bobergtype"], 
+        intmodel = kwargs["intmodel"], 
+        startrigidity = kwargs["startrigidity"], 
+        endrigidity = kwargs["endrigidity"], 
+        rigiditystep = kwargs["rigiditystep"], 
+        rigidityscan = kwargs["rigidityscan"], 
+        coordsystem = kwargs["coordsystem"],
+        gyropercent = kwargs["gyropercent"],
+        fixedstep = kwargs["fixedstep"],
+        magnetopause = kwargs["magnetopause"],
+        corenum = kwargs["corenum"], 
+        azimuth = kwargs["azimuth"], 
+        zenith = kwargs["zenith"], 
+        g = kwargs["g"], 
+        h = kwargs["h"], 
+        asymptotic = kwargs["asymptotic"], 
+        asymlevels = kwargs["asymlevels"], 
+        unit = kwargs["unit"],
+        MHDfile = kwargs["MHDfile"], 
+        MHDcoordsys = kwargs["MHDcoordsys"], 
+        spheresize = kwargs["spheresize"], 
+        inputcoord = kwargs["inputcoord"], 
+        Verbose = kwargs["Verbose"], 
+        AdaptiveExternalModel = kwargs["AdaptiveExternalModel"], 
+        mintrapdist = kwargs["mintrapdist"],
+        delim = kwargs["delim"],
+        adaptivestep = kwargs['adaptivestep'], 
+        betaerror = kwargs['betaerror'], 
+        totalbetacheck = kwargs['totalbetacheck'],
+        maxsteps = kwargs['maxsteps'],
+        threadnum = kwargs['threadnum'],
+        transmission = kwargs['transmission'],
+        transmissionsamples = kwargs['transmissionsamples'],
+        transmissionRstep = kwargs['transmissionRstep'],
+        max_degree = kwargs["max_degree"]
     )
     
     flight = otso_flight.OTSO_flight(FlightDataInstance)

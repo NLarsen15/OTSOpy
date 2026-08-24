@@ -1,68 +1,139 @@
 import pandas as pd
 import multiprocessing as mp
+import numpy as np
+import json
 
-from ..libs import MiddleMan as OTSOLib
+from ..libs.MiddleMan import Middleman as OTSOLib
 from ..utils import mhd_utils
+from ..utils import fortran_data_utils
 from ..data_classes.cone_data import ConeData
+from ..utils import cutoff_utils as cu
+from ..utils import transmission_utils as tu
+from ..utils import cpus_utils as cpu_util
 
-def FortranCone(Data: list, ConeDataInstance: ConeData, queue: mp.Queue) -> None:
-    
+
+def FortranCone(Data: list, ConeDataInstance: ConeData, queue: mp.Queue, cpus, JsonFile, lock) -> None:
+
+    cpu_util.set_process_affinity(cpus)
+
     if ConeDataInstance.model[1] == 99:
-      mhd_utils.MHDinitialise(ConeDataInstance.MHDfile)
-    
+        mhd_utils.MHDinitialise(ConeDataInstance.MHDfile)
+
     for x in Data:
-      
-      Position = [x[3],x[1],x[2],x[4],x[5]]
-      Station = x[0]
 
-      NMname = Station
+        Station = x[0]
 
-      StartRigidity = ConeDataInstance.rigidityarray[0]
-      EndRigidity = ConeDataInstance.rigidityarray[1]
-      RigidityStep = ConeDataInstance.rigidityarray[2]
-      AtomicNum = ConeDataInstance.particlearray[0]
-      AntiCheck = ConeDataInstance.particlearray[1]
-      DateArray = ConeDataInstance.datearray
-      model = ConeDataInstance.model
-      IntModel = ConeDataInstance.integrationmodel
-      IOPT = ConeDataInstance.IOPT
-      WindArray = ConeDataInstance.windarray
-      Magnetopause = ConeDataInstance.magnetopause
-      CoordinateSystem = ConeDataInstance.coordsystem
-      MaxStepPercent = ConeDataInstance.maxsteppercent
-      EndParams = ConeDataInstance.endparams
-      g = ConeDataInstance.g
-      h = ConeDataInstance.h
-      MHDCoordSys = ConeDataInstance.MHDcoordsys
-      spheresize = ConeDataInstance.spheresize
-      inputcoord = ConeDataInstance.inputcoord
-      trapdist = ConeDataInstance.mindist
-      adapt = ConeDataInstance.adapt
-      Berr = ConeDataInstance.Berr
-      totalbetacheck = ConeDataInstance.totalbetacheck
+        FortranData = fortran_data_utils.prepare_fortran_cone(
+            x, ConeDataInstance
+        )
 
-      if EndRigidity <= 0:
-         EndRigidity = 0 + RigidityStep
+        g = ConeDataInstance.g
+        h = ConeDataInstance.h
 
-      length = int(round((StartRigidity-EndRigidity)/RigidityStep)) + 1
+        Rigidities = np.zeros(FortranData.n, dtype=np.float64)
+        Allowed = np.zeros(FortranData.n, dtype=np.int32)
+        Asymlat = np.zeros(FortranData.n, dtype=np.float64)
+        Asymlong = np.zeros(FortranData.n, dtype=np.float64)
 
-      Cone, Rigidities = OTSOLib.cone(Position, StartRigidity, EndRigidity, RigidityStep, DateArray, model, 
-                                      IntModel, AtomicNum, AntiCheck, IOPT, WindArray,
-                                       Magnetopause, CoordinateSystem, MaxStepPercent, 
-                                       EndParams, length, g, h, MHDCoordSys,spheresize, 
-                                       inputcoord, trapdist, adapt, Berr, totalbetacheck)
-      
-      decoded_lines = [line.decode('utf-8').strip() for sublist in Cone for line in sublist]
+        OTSOLib.cone(
+            FortranData,
+            g,
+            h,
+            Rigidities,
+            Allowed,
+            Asymlat,
+            Asymlong,
+        )
 
-      data = [line.split() for line in decoded_lines]
+        decimals = len(str(FortranData.rigiditystep).split(".")[1])
 
-      Conedf = pd.DataFrame(data, columns=['R [GV]', 'Filter', 'ALat', 'ALong'])
-      Conedf[NMname] = Conedf[['Filter', 'ALat', 'ALong']].astype(str).agg(f'{ConeDataInstance.delim}'.join, axis=1)
-      Conedf.drop(columns=['Filter', 'ALat', 'ALong'], inplace=True)
-      
+        Conedf = (
+            pd.DataFrame(
+                {
+                    "R [GV]": Rigidities.round(decimals),
+                    "Filter": Allowed,
+                    "Alat": Asymlat,
+                    "Along": Asymlong,
+                }
+            )
+            .sort_values("R [GV]")
+            .reset_index(drop=True)
+        )
 
-      Rigiditydataframe = pd.DataFrame({Station: Rigidities}, index=['Ru', 'Rc', 'Rl'])
- 
-      queue.put([Conedf, Rigiditydataframe])
-    
+        Conedf["Alat"] = Conedf["Alat"].round(4)
+        Conedf["Along"] = Conedf["Along"].round(4)
+
+        R_low, R_high, transparency, R_eff = cu.find_cutoff_range(
+            Conedf, FortranData.rigiditystep
+        )
+
+        returnvalues = [R_high, R_eff, R_low, transparency]
+
+        Rigiditydataframe = pd.DataFrame(
+            {Station: returnvalues},
+            index=["Ru", "Rc", "Rl", "PTF"],
+        )
+
+        
+
+        # ----------------------------------------------------------
+        # Append transmission (if requested)
+        # ----------------------------------------------------------
+        if ConeDataInstance.transmission:
+
+            Transmissiondf = tu.transmission(
+                FortranData,
+                R_high,
+                R_low,
+                Station,
+                ConeDataInstance,
+            )
+
+            Conedf = Conedf.merge(
+                Transmissiondf,
+                on="R [GV]",
+                how="left",
+            )
+
+            tf_col = next(
+                col for col in Transmissiondf.columns if col != "R [GV]"
+            )
+
+            Conedf[Station] = (
+                Conedf["Filter"].astype(str)
+                + ConeDataInstance.delim
+                + Conedf["Alat"].map("{:.4f}".format)
+                + ConeDataInstance.delim
+                + Conedf["Along"].map("{:.4f}".format)
+                + ConeDataInstance.delim
+                + Conedf[tf_col].astype(str)
+            )
+
+        else:
+
+            Conedf[Station] = (
+                  Conedf["Filter"].astype(str)
+                  + ConeDataInstance.delim
+                  + Conedf["Alat"].map("{:.4f}".format)
+                  + ConeDataInstance.delim
+                  + Conedf["Along"].map("{:.4f}".format)
+              )
+
+        Conedf = Conedf[["R [GV]", Station]]
+
+        record = { 
+              "station": Station,
+              "cone": Conedf.to_dict(orient="split"),
+              "rigidities": Rigiditydataframe.to_dict(orient="split"),
+              }
+
+        with lock:
+          with open(JsonFile, "a", encoding="utf-8") as f:
+              json.dump(record, f)
+              f.write("\n")
+
+        queue.put(1)
+
     return
+
+

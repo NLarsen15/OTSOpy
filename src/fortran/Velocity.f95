@@ -13,11 +13,12 @@
 ! V - Speed of the CR [m/s]
 !
 ! ************************************************************************************************************************************
-subroutine Rigidity2velocity(V)
-USE particle
+subroutine Rigidity2velocity(lambda,V)
+USE sharedparameters
 implicit none
 
-real(8) :: V
+real(8), intent(in) :: lambda
+real(8), intent(out) :: V
 
 V = c * (1.0-(1.0/(lambda**2.0)))**(0.5)
 
@@ -36,9 +37,10 @@ end subroutine Rigidity2velocity
 ! x, y, and z components of the velocty are updated in the particle module.
 !
 ! ************************************************************************************************************************************
-subroutine VelocityComponents(Vabs, NormalVector)
-USE particle
+subroutine VelocityComponents(Vabs, NormalVector, Velocity)
 implicit none
+
+real(8), intent(out) :: Velocity(3)
 
 real(8) :: Vabs, NormalVector(3)
 real(8) :: Normabs
@@ -63,19 +65,17 @@ end subroutine VelocityComponents
 ! NormOUT - Normal vector at the given point on Earth
 !
 ! ************************************************************************************************************************************
-subroutine NormalVector(EnteredPosition, inputcoord, NormOUT)
-USE particle
+subroutine NormalVector(EnteredPosition, inputcoord, NormOUT, model, year, day, secondTotal)
+use sharedparameters, only : Re_m
 implicit none
     
-real(8) :: Earth, EnteredPosition(3)
+real(8) :: EnteredPosition(3)
 real(8) :: NormOUT(3), xDT(3), xDTConvert(3), xINConvert(3)
 real(8) :: rMag
 character(len=3) :: inputcoord
-    
-!f2py intent(in) xIN, year, day, sec
-!f2py intent(out) NormOUT
-    
-Earth = 6371200.0
+integer(4) :: model(4)
+integer(4) :: year, day
+real(8) :: secondTotal
 
 if (inputcoord == "GDZ") then
     ! Geodetic: step +0.00001 Re along geodetic altitude
@@ -119,8 +119,8 @@ else
 
 end if
 
-NormOUT(1) = (xDTConvert(1) - xINConvert(1)) * Earth
-NormOUT(2) = (xDTConvert(2) - xINConvert(2)) * Earth
-NormOUT(3) = (xDTConvert(3) - xINConvert(3)) * Earth
+NormOUT(1) = (xDTConvert(1) - xINConvert(1)) * Re_m
+NormOUT(2) = (xDTConvert(2) - xINConvert(2)) * Re_m
+NormOUT(3) = (xDTConvert(3) - xINConvert(3)) * Re_m
     
 end subroutine NormalVector

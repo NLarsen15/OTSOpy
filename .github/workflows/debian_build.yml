@@ -1,0 +1,35 @@
+name: Build Debian Package
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 \
+            fakeroot \
+            dpkg-dev
+
+      - name: Build Debian package
+        run: |
+          chmod +x "src/build scripts/build_debian_package.sh"
+          "src/build scripts/build_debian_package.sh"
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: python3-otso
+          path: "src/debian/*.deb"
+          if-no-files-found: error

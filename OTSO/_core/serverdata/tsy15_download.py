@@ -2,12 +2,15 @@ import csv
 import math
 import requests
 import urllib3
-import sys
 import os
 from datetime import datetime
+import numpy as np
+import pandas as pd
 
-from ..libs import MiddleMan as OTSOLib
+from ..libs.MiddleMan import Middleman as OTSOLib
 from ..utils.tsy_params_utils import N_index_normalized, B_index
+from .scratch_dir import SCRATCH_DIR
+from .prior_year import load_prior_year_tail
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -24,8 +27,9 @@ def convert_to_gsw_coordinates(datetime_str, vx_gse, vy_gse, vz_gse, bx_gse, by_
         position_gse = [bx_gse, by_gse, bz_gse]
         Wind = [vx_gse, vy_gse, vz_gse]
 
-        
-        position_gsw = OTSOLib.gse2gswtsy15(date, position_gse, Wind, g, h)
+        position_gsw = np.zeros(3, dtype=np.float64)
+
+        OTSOLib.gse2gswtsy15(date, position_gse, Wind, g, h, len(g), position_gsw)
         
         bt_gsw = math.sqrt(position_gsw[1]**2 + position_gsw[2]**2)
 
@@ -401,7 +405,7 @@ def convert_omni_to_tempfile(omni_filename, output_filename='tempfile.csv'):
         
         # print(f"  Added corrected SYM-H column")
         
-        script_dir = os.path.join(os.path.dirname(__file__), "")
+        script_dir = SCRATCH_DIR
         output_path = os.path.join(script_dir, output_filename)
         output_df.to_csv(output_path, index=False)
         # print(f"Successfully converted {len(output_df)} rows to {output_path}")
@@ -500,7 +504,7 @@ def convert_tsy15_to_tempfile(tsy15_filename, output_filename='tempfile.csv'):
         # print(f"  Added corrected SYM-H column")
         
         # Save to CSV in OTSO package directory
-        script_dir = os.path.join(os.path.dirname(__file__), "")
+        script_dir = SCRATCH_DIR
         output_path = os.path.join(script_dir, output_filename)
         output_df.to_csv(output_path, index=False)
         # print(f"Successfully converted {len(output_df)} rows to {output_path}")
@@ -520,7 +524,7 @@ def check_and_download_tsy15_data(year):
     tsy15_url = f"https://geo.phys.spbu.ru/~tsyganenko/models/ta15/{year}_OMNI_5m_with_TA15_drivers.dat"
     
     # Save to OTSO package directory
-    script_dir = os.path.join(os.path.dirname(__file__), "")
+    script_dir = SCRATCH_DIR
     local_filename = os.path.join(script_dir, f"{year}_OMNI_5m_with_TA15_drivers.dat")
     
     # print(f"Checking for TSY15 pre-computed data for year {year}...")
@@ -547,21 +551,20 @@ def check_and_download_tsy15_data(year):
 def download_omni_file(year):
     url = f"https://spdf.gsfc.nasa.gov/pub/data/omni/high_res_omni/omni_5min{year}.asc"
     
-    # Save to OTSO package directory
-    script_dir = os.path.join(os.path.dirname(__file__), "")
+    script_dir = SCRATCH_DIR
     local_filename = os.path.join(script_dir, f"omni_5min{year}.asc")
-    
+
     try:
         total_size = 0
         try:
             response = requests.head(url, timeout=10)
             response.raise_for_status()
             total_size = int(response.headers.get('content-length', 0))
-        except:
+        except requests.exceptions.RequestException:
             #print("Could not determine file size, showing download amount only...")
             pass
-        
-        response = requests.get(url, stream=True)
+
+        response = requests.get(url, stream=True, timeout=30)
         response.raise_for_status()
         
         downloaded_size = 0
@@ -620,14 +623,17 @@ def check_and_download_data(year, check_tsy15=False):
     #print("="*60)
     #print(f"DATA DOWNLOAD FOR YEAR {year}")
     #print("="*60)
-    
-    # Check TSY15 only if explicitly requested
+
+    # Prefer Tsyganenko's own pre-computed driver file when requested and available -
+    # it already contains computed N/B indices, so it skips the OMNI recompute below.
     if check_tsy15:
         tsy15_success, tsy15_file = check_and_download_tsy15_data(year)
-    
-    # Use OMNI (default behavior)
+        if tsy15_success:
+            return True, tsy15_file, 'tsy15'
+
+    # Use OMNI (default behavior, and the fallback if TSY15 wasn't requested/available)
     omni_success, omni_file = download_omni_file(year)
-    
+
     if omni_success:
         # print(f"\nUsing OMNI 5-minute data for year {year}")
         return True, omni_file, 'omni'
@@ -635,9 +641,36 @@ def check_and_download_data(year, check_tsy15=False):
         # print(f"Failed to download data for year {year}")
         return False, None, None
 
+def build_warmup_rows(year, window_size):
+    """
+    Builds synthetic 'instantaneous'-index rows from the tail of the previous year's
+    cached data, so the rolling average has a real trailing window for the first points
+    of the year instead of starting cold.
+
+    This is an approximation: raw OMNI data for prior years isn't kept once a year
+    finishes downloading (see prior_year.load_prior_year_tail), only that year's own
+    final, already-rolling-averaged N_index/B_index. Using those directly as the
+    instantaneous seed values isn't exact, but it's far closer to reality than the
+    zero-history cold start it replaces, and it's the only history actually available
+    without re-downloading and reprocessing the previous year's raw OMNI feed.
+    """
+    prior_tail = load_prior_year_tail(year, hours=1)
+    if prior_tail is None or prior_tail.empty:
+        return []
+    tail = prior_tail.tail(window_size - 1)
+    warmup_rows = []
+    for _, r in tail.iterrows():
+        warmup_rows.append({
+            'DateTime': r['Date'].strftime('%Y-%m-%d %H:%M:%S'),
+            'N_index_inst': f"{r['N_index']:.6f}" if pd.notna(r.get('N_index')) else '',
+            'B_index_inst': f"{r['B_index']:.6f}" if pd.notna(r.get('B_index')) else '',
+            'SYM_H': f"{r['SYM_H']:.3f}" if pd.notna(r.get('SYM_H')) else '',
+        })
+    return warmup_rows
+
 def process_omni_with_instantaneous_indices(g, h, year):
     # Get the directory of the current script (OTSO package location)
-    script_dir = os.path.join(os.path.dirname(__file__), "")
+    script_dir = SCRATCH_DIR
     input_file = os.path.join(script_dir, 'tempfile.csv')
     output_file = os.path.join(script_dir, f'TSY15_{year}.csv')
     window_size = 7  # 30 minutes = 7 points for 5-minute resolution
@@ -683,11 +716,14 @@ def process_omni_with_instantaneous_indices(g, h, year):
             #print(f"  Processed {i + 1} rows...")
     
     #print(f"Instantaneous indices computed for {len(processed_rows)} rows")
-    
-    # Step 2: Apply rolling average to the indices
+
+    # Step 2: Apply rolling average to the indices, warm-started from the previous
+    # year's tail (if cached) so the year's first points aren't a cold start.
     #print(f"\nApplying {window_size}-point rolling average to indices...")
-    results = calculate_rolling_average_indices(processed_rows, window_size)
-    
+    warmup_rows = build_warmup_rows(year, window_size)
+    results = calculate_rolling_average_indices(warmup_rows + processed_rows, window_size)
+    results = results[len(warmup_rows):]
+
     # Write results
     with open(output_file, 'w', newline='') as outfile:
         fieldnames = ['DateTime', 'BX_nT_GSW', 'BY_nT_GSW', 'BZ_nT_GSW', 'Bt_nT_GSW',
@@ -745,7 +781,7 @@ def process_year(year, g, h, check_tsy15=False):
             #print("\nCONVERSION FAILED")
             return False, None, data_source
             
-        script_dir = os.path.join(os.path.dirname(__file__), "")
+        script_dir = SCRATCH_DIR
         final_output_file = os.path.join(script_dir, f'TSY15_{year}.csv')
         
         #print("\n" + "="*60)
@@ -767,7 +803,7 @@ def process_year(year, g, h, check_tsy15=False):
             return False, None, data_source
         
         # Check if output file was created in OTSO directory
-        script_dir = os.path.join(os.path.dirname(__file__), "")
+        script_dir = SCRATCH_DIR
         expected_tempfile = os.path.join(script_dir, 'tempfile.csv')
         if not os.path.exists(expected_tempfile):
             print(f"\ntempfile.csv was not created at {expected_tempfile}")
@@ -785,7 +821,7 @@ def process_year(year, g, h, check_tsy15=False):
             #print(f"Output file: {final_output_file}")
             return True, final_output_file, data_source
         except FileNotFoundError:
-            script_dir = os.path.join(os.path.dirname(__file__), "")
+            script_dir = SCRATCH_DIR
             #print(f"Error: tempfile.csv not found during processing at {script_dir}")
             return False, None, data_source
         except Exception as e:
@@ -795,11 +831,3 @@ def process_year(year, g, h, check_tsy15=False):
             return False, None, data_source
     
     return False, None, None
-
-def TSY15_OTSO_Download_v2(OMNI_year,g,h,check_tsy15=False):
-    success, output_file, data_source = process_year(OMNI_year, g, h, check_tsy15)
-    
-    if not success:
-        sys.exit(1)
-    
-    sys.exit(0)

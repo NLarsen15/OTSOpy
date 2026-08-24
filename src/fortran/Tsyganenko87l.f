@@ -37,27 +37,29 @@ C  IOPT     1      2         3        4         5        6
 C   KP    0,0+  1-,1,1+   2-,2,2+  3-,3,3+   4-,4,4+   >=5-  
 C-----------------------------------------------------------------------
 
+      USE TSY87module
       IMPLICIT NONE
 
-C Input
-      REAL*8 ps, x, y, z,tilt
+      ! Input
+      REAL*8 ps, x, y, z
       INTEGER*4 IOPT
-C Output
+
+      ! Output
       REAL*8 bx, by, bz
-C Local
-      REAL*8 GA(32,6), PA(32), HPI, FC, RT, X1, X2
-      REAL*8 C1, RRC2, DSTR, XN, RH, DY, B0, B1, B2, XN21, XN2, XNR
-      REAL*8 XN22, ADLN, SPS, CPS, RPS, ZS, ZP, ZM, FY, XNX, XNX2
+
+      ! Local
+      REAL*8 GA(32,6), HPI
+      REAL*8 B2, SPS, CPS, RPS, ZS, ZP, ZM, FY, XNX, XNX2
       REAL*8 XC1, XC2, XC22, XR2, XC12, B20, B2P, B2M, B, BP, BM, XA1
       REAL*8 XAP1, XAM1, XA2, XAP2, XAM2, XNA, XNAP, XNAM, F, FP, FM
-      REAL*8 XLN1, XLNP1, XLNM1, XLN2, XLNP2, XLNM2, ALN, S0, S0P, S0M
-      REAL*8 S1, S1P, S1M, S2, S2P, S2M, G1, G1P, G1M, G2, G2P, G2M
-      REAL*8 EX1, EX2, Y2, Z2, YZ, XSM, ZSM, RR, RR2, ZN, BRSM, BZSM
-      REAL*8 BY1, BXSM
-      INTEGER*4 I, IP
-      SAVE IP,PA,C1,RRC2,DSTR,XN,RH,X1,DY,B0,B1,XN21,XN2,XNR,XN22,ADLN
+      REAL*8 XLN1, XLNP1, XLNM1, XLN2, XLNP2, XLNM2
+      REAL*8 ALN, S0, S0P, S0M, S1, S1P, S1M, S2, S2P, S2M
+      REAL*8 G1, G1P, G1M, G2, G2P, G2M
+      REAL*8 EX1, EX2, Y2, Z2, YZ, XSM, ZSM, RR, RR2, ZN
+      REAL*8 BRSM, BZSM, BY1, BXSM
+
+      INTEGER*4 I
 C
-      COMMON /dip_ang/tilt
 C    &-.1058,-3.221,-.00114,-.02166,-30.43,.04049,.05464,.008884,42.,
 C
 C errata 1.29.90 D.P. Stern
@@ -91,7 +93,6 @@ C
      :-.1477d0,.838d0,-.01008d0,-.0057d0,9.231d0,-674.3d0,-900.d0,
      :-74.43d0,4.658d0,-3.245d0,3.39d0,21.8d0,5.62d0,25.17d0/
 
-      DATA IP, FC, RT, X1, X2 /100, 0.3183099031D0, 30.0D0, 4.0D0,5.0D0/
       ps=tilt*4.D0*ATAN(1.D0)/180.d0
 
       HPI = 2.0D0 * DATAN(1.0D0)
