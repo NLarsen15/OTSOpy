@@ -119,7 +119,11 @@ if (FinalStep) then
     h_used = Lasth
 end if
 
-xGSM = PositionArray(3,:)
+if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
+    xGSM = PositionArray(2,:)
+else
+    xGSM = PositionArray(3,:)
+end if
 
 xGSM = xGSM * Re_m
 
@@ -280,7 +284,11 @@ VelocityArray(1,:) = Vnew
 
 PositionArray(1,:) = XnewGDZ
 
-PositionArray(3,:) = Xnew_Re
+if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
+    PositionArray(2,:) = Xnew_Re
+else
+    PositionArray(3,:) = Xnew_Re
+end if
 
 if (adaptivestep .eqv. .TRUE.) then
 
