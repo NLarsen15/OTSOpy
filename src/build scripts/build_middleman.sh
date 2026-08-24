@@ -8,7 +8,7 @@ LIBS_DIR="../../OTSO/_core/libs"
 MODULE_NAME="MiddleMan"
 
 # Define Python versions to build for
-PYTHON_VERSIONS="3.9 3.10 3.11 3.12 3.13 3.14"
+PYTHON_VERSIONS="3.11 3.12 3.13 3.14"
 
 # Function to build for a specific Python version
 build_version() {

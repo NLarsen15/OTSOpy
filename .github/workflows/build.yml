@@ -109,6 +109,17 @@ jobs:
 
 
 
+    - name: Remove pre-existing Windows libraries before build
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        # OTSO/_core/libs/ ships with prebuilt .pyd files for other Python versions
+        # committed to the repo. If this matrix version's build fails to produce its
+        # own .pyd, the fallback search below would otherwise silently pick up one of
+        # these stale files and report success with the wrong version's binary.
+        echo "Removing committed _MiddleMan*.pyd files so a failed build can't be masked by a stale one..."
+        rm -fv OTSO/_core/libs/_MiddleMan*.pyd
+
     - name: Build Fortran extension with build script (Windows)
       if: runner.os == 'Windows'
       shell: bash -l {0}
@@ -154,15 +165,12 @@ jobs:
           echo "Found built extension, copying to build_artifacts..."
           cp "OTSO/_core/libs/$EXTNAME" OTSO/_core/libs/build_artifacts/
         else
-          echo "Searching for any MiddleMan extension files..."
-          find OTSO/_core/libs -name "_MiddleMan.*" -type f | head -n1 | while read file; do
-            if [[ -n "$file" ]]; then
-              echo "Found $file, copying to build_artifacts..."
-              cp "$file" OTSO/_core/libs/build_artifacts/
-            fi
-          done
+          echo "ERROR: Expected extension $EXTNAME not found in OTSO/_core/libs/."
+          echo "Contents of OTSO/_core/libs/:"
+          ls -l OTSO/_core/libs/
+          exit 1
         fi
-        
+
         echo "Library copied. Listing build_artifacts contents:"
         ls -l OTSO/_core/libs/build_artifacts/
 
