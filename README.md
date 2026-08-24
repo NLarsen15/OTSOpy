@@ -3,7 +3,7 @@
 # OTSOpy
 ![License](https://img.shields.io/github/license/NLarsen15/OTSOpy)
 ![GitHub release](https://img.shields.io/github/v/release/NLarsen15/OTSOpy)
-![Python](https://img.shields.io/badge/python-3.10%20to%203.14-blue)
+![Python](https://img.shields.io/badge/python-3.11%20to%203.14-blue)
 [![Docs](https://img.shields.io/badge/docs-online-brightgreen)](https://nlarsen15.github.io/OTSOpy/)
 ![GitHub stars](https://img.shields.io/github/stars/NLarsen15/OTSOpy?style=social)
 
@@ -12,11 +12,11 @@ Python package version of the OTSO tool used for trajectory computations of char
 OTSO is designed to be open-source; all suggestions for improvement are welcome, and please report any bugs you find. I welcome any help provided by the community in the development of OTSO.
 
 __Supported Python Versions:__ 3.11, 3.12, 3.13, and 3.14 
-(I will endeavour to keep OTSO support as up to date as possible)
+(I will endeavour to keep OTSO support as up-to-date as possible)
 
 # OTSO Documentation
 
-Detailed OTSO documentation for functions and input parameters is provided digitally via GitHub pages. Documentation can be found by clicking on [OTSOdocs](https://nlarsen15.github.io/OTSOpy/).
+Detailed OTSO documentation for functions and input parameters is provided digitally via GitHub Pages. Documentation can be found by clicking on [OTSOdocs](https://nlarsen15.github.io/OTSOpy/).
 
 # Installation
 
