@@ -1,0 +1,1805 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../Cutoff/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Parameters - OTSO Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#parameters-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="OTSO Documentation" class="md-header__button md-logo" aria-label="OTSO Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OTSO Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Parameters
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="OTSO Documentation" class="md-nav__button md-logo" aria-label="OTSO Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    OTSO Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameters
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#datetime_params-datetimeparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        datetime_params — DateTimeParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#magfield_params-magfieldparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        magfield_params — MagFieldParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rigidity_params-rigidityparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rigidity_params — RigidityParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asymptotic_params-asymptoticparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        asymptotic_params — AsymptoticParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transmission_params-transmissionparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        transmission_params — TransmissionParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solar_wind_params-solarwindparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        solar_wind_params — SolarWindParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#geomagnetic_params-geomagneticparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        geomagnetic_params — GeomagneticParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tsyganenko_params-tsyganenkoparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tsyganenko_params — TsyganenkoParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration_params-integrationparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        integration_params — IntegrationParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#particle_params-particleparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        particle_params — ParticleParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coordinate_params-coordinateparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        coordinate_params — CoordinateParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#computation_params-computationparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        computation_params — ComputationParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data_retrieval_params-dataretrievalparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data_retrieval_params — DataRetrievalParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom_field_params-customfieldparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        custom_field_params — CustomFieldParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grid_params-gridparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        grid_params — GridParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skymap_params-skymapparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skymap_params — SkymapParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cutoff/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cutoff
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Trajectory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Planet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Flight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Transmission/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transmission
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Skymap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skymap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Magfield/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Magfield
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trace
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Coordtrans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coordtrans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CLI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Publications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#datetime_params-datetimeparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        datetime_params — DateTimeParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#magfield_params-magfieldparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        magfield_params — MagFieldParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rigidity_params-rigidityparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rigidity_params — RigidityParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asymptotic_params-asymptoticparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        asymptotic_params — AsymptoticParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transmission_params-transmissionparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        transmission_params — TransmissionParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solar_wind_params-solarwindparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        solar_wind_params — SolarWindParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#geomagnetic_params-geomagneticparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        geomagnetic_params — GeomagneticParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tsyganenko_params-tsyganenkoparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tsyganenko_params — TsyganenkoParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration_params-integrationparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        integration_params — IntegrationParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#particle_params-particleparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        particle_params — ParticleParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coordinate_params-coordinateparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        coordinate_params — CoordinateParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#computation_params-computationparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        computation_params — ComputationParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data_retrieval_params-dataretrievalparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data_retrieval_params — DataRetrievalParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom_field_params-customfieldparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        custom_field_params — CustomFieldParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grid_params-gridparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        grid_params — GridParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skymap_params-skymapparams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skymap_params — SkymapParams
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="parameters-reference">Parameters Reference</h1>
+<p>Every OTSO function (<code>cutoff</code>, <code>cone</code>, <code>planet</code>, <code>trajectory</code>, <code>flight</code>, <code>trace</code>, <code>magfield</code>, <code>transmission</code>, <code>skymap</code>) takes its settings as a handful of grouped dictionaries — <code>magfield_params</code>, <code>integration_params</code>, <code>rigidity_params</code>, and so on — instead of one long flat argument list. Each function's own docstring lists exactly which of these groups it accepts (not every function accepts every group — see the "Used by" line under each heading below), and this page explains what each key inside those groups actually does.</p>
+<p>Every key is optional; anything you don't set falls back to the default shown.</p>
+<hr />
+<h2 id="datetime_params-datetimeparams"><code>datetime_params</code> — <code>DateTimeParams</code></h2>
+<p><strong>Used by:</strong> <code>cutoff</code>, <code>cone</code>, <code>planet</code>, <code>trajectory</code>, <code>trace</code>, <code>magfield</code>, <code>transmission</code>, <code>skymap</code> (not <code>flight</code>, which takes a list of dates directly since a flight path moves through time)</p>
+<p>The UTC date/time of the simulation. This drives which IGRF/CHAOS coefficients are interpolated for the internal field and which OMNI/NOAA record is pulled when <code>serverdata</code>/<code>livedata</code> are enabled.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>year</code></td>
+<td>int</td>
+<td>2024</td>
+<td>Year</td>
+</tr>
+<tr>
+<td><code>month</code></td>
+<td>int</td>
+<td>1</td>
+<td>Month (1–12)</td>
+</tr>
+<tr>
+<td><code>day</code></td>
+<td>int</td>
+<td>1</td>
+<td>Day (1–31)</td>
+</tr>
+<tr>
+<td><code>hour</code></td>
+<td>int</td>
+<td>12</td>
+<td>Hour (0–23)</td>
+</tr>
+<tr>
+<td><code>minute</code></td>
+<td>int</td>
+<td>0</td>
+<td>Minute (0–59)</td>
+</tr>
+<tr>
+<td><code>second</code></td>
+<td>int</td>
+<td>0</td>
+<td>Second (0–59)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="magfield_params-magfieldparams"><code>magfield_params</code> — <code>MagFieldParams</code></h2>
+<p><strong>Used by:</strong> all functions</p>
+<p>Selects and configures the internal (Earth's core) and external (magnetospheric) magnetic field models, and the magnetopause boundary used to decide when a particle has escaped.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>internalmag</code></td>
+<td>str</td>
+<td><code>"IGRF"</code></td>
+<td>Internal field model. One of <code>"NONE"</code>, <code>"IGRF"</code>, <code>"Dipole"</code>, <code>"Custom Gauss"</code>, <code>"CHAOS"</code>. <code>"NONE"</code> still computes Gauss coefficients but effectively disables the internal contribution; <code>"Custom Gauss"</code> requires <code>g</code>/<code>h</code> in <code>custom_field_params</code>.</td>
+</tr>
+<tr>
+<td><code>externalmag</code></td>
+<td>str</td>
+<td><code>"TSY89c"</code></td>
+<td>External (magnetospheric) field model. One of <code>"NONE"</code>, <code>"TSY87short"</code>, <code>"TSY87long"</code>, <code>"TSY89a"</code>, <code>"TSY96"</code>, <code>"TSY01"</code>, <code>"TSY01S"</code>, <code>"TSY04"</code>, <code>"TSY89c"</code>, <code>"TSY15N"</code>, <code>"TSY15B"</code>, <code>"TA16_RBF"</code>, <code>"TSY89_refit"</code>, <code>"MHD"</code> (requires <code>MHDfile</code>). Newer Tsyganenko models need more solar wind/index inputs — see <code>tsyganenko_params</code> and <code>geomagnetic_params</code>.</td>
+</tr>
+<tr>
+<td><code>boberg</code></td>
+<td>bool</td>
+<td><code>False</code></td>
+<td>Apply the Boberg extension on top of the TSY89 model to account for storm conditions, Boberg extension is TSY89 version specific.</td>
+</tr>
+<tr>
+<td><code>bobergtype</code></td>
+<td>str</td>
+<td><code>"EXTENSION"</code></td>
+<td>Boberg variant to use: <code>"EXTENSION"</code>, <code>"CONTINUOUS"</code>, <code>"DST_DEPENDENT"</code>, <code>"DST_MIDPOINT"</code>. Only relevant when <code>boberg=True</code>.</td>
+</tr>
+<tr>
+<td><code>magnetopause</code></td>
+<td>str</td>
+<td><code>"Kobel"</code></td>
+<td>Magnetopause shape model used as the outer escape boundary. One of <code>"NONE"</code> (disabled — particle never counted as escaped by this check), <code>"Sphere"</code> (radius set by <code>spheresize</code>), <code>"aFormisano"</code>, <code>"Sibeck"</code>, <code>"Kobel"</code>, <code>"Lin"</code>.</td>
+</tr>
+<tr>
+<td><code>spheresize</code></td>
+<td>float</td>
+<td>25</td>
+<td>Radius (Re) of the spherical magnetopause boundary. Only used when <code>magnetopause="Sphere"</code>.</td>
+</tr>
+<tr>
+<td><code>AdaptiveExternalModel</code></td>
+<td>bool</td>
+<td><code>False</code></td>
+<td>Only relevant with <code>serverdata="ON"</code>. If the requested external model's required OMNI inputs are missing for the given date, automatically fall back to the next-simplest Tsyganenko model that has valid inputs (e.g. TA16 → TSY15B → ... → TSY89) instead of raising an error.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="rigidity_params-rigidityparams"><code>rigidity_params</code> — <code>RigidityParams</code></h2>
+<p><strong>Used by:</strong> <code>cutoff</code>, <code>cone</code>, <code>planet</code>, <code>flight</code>, <code>transmission</code>, <code>skymap</code> (not <code>trajectory</code>, which traces a single particle at the fixed rigidity given in <code>particle_params["rigidity"]</code> rather than scanning a range)</p>
+<p>Controls the descending rigidity scan used to locate the cutoff transitions (upper/effective/lower cutoff).</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>startrigidity</code></td>
+<td>float</td>
+<td>20</td>
+<td>Highest rigidity (GV) the scan starts from.</td>
+</tr>
+<tr>
+<td><code>endrigidity</code></td>
+<td>float</td>
+<td>0</td>
+<td>Lowest rigidity (GV) the scan stops at.</td>
+</tr>
+<tr>
+<td><code>rigiditystep</code></td>
+<td>float</td>
+<td>0.01</td>
+<td>Rigidity decrement (GV) between successive traced particles. Smaller = finer cutoff resolution but more traces.</td>
+</tr>
+<tr>
+<td><code>rigidityscan</code></td>
+<td>str</td>
+<td><code>"ON"</code></td>
+<td><code>"ON"</code> performs a preliminary rough scan of rigidity range to find rough upper and lower bounds of rigidity range to test with user given resolution. <code>"OFF"</code> disables scanning.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="asymptotic_params-asymptoticparams"><code>asymptotic_params</code> — <code>AsymptoticParams</code></h2>
+<p><strong>Used by:</strong> <code>cutoff</code>, <code>planet</code>, <code>flight</code></p>
+<p>Computes the asymptotic viewing direction (the direction a particle arrived from, once far from Earth) at a fixed set of energy/rigidity levels, independent of the cutoff rigidity scan.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asymptotic</code></td>
+<td>str</td>
+<td><code>"NO"</code></td>
+<td><code>"YES"</code> enables asymptotic direction computation, <code>"NO"</code> disables it.</td>
+</tr>
+<tr>
+<td><code>unit</code></td>
+<td>str</td>
+<td><code>"GeV"</code></td>
+<td>Unit the <code>asymlevels</code> values are given in: <code>"GeV"</code> or <code>"GV"</code>.</td>
+</tr>
+<tr>
+<td><code>asymlevels</code></td>
+<td>list</td>
+<td><code>[0.1, 0.3, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 50, 70, 100, 300, 500, 700, 1000]</code></td>
+<td>The list of energy/rigidity levels (in <code>unit</code>) to compute an asymptotic direction for.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="transmission_params-transmissionparams"><code>transmission_params</code> — <code>TransmissionParams</code></h2>
+<p><strong>Used by:</strong> <code>cutoff</code>, <code>cone</code>, <code>planet</code>, <code>flight</code>, <code>transmission</code>, <code>skymap</code></p>
+<p>Computes the transmission function (probability that a given rigidity is geomagnetically allowed) by sampling a small band of rigidities around each scanned point rather than a single trace.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>transmission</code></td>
+<td>bool</td>
+<td><code>False</code></td>
+<td>Enable transmission function computation.</td>
+</tr>
+<tr>
+<td><code>transmissionRstep</code></td>
+<td>float</td>
+<td>0.001</td>
+<td>Half-width (GV) of the sampling band around each tested rigidity: samples are drawn from <code>R ± transmissionRstep</code>.</td>
+</tr>
+<tr>
+<td><code>transmissionsamples</code></td>
+<td>int</td>
+<td>20</td>
+<td>Number of rigidities sampled within that band.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="solar_wind_params-solarwindparams"><code>solar_wind_params</code> — <code>SolarWindParams</code></h2>
+<p><strong>Used by:</strong> all functions (ignored if <code>serverdata</code>/<code>livedata</code> supply these instead)</p>
+<p>Manual solar wind and IMF values, used when not pulling data from the OMNI server or live NOAA feed. Several external field models (see <code>magfield_params["externalmag"]</code>) need specific fields here to be non-default.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vx</code></td>
+<td>float</td>
+<td>-500</td>
+<td>Solar wind velocity x-component (km/s). OTSO expects this pointed sunward-to-Earth; a positive value is auto-flipped negative internally.</td>
+</tr>
+<tr>
+<td><code>vy</code></td>
+<td>float</td>
+<td>0</td>
+<td>Solar wind velocity y-component (km/s).</td>
+</tr>
+<tr>
+<td><code>vz</code></td>
+<td>float</td>
+<td>0</td>
+<td>Solar wind velocity z-component (km/s).</td>
+</tr>
+<tr>
+<td><code>bx</code></td>
+<td>float</td>
+<td>0</td>
+<td>IMF x-component (nT).</td>
+</tr>
+<tr>
+<td><code>by</code></td>
+<td>float</td>
+<td>5</td>
+<td>IMF y-component (nT).</td>
+</tr>
+<tr>
+<td><code>bz</code></td>
+<td>float</td>
+<td>5</td>
+<td>IMF z-component (nT). Southward (negative) IMF drives stronger geomagnetic activity.</td>
+</tr>
+<tr>
+<td><code>by_avg</code></td>
+<td>float</td>
+<td>0</td>
+<td>IMF By averaged over the preceding 30 minutes (nT). Needed by TSY15N/TSY15B/TA16.</td>
+</tr>
+<tr>
+<td><code>bz_avg</code></td>
+<td>float</td>
+<td>0</td>
+<td>IMF Bz averaged over the preceding 30 minutes (nT). Needed by TSY15N/TSY15B/TA16.</td>
+</tr>
+<tr>
+<td><code>density</code></td>
+<td>float</td>
+<td>1</td>
+<td>Solar wind proton density (particles/cm³).</td>
+</tr>
+<tr>
+<td><code>pdyn</code></td>
+<td>float</td>
+<td>0</td>
+<td>Solar wind dynamic pressure (nPa).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="geomagnetic_params-geomagneticparams"><code>geomagnetic_params</code> — <code>GeomagneticParams</code></h2>
+<p><strong>Used by:</strong> all functions (ignored if <code>serverdata</code>/<code>livedata</code> supply these instead)</p>
+<p>Geomagnetic activity indices, required by specific external field models.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Dst</code></td>
+<td>float</td>
+<td>0</td>
+<td>Dst index (nT) — ring current strength. Used by the Boberg extension's Dst-dependent variants and some Tsyganenko models.</td>
+</tr>
+<tr>
+<td><code>kp</code></td>
+<td>float</td>
+<td>0</td>
+<td>Kp index (0–9). Drives <code>IOPT</code>, the storm-level input used by the older Tsyganenko models (TSY89 family).</td>
+</tr>
+<tr>
+<td><code>n_index</code></td>
+<td>float</td>
+<td>0</td>
+<td>Newell coupling function. Needed by TSY15N.</td>
+</tr>
+<tr>
+<td><code>b_index</code></td>
+<td>float</td>
+<td>0</td>
+<td>Boynton coupling function. Needed by TSY15B.</td>
+</tr>
+<tr>
+<td><code>sym_h_corrected</code></td>
+<td>float</td>
+<td>0</td>
+<td>Corrected SYM-H index (nT). Needed by TA16_RBF.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="tsyganenko_params-tsyganenkoparams"><code>tsyganenko_params</code> — <code>TsyganenkoParams</code></h2>
+<p><strong>Used by:</strong> all functions (ignored if <code>serverdata</code>/<code>livedata</code> supply these instead)</p>
+<p>The G1–G3 and W1–W6 driving coefficients used by the newer Tsyganenko external field models (TSY01 storm, TSY04, and later).</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>G1</code></td>
+<td>float</td>
+<td>0</td>
+<td>Tsyganenko G1 coefficient (TSY01/TSY01S).</td>
+</tr>
+<tr>
+<td><code>G2</code></td>
+<td>float</td>
+<td>0</td>
+<td>Tsyganenko G2 coefficient (TSY01).</td>
+</tr>
+<tr>
+<td><code>G3</code></td>
+<td>float</td>
+<td>0</td>
+<td>Tsyganenko G3 coefficient (TSY01S).</td>
+</tr>
+<tr>
+<td><code>W1</code>–<code>W6</code></td>
+<td>float</td>
+<td>0</td>
+<td>Tsyganenko W1–W6 coefficients (TSY04) — cumulative solar wind forcing terms.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="integration_params-integrationparams"><code>integration_params</code> — <code>IntegrationParams</code></h2>
+<p><strong>Used by:</strong> <code>cutoff</code>, <code>cone</code>, <code>planet</code>, <code>trajectory</code>, <code>flight</code>, <code>transmission</code>, <code>skymap</code> in full; <code>trace</code> accepts only <code>minaltitude</code>, <code>maxdistance</code>, <code>maxtime</code>, <code>maxsteps</code>, <code>startaltitude</code>, <code>fixedstep</code> (field-line tracing doesn't do particle-style adaptive/beta-checked integration, so <code>intmodel</code>/<code>gyropercent</code>/<code>betaerror</code>/<code>totalbetacheck</code>/<code>adaptivestep</code>/<code>mintrapdist</code> don't apply); not used by <code>magfield</code></p>
+<p>Controls how a particle's trajectory is numerically integrated through the field, and when a trace is stopped.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>intmodel</code></td>
+<td>str</td>
+<td><code>"Boris-Buneman"</code></td>
+<td>Integration method: <code>"4RK"</code>, <code>"5RK"</code>, <code>"6RK"</code> (Runge-Kutta, 4th/5th/6th order), <code>"Boris-Buneman"</code>, <code>"Vay"</code>, <code>"HC"</code> (Higuera-Cary).</td>
+</tr>
+<tr>
+<td><code>gyropercent</code></td>
+<td>float</td>
+<td>5</td>
+<td>Adaptive step-size cap, as a percentage of the particle's local gyration (cyclotron) period. Smaller values give a finer, more accurate integration step but take longer; only applies when <code>adaptivestep=True</code>.</td>
+</tr>
+<tr>
+<td><code>minaltitude</code></td>
+<td>float</td>
+<td>20</td>
+<td>Termination boundary (km if <code>inputcoord="GDZ"</code>, otherwise Re): the trace stops once the particle's radial position drops below this altitude ("Earth encounter" — e.g. the particle is absorbed by the atmosphere).</td>
+</tr>
+<tr>
+<td><code>startaltitude</code></td>
+<td>float</td>
+<td>20</td>
+<td>Altitude (same units as <code>minaltitude</code>) the trace begins at, typically 20km is selected as the average altitude at which particle interact with the atmosphere. Distinct from <code>minaltitude</code>, which only governs when the trace <em>stops</em>.</td>
+</tr>
+<tr>
+<td><code>maxdistance</code></td>
+<td>float</td>
+<td>100</td>
+<td>Termination boundary (Re): the trace stops once the particle has travelled farther than this from Earth (it is assumed a forbidden trapped trajectory).</td>
+</tr>
+<tr>
+<td><code>maxtime</code></td>
+<td>float</td>
+<td>0</td>
+<td>Termination boundary (s) on total integration time. <code>0</code> disables this check. Acts as a safety net against traces that never hit another stopping condition.</td>
+</tr>
+<tr>
+<td><code>maxsteps</code></td>
+<td>int</td>
+<td>0 (<code>None</code> at the public API level)</td>
+<td>Termination boundary on the number of integration steps taken. <code>0</code>/unset disables this check. Another safety net alongside <code>maxtime</code>.</td>
+</tr>
+<tr>
+<td><code>mintrapdist</code></td>
+<td>float</td>
+<td>0</td>
+<td>Reference radial distance (Re) used to detect trapped particles: if the particle's radial distance never grows past this value over the course of the trace, it's flagged as trapped rather than escaping or hitting the atmosphere.</td>
+</tr>
+<tr>
+<td><code>betaerror</code></td>
+<td>float</td>
+<td>0.001</td>
+<td>Maximum allowed fractional change in the particle's speed over a single integration step, as a percentage. Speed should be conserved in a static magnetic field (the Lorentz force does no work), so a larger-than-allowed change means the step was too coarse — the integrator rejects and retries it with a smaller step.</td>
+</tr>
+<tr>
+<td><code>totalbetacheck</code></td>
+<td>bool</td>
+<td><code>False</code></td>
+<td>Additionally checks the particle's <em>current</em> speed against its speed at the very start of the trace (not just step-to-step). If the cumulative drift exceeds <code>betaerror</code>, the integrator backs off and retries — catches slow numerical drift that per-step checks alone can miss.</td>
+</tr>
+<tr>
+<td><code>adaptivestep</code></td>
+<td>bool</td>
+<td><code>True</code></td>
+<td>Use an adaptive step size (capped by <code>gyropercent</code>, tightened by <code>betaerror</code>) instead of a fixed one.</td>
+</tr>
+<tr>
+<td><code>fixedstep</code></td>
+<td>float</td>
+<td>0.0</td>
+<td>Fixed step size in seconds, used only when <code>adaptivestep=False</code> and this is <code>&gt; 0</code>. <code>0</code> (default) falls back to a <code>gyropercent</code>-derived step even with <code>adaptivestep=False</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="particle_params-particleparams"><code>particle_params</code> — <code>ParticleParams</code></h2>
+<p><strong>Used by:</strong> <code>cutoff</code>, <code>cone</code>, <code>planet</code>, <code>trajectory</code>, <code>flight</code>, <code>transmission</code>, <code>skymap</code> (not <code>trace</code> or <code>magfield</code>, which don't trace a physical particle)</p>
+<p>The particle species and (for <code>trajectory</code>, or <code>cutoff_comp="Custom"</code>) its fixed direction/rigidity.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Anum</code></td>
+<td>int</td>
+<td>1</td>
+<td>Atomic number of the traced species: <code>-1</code> = muon, <code>0</code> = electron, <code>1</code> = hydrogen (proton), <code>2</code> = helium (alpha particle), <code>3</code> = lithium, <code>4</code> = beryllium. Values above 4 are not currently supported.</td>
+</tr>
+<tr>
+<td><code>anti</code></td>
+<td>str</td>
+<td><code>"YES"</code></td>
+<td><code>"YES"</code> traces the anti-particle (standard for cosmic-ray cutoff work, since OTSO backtraces from Earth outward); <code>"NO"</code> traces the particle itself.</td>
+</tr>
+<tr>
+<td><code>zenith</code></td>
+<td>float</td>
+<td>0</td>
+<td>Zenith angle (degrees) of the initial direction. Only used when <code>cutoff_comp="Custom"</code>.</td>
+</tr>
+<tr>
+<td><code>azimuth</code></td>
+<td>float</td>
+<td>0</td>
+<td>Azimuth angle (degrees) of the initial direction. Only used when <code>cutoff_comp="Custom"</code>.</td>
+</tr>
+<tr>
+<td><code>rigidity</code></td>
+<td>float</td>
+<td>1</td>
+<td>Fixed rigidity (GV) to trace at. Used by <code>trajectory</code>, which traces one particle rather than scanning a rigidity range.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="coordinate_params-coordinateparams"><code>coordinate_params</code> — <code>CoordinateParams</code></h2>
+<p><strong>Used by:</strong> <code>cutoff</code>, <code>cone</code>, <code>planet</code>, <code>trajectory</code>, <code>flight</code>, <code>magfield</code>, <code>transmission</code>, <code>skymap</code>, <code>trace</code> (<code>trace</code> only uses <code>inputcoord</code>; <code>coordsystem</code>/<code>coordout</code> don't apply to field-line tracing)</p>
+<p>Input/output coordinate systems for station locations and results.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inputcoord</code></td>
+<td>str</td>
+<td><code>"GDZ"</code></td>
+<td>Coordinate system station/location inputs are given in. One of <code>"GDZ"</code>, <code>"GEO"</code>, <code>"GSM"</code>, <code>"GSE"</code>, <code>"SM"</code>, <code>"GEI"</code>, <code>"MAG"</code>, <code>"SPH"</code>, <code>"RLL"</code>. <code>"GDZ"</code> (geodetic) is the natural choice when giving latitude/longitude/altitude.</td>
+</tr>
+<tr>
+<td><code>coordsystem</code></td>
+<td>str</td>
+<td><code>"GEO"</code>/<code>"GSM"</code> (varies by function — check its docstring)</td>
+<td>Coordinate system results (e.g. trajectory positions) are reported in. Same 9 options as <code>inputcoord</code>.</td>
+</tr>
+<tr>
+<td><code>coordout</code></td>
+<td>str</td>
+<td><code>"GSM"</code></td>
+<td><code>magfield</code>-specific output coordinate system. Cartesian only: <code>"GEO"</code>, <code>"GSM"</code>, <code>"GSE"</code>, <code>"SM"</code>, <code>"GEI"</code>, <code>"MAG"</code>, <code>"RLL"</code> (no <code>"GDZ"</code>/<code>"SPH"</code>).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="computation_params-computationparams"><code>computation_params</code> — <code>ComputationParams</code></h2>
+<p><strong>Used by:</strong> all functions</p>
+<p>Controls parallelism and console output. OTSO parallelizes over stations/grid points using multiple OS processes, and each of those processes can additionally use multiple CPU threads internally (OpenMP) for its own Fortran computation — so a rough rule of thumb is <code>corenum × threadnum</code> ≤ your machine's CPU count.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>corenum</code></td>
+<td>int or <code>None</code></td>
+<td><code>None</code> (auto: logical CPU count − 2, minimum 1)</td>
+<td>Number of parallel OS worker processes. Each worker handles a chunk of the stations/grid points.</td>
+</tr>
+<tr>
+<td><code>threadnum</code></td>
+<td>int</td>
+<td>1</td>
+<td>Number of CPU threads each worker process is pinned to and allowed to use internally (OpenMP-parallelized Fortran routines) for its own computation.</td>
+</tr>
+<tr>
+<td><code>Verbose</code></td>
+<td>bool</td>
+<td><code>True</code></td>
+<td>Print progress (a progress bar where available) while computing.</td>
+</tr>
+<tr>
+<td><code>delim</code></td>
+<td>str</td>
+<td><code>";"</code></td>
+<td>Delimiter used to join multiple asymptotic-direction values into a single output field, when <code>asymptotic_params["asymptotic"]="YES"</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="data_retrieval_params-dataretrievalparams"><code>data_retrieval_params</code> — <code>DataRetrievalParams</code></h2>
+<p><strong>Used by:</strong> all functions</p>
+<p>Automatic space-weather data retrieval, as an alternative to manually filling in <code>solar_wind_params</code>/<code>geomagnetic_params</code>/<code>tsyganenko_params</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>serverdata</code></td>
+<td>str</td>
+<td><code>"OFF"</code></td>
+<td><code>"ON"</code> downloads and uses the finalised OMNI database values for the given <code>datetime_params</code>, overriding manually-supplied solar wind/geomagnetic/Tsyganenko values.</td>
+</tr>
+<tr>
+<td><code>livedata</code></td>
+<td>str</td>
+<td><code>"OFF"</code></td>
+<td><code>"ON"</code> pulls preliminary real-time data from NOAA instead. NOAA values are provisional and may later differ from the finalised OMNI database (<code>serverdata</code> takes precedence if both would apply). Not supported for <code>externalmag="TSY04"</code> or <code>"TA16_RBF"</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="custom_field_params-customfieldparams"><code>custom_field_params</code> — <code>CustomFieldParams</code></h2>
+<p><strong>Used by:</strong> all functions</p>
+<p>Advanced/custom internal field configuration.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>g</code></td>
+<td>list or <code>None</code></td>
+<td><code>None</code></td>
+<td>Custom Gauss <code>g</code> coefficients. Required when <code>internalmag="Custom Gauss"</code>.</td>
+</tr>
+<tr>
+<td><code>h</code></td>
+<td>list or <code>None</code></td>
+<td><code>None</code></td>
+<td>Custom Gauss <code>h</code> coefficients. Required when <code>internalmag="Custom Gauss"</code>.</td>
+</tr>
+<tr>
+<td><code>max_degree</code></td>
+<td>int</td>
+<td>13</td>
+<td>Maximum spherical harmonic degree/order used when expanding the internal field from Gauss coefficients. Higher = more accurate near Earth but more computation; capped at the underlying coefficient table's degree (IGRF: 13; <code>"Dipole"</code> is forced to degree 1 regardless of this value).</td>
+</tr>
+<tr>
+<td><code>MHDfile</code></td>
+<td>str or <code>None</code></td>
+<td><code>None</code></td>
+<td>Path to an MHD simulation output file. Required when <code>externalmag="MHD"</code>; OTSO validates the file exists before running.</td>
+</tr>
+<tr>
+<td><code>MHDcoordsys</code></td>
+<td>str or <code>None</code></td>
+<td><code>None</code></td>
+<td>Coordinate system the MHD file's field data is given in.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="grid_params-gridparams"><code>grid_params</code> — <code>GridParams</code></h2>
+<p><strong>Used by:</strong> <code>planet</code>, <code>trace</code></p>
+<p>Defines the latitude/longitude grid over which a global field/cutoff map is computed.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>maxlat</code></td>
+<td>float</td>
+<td>90</td>
+<td>Northern latitude bound (degrees).</td>
+</tr>
+<tr>
+<td><code>minlat</code></td>
+<td>float</td>
+<td>-90</td>
+<td>Southern latitude bound (degrees).</td>
+</tr>
+<tr>
+<td><code>latstep</code></td>
+<td>float</td>
+<td>-5</td>
+<td>Latitude step (degrees). <strong>Must be negative</strong> to iterate from <code>maxlat</code> down to <code>minlat</code> — a positive value triggers a warning and will likely produce an empty or unexpected grid.</td>
+</tr>
+<tr>
+<td><code>maxlong</code></td>
+<td>float</td>
+<td>360</td>
+<td>Eastern longitude bound (degrees).</td>
+</tr>
+<tr>
+<td><code>minlong</code></td>
+<td>float</td>
+<td>0</td>
+<td>Western longitude bound (degrees).</td>
+</tr>
+<tr>
+<td><code>longstep</code></td>
+<td>float</td>
+<td>5</td>
+<td>Longitude step (degrees), from <code>minlong</code> up to <code>maxlong</code>.</td>
+</tr>
+<tr>
+<td><code>array_of_lats_and_longs</code></td>
+<td>list or <code>None</code></td>
+<td><code>None</code></td>
+<td>Optional explicit list of <code>(latitude, longitude)</code> pairs to use instead of generating a grid from the bounds/step above.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="skymap_params-skymapparams"><code>skymap_params</code> — <code>SkymapParams</code></h2>
+<p><strong>Used by:</strong> <code>skymap</code></p>
+<p>Defines the zenith/azimuth grid, centred on each station, that <code>skymap</code> computes a cutoff rigidity for.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>minzenith</code></td>
+<td>float</td>
+<td>0</td>
+<td>Minimum zenith angle (degrees, 0 = straight up).</td>
+</tr>
+<tr>
+<td><code>maxzenith</code></td>
+<td>float</td>
+<td>75</td>
+<td>Maximum zenith angle (degrees).</td>
+</tr>
+<tr>
+<td><code>zenithstep</code></td>
+<td>float</td>
+<td>15</td>
+<td>Zenith step (degrees) between grid points.</td>
+</tr>
+<tr>
+<td><code>minazimuth</code></td>
+<td>float</td>
+<td>0</td>
+<td>Minimum azimuth angle (degrees, measured from geographic North).</td>
+</tr>
+<tr>
+<td><code>maxazimuth</code></td>
+<td>float</td>
+<td>360</td>
+<td>Maximum azimuth angle (degrees).</td>
+</tr>
+<tr>
+<td><code>azimuthstep</code></td>
+<td>float</td>
+<td>45</td>
+<td>Azimuth step (degrees) between grid points.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
