@@ -14,7 +14,8 @@
 subroutine RK5(VelocityArray, PositionArray, h, BetaError, &
                FinalStep, M, Q, secondTotal, mindistcheck, DistanceTraveled, &
                steps, TimeElapsed, counter, OLDPositionArray, OLDVelocityArray, &
-               OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+               OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+               CachedBfield, CachedBfieldValid)
 
 use SharedParameters
 implicit none
@@ -43,6 +44,9 @@ real(8), intent(inout) :: MDP(3)
 real(8), intent(in) :: MaxGyroPercent
 real(8), intent(in) :: R
 real(8), intent(in) :: firsth
+
+real(8), intent(inout) :: CachedBfield(3)
+logical, intent(inout) :: CachedBfieldValid
 
 real(8) :: d
 real(8) :: B0(3), crossed(3)
@@ -112,7 +116,11 @@ do while (.not. StepAccepted)
 
     t0 = secondTotal
 
-    call MagneticField(x0_Re, t0, B0)
+    if (CachedBfieldValid) then
+        B0 = CachedBfield
+    else
+        call MagneticField(x0_Re, t0, B0)
+    end if
 
     Bnorm0 = sqrt(dot_product(B0,B0))
 
@@ -278,7 +286,9 @@ end if
 if (adaptivestep) then
 
     call NewMax(VelocityArray, PositionArray, &
-                MaxGyroPercent, secondTotal, R, Max)
+                MaxGyroPercent, secondTotal, R, Max, CachedBfield)
+
+    CachedBfieldValid = .true.
 
     if (h > Max) then
         h = Max

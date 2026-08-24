@@ -29,8 +29,7 @@ tsyganenko_inputs     = {"G1": 0, "G2": 0, "G3": 0, "W1": 0, "W2": 0, "W3": 0,
 integration_inputs    = {"intmodel": "Boris-Buneman", "gyropercent": 15, "minaltitude": 20,
                          "maxdistance": 100, "maxtime": 0, "mintrapdist": 6.6,
                          "startaltitude": 20, "betaerror": 0.001,
-                         "totalbetacheck": True, "adaptivestep": False,
-                         "maxsteps": 100000}
+                         "totalbetacheck": True, "adaptivestep": True}
 
 particle_inputs       = {"Anum": 1, "anti": "YES", "zenith": 0, "azimuth": 0}
 
@@ -48,15 +47,12 @@ data_retrieval_inputs = {"serverdata": "OFF", "livedata": "OFF"}
 
 if __name__ == '__main__':
 
-    stations_list = ["OULU","ROME","ATHN","CALG"] # list of neutron monitor stations (using their abbreviations)
-    custom_location_list = [["Custom", 25, 25]] # list of lists ["name", latitude, longitude]
-
+    stations_list = ["OULU"]
     #cutoff_comp can be set as "Vertical, Apparent, and Custom"
 
     # Example using grouped parameters
     cutoff_results = cutoff(
         Stations=stations_list,
-        customlocations=custom_location_list,
         cutoff_comp="Vertical",
         datetime_params=date_inputs,
         magfield_params=magfield_inputs,
@@ -75,9 +71,9 @@ if __name__ == '__main__':
     )
 
     print(cutoff_results[0]) # dataframe output containing Ru, Rc, Rl for all input locations
-    print(cutoff_results[1]) # dataframe output containing asymptotic viewing direction results for all input locations
-    print(cutoff_results[2]) # dataframe output containing transmission functions for all input locations
-    print(cutoff_results[-1]) # text output of input variable information
+    #print(cutoff_results[1]) # dataframe output containing asymptotic viewing direction results for all input locations
+    #print(cutoff_results[2]) # dataframe output containing transmission functions for all input locations
+    #print(cutoff_results[-1]) # text output of input variable information
 
 
 

@@ -1579,6 +1579,57 @@ subroutine f90wrap_particledata__set__maxgyropercent(this, f90wrap_MaxGyroPercen
     this_ptr%p%MaxGyroPercent = f90wrap_MaxGyroPercent
 end subroutine f90wrap_particledata__set__maxgyropercent
 
+subroutine f90wrap_particledata__array__cachedbfield(this, nd, dtype, dshape, dloc)
+    use middleman
+    use, intrinsic :: iso_c_binding, only : c_int
+    implicit none
+    type particledata_ptr_type
+        type(particledata), pointer :: p => NULL()
+    end type particledata_ptr_type
+    integer(c_int), intent(in) :: this(4)
+    type(ParticleData_ptr_type) :: this_ptr
+    integer(c_int), intent(out) :: nd
+    integer(c_int), intent(out) :: dtype
+    integer(c_int), dimension(10), intent(out) :: dshape
+    integer*8, intent(out) :: dloc
+    
+    nd = 1
+    dtype = 11
+    this_ptr = transfer(this, this_ptr)
+    dshape(1:1) = shape(this_ptr%p%CachedBfield)
+    dloc = loc(this_ptr%p%CachedBfield)
+end subroutine f90wrap_particledata__array__cachedbfield
+
+subroutine f90wrap_particledata__get__cachedbfieldvalid(this, f90wrap_CachedBfieldValid)
+    use middleman
+    use, intrinsic :: iso_c_binding, only: c_int
+    implicit none
+    type particledata_ptr_type
+        type(particledata), pointer :: p => NULL()
+    end type particledata_ptr_type
+    integer(c_int), intent(in)   :: this(4)
+    type(ParticleData_ptr_type) :: this_ptr
+    logical, intent(out) :: f90wrap_CachedBfieldValid
+    
+    this_ptr = transfer(this, this_ptr)
+    f90wrap_CachedBfieldValid = this_ptr%p%CachedBfieldValid
+end subroutine f90wrap_particledata__get__cachedbfieldvalid
+
+subroutine f90wrap_particledata__set__cachedbfieldvalid(this, f90wrap_CachedBfieldValid)
+    use middleman
+    use, intrinsic :: iso_c_binding, only: c_int
+    implicit none
+    type particledata_ptr_type
+        type(particledata), pointer :: p => NULL()
+    end type particledata_ptr_type
+    integer(c_int), intent(in)   :: this(4)
+    type(ParticleData_ptr_type) :: this_ptr
+    logical, intent(in) :: f90wrap_CachedBfieldValid
+    
+    this_ptr = transfer(this, this_ptr)
+    this_ptr%p%CachedBfieldValid = f90wrap_CachedBfieldValid
+end subroutine f90wrap_particledata__set__cachedbfieldvalid
+
 subroutine f90wrap_particledata__get__distancetraveled(this, f90wrap_DistanceTraveled)
     use middleman
     use, intrinsic :: iso_c_binding, only: c_int

@@ -36,6 +36,6 @@ module SharedParameters
     real(8) :: CurrentGyro
 
     !$omp threadprivate(CurrentGyro)
-    
+
     save
 end module SharedParameters

@@ -133,13 +133,14 @@ end subroutine FirstTimeStep
 !
 ! ************************************************************************************************************************************
 subroutine NewMax(VelocityArray, PositionArray, &
-MaxGyroPercent, secondTotal, R, Max)
+MaxGyroPercent, secondTotal, R, Max, BfieldOut)
 USE SharedParameters
 implicit none
 
 real(8), intent(in) :: R, secondTotal, MaxGyroPercent
 real(8), intent(in) :: VelocityArray(2,3), PositionArray(3,3)
 real(8), intent(out) :: Max
+real(8), intent(out) :: BfieldOut(3)
 real(8) :: Bfield(3), Bmag
 real(8) :: GEOPosition(3), GSMPosition(3), Velocity(3)
 
@@ -148,11 +149,13 @@ GSMPosition = PositionArray(3,:)
 
 Velocity = VelocityArray(1,:)
 
-if (model(1) == 4) then
+if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
 call MagneticField(GEOPosition, secondTotal, Bfield)
 else
 call MagneticField(GSMPosition, secondTotal, Bfield)
 end if
+
+BfieldOut = Bfield
 
 call TimeStepMax(Bfield, Velocity, R, MaxGyroPercent, Max)
 

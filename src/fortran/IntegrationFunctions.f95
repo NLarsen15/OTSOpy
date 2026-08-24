@@ -11,7 +11,7 @@ subroutine funcIntegration(DUMMY1, DUMMY2, &
  DUMMY5, DUMMY6, DUMMY7, DUMMY8, DUMMY9, &
  DUMMY10, DUMMY11, DUMMY12, DUMMY13, DUMMY14, DUMMY15, &
  DUMMY16, DUMMY17, DUMMY20, DUMMY21, &
- DUMMY22, DUMMY23, DUMMY24)
+ DUMMY22, DUMMY23, DUMMY24, DUMMY25, DUMMY26)
 implicit none
 real(8), intent(inout) :: DUMMY1(2,3) !VelocityArray
 real(8), intent(inout) :: DUMMY2(3,3) !PositionArray
@@ -36,6 +36,8 @@ real(8), intent(inout) :: DUMMY21(3) !MDP
 real(8), intent(in) :: DUMMY22 !MaxGyroPercent
 real(8), intent(in) :: DUMMY23 !R
 real(8), intent(in) :: DUMMY24 !firsth
+real(8), intent(inout) :: DUMMY25(3) !CachedBfield
+logical, intent(inout) :: DUMMY26 !CachedBfieldValid
 
 
 end subroutine funcIntegration
@@ -47,7 +49,8 @@ contains
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth) ! 4th Order Runge-Kutta
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid) ! 4th Order Runge-Kutta
     real(8), intent(inout) :: VelocityArray(2,3), PositionArray(3,3)
     real(8), intent(inout) :: h, secondTotal
     logical, intent(inout) :: mindistcheck
@@ -63,12 +66,15 @@ contains
     real(8), intent(in) :: MaxGyroPercent
     real(8), intent(in) :: R
     real(8), intent(in) :: firsth
+    real(8), intent(inout) :: CachedBfield(3)
+    logical, intent(inout) :: CachedBfieldValid
 
     call RK4(VelocityArray, PositionArray, &
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid)
     return
   end subroutine function4RK
 
@@ -76,7 +82,8 @@ contains
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth) ! 6th Order Runge-Kutta
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid) ! 6th Order Runge-Kutta
     real(8), intent(inout) :: VelocityArray(2,3), PositionArray(3,3)
     real(8), intent(inout) :: h, secondTotal
     logical, intent(inout) :: mindistcheck
@@ -92,12 +99,15 @@ contains
     real(8), intent(in) :: MaxGyroPercent
     real(8), intent(in) :: R
     real(8), intent(in) :: firsth
+    real(8), intent(inout) :: CachedBfield(3)
+    logical, intent(inout) :: CachedBfieldValid
 
     call RK6(VelocityArray, PositionArray, &
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid)
     return
   end subroutine function6RK
 
@@ -105,7 +115,8 @@ contains
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth) ! 5th Order Runge-Kutta (frozen-field, 6-stage)
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid) ! 5th Order Runge-Kutta (frozen-field, 6-stage)
     real(8), intent(inout) :: VelocityArray(2,3), PositionArray(3,3)
     real(8), intent(inout) :: h, secondTotal
     logical, intent(inout) :: mindistcheck
@@ -121,12 +132,15 @@ contains
     real(8), intent(in) :: MaxGyroPercent
     real(8), intent(in) :: R
     real(8), intent(in) :: firsth
+    real(8), intent(inout) :: CachedBfield(3)
+    logical, intent(inout) :: CachedBfieldValid
 
     call RK5(VelocityArray, PositionArray, &
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid)
     return
   end subroutine function5RK
 
@@ -134,7 +148,8 @@ contains
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth) ! Boris-Buneman Method
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid) ! Boris-Buneman Method
     real(8), intent(inout) :: VelocityArray(2,3), PositionArray(3,3)
     real(8), intent(inout) :: h, secondTotal
     logical, intent(inout) :: mindistcheck
@@ -150,12 +165,15 @@ contains
     real(8), intent(in) :: MaxGyroPercent
     real(8), intent(in) :: R
     real(8), intent(in) :: firsth
+    real(8), intent(inout) :: CachedBfield(3)
+    logical, intent(inout) :: CachedBfieldValid
 
     call BorisBuneman(VelocityArray, PositionArray, &
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid)
 
     return
   end subroutine functionBorisBuneman
@@ -164,7 +182,8 @@ contains
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth) ! Vay Method
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid) ! Vay Method
     real(8), intent(inout) :: VelocityArray(2,3), PositionArray(3,3)
     real(8), intent(inout) :: h, secondTotal
     logical, intent(inout) :: mindistcheck
@@ -180,12 +199,15 @@ contains
     real(8), intent(in) :: MaxGyroPercent
     real(8), intent(in) :: R
     real(8), intent(in) :: firsth
-    
+    real(8), intent(inout) :: CachedBfield(3)
+    logical, intent(inout) :: CachedBfieldValid
+
     call Vay(VelocityArray, PositionArray, &
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid)
     return
   end subroutine functionVay
 
@@ -193,8 +215,9 @@ contains
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth) ! Higuera-Cary Method
-    real(8), intent(inout) :: VelocityArray(2,3), PositionArray(3,3) 
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid) ! Higuera-Cary Method
+    real(8), intent(inout) :: VelocityArray(2,3), PositionArray(3,3)
     real(8), intent(inout) :: h, secondTotal
     logical, intent(inout) :: mindistcheck
     real(8), intent(in)    :: BetaError, M, Q
@@ -209,12 +232,15 @@ contains
     real(8), intent(in) :: MaxGyroPercent
     real(8), intent(in) :: R
     real(8), intent(in) :: firsth
+    real(8), intent(inout) :: CachedBfield(3)
+    logical, intent(inout) :: CachedBfieldValid
 
     call HC(VelocityArray, PositionArray, &
     h, BetaError, FinalStep, M, Q, secondTotal, &
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
-    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+    OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+    CachedBfield, CachedBfieldValid)
     return
   end subroutine functionHC
 

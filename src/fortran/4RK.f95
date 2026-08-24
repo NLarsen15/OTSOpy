@@ -14,7 +14,8 @@
 subroutine RK4(VelocityArray, PositionArray, h, BetaError, &
                FinalStep, M, Q, secondTotal, mindistcheck, DistanceTraveled, &
                steps, TimeElapsed, counter, OLDPositionArray, OLDVelocityArray, &
-               OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+               OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+               CachedBfield, CachedBfieldValid)
 
 use SharedParameters
 implicit none
@@ -43,6 +44,9 @@ real(8), intent(inout) :: MDP(3)
 real(8), intent(in) :: MaxGyroPercent
 real(8), intent(in) :: R
 real(8), intent(in) :: firsth
+
+real(8), intent(inout) :: CachedBfield(3)
+logical, intent(inout) :: CachedBfieldValid
 
 real(8) :: P0(3), P1(3), P2(3), P3(3), P4(3)
 real(8) :: F1(3), F2(3), F3(3), F4(3)
@@ -148,7 +152,11 @@ do while (.not. StepAccepted)
     Y1 = sqrt(1.0d0 + dot_product(P1,P1)/(M*M*c*c))
     v1 = P1 / (Y1*M)
 
-    call MagneticField(x1_Re, t0, Bfield)
+    if (CachedBfieldValid) then
+        Bfield = CachedBfield
+    else
+        call MagneticField(x1_Re, t0, Bfield)
+    end if
     call LorentzForce(v1, Bfield, Q, F1)
 
     Bnorm0 = sqrt(dot_product(Bfield,Bfield))
@@ -316,7 +324,9 @@ end if
 if (adaptivestep) then
 
     call NewMax(VelocityArray, PositionArray, &
-                MaxGyroPercent, secondTotal, R, Max)
+                MaxGyroPercent, secondTotal, R, Max, CachedBfield)
+
+    CachedBfieldValid = .true.
 
     if (h > Max) then
         h = Max

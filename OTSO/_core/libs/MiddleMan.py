@@ -9,7 +9,7 @@ import weakref
 class Middleman(f90wrap.runtime.FortranModule):
     """
     Module middleman
-    Defined at MiddleMan.f95 lines 1-1138
+    Defined at MiddleMan.f95 lines 1-1147
     """
     @f90wrap.runtime.register_class("MiddleMan.FortranData")
     class FortranData(f90wrap.runtime.FortranDerivedType):
@@ -598,14 +598,14 @@ class Middleman(f90wrap.runtime.FortranModule):
     class ParticleData(f90wrap.runtime.FortranDerivedType):
         """
         Type(name=particledata)
-        Defined at MiddleMan.f95 lines 39-90
+        Defined at MiddleMan.f95 lines 39-94
         """
         def __init__(self, handle=None):
             """
             Automatically generated constructor for particledata
             
             self = Particledata()
-            Defined at MiddleMan.f95 lines 39-90
+            Defined at MiddleMan.f95 lines 39-94
             
             Returns
             -------
@@ -1016,10 +1016,53 @@ class Middleman(f90wrap.runtime.FortranModule):
                 maxgyropercent)
         
         @property
+        def cachedbfield(self):
+            """
+            Element cachedbfield ftype=real(8) pytype=float array
+            Defined at MiddleMan.f95 line 79
+            """
+            array_ndim, array_type, array_shape, array_handle = \
+                _MiddleMan.f90wrap_particledata__array__cachedbfield(self._handle)
+            array_hash = hash((array_ndim, array_type, tuple(array_shape), array_handle))
+            cachedbfield = self._arrays.get(array_hash)
+            if cachedbfield is not None:
+                # Validate cached array: check data pointer matches current handle (issue #222)
+                # Arrays can be deallocated and reallocated at same address, invalidating cache
+                if cachedbfield.ctypes.data != array_handle:
+                    cachedbfield = None
+            if cachedbfield is None:
+                try:
+                    cachedbfield = f90wrap.runtime.get_array(f90wrap.runtime.sizeof_fortran_t,
+                                            self._handle,
+                                            _MiddleMan.f90wrap_particledata__array__cachedbfield)
+                except TypeError:
+                    cachedbfield = f90wrap.runtime.direct_c_array(array_type, array_shape, \
+                        array_handle)
+                self._arrays[array_hash] = cachedbfield
+            return cachedbfield
+        
+        @cachedbfield.setter
+        def cachedbfield(self, cachedbfield):
+            self.cachedbfield[...] = cachedbfield
+        
+        @property
+        def cachedbfieldvalid(self):
+            """
+            Element cachedbfieldvalid ftype=logical pytype=bool
+            Defined at MiddleMan.f95 line 80
+            """
+            return _MiddleMan.f90wrap_particledata__get__cachedbfieldvalid(self._handle)
+        
+        @cachedbfieldvalid.setter
+        def cachedbfieldvalid(self, cachedbfieldvalid):
+            _MiddleMan.f90wrap_particledata__set__cachedbfieldvalid(self._handle, \
+                cachedbfieldvalid)
+        
+        @property
         def distancetraveled(self):
             """
             Element distancetraveled ftype=real(8) pytype=float32
-            Defined at MiddleMan.f95 line 77
+            Defined at MiddleMan.f95 line 81
             """
             return _MiddleMan.f90wrap_particledata__get__distancetraveled(self._handle)
         
@@ -1032,7 +1075,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def mdp(self):
             """
             Element mdp ftype=real(8) pytype=float array
-            Defined at MiddleMan.f95 line 79
+            Defined at MiddleMan.f95 line 83
             """
             array_ndim, array_type, array_shape, array_handle = \
                 _MiddleMan.f90wrap_particledata__array__mdp(self._handle)
@@ -1061,7 +1104,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def betaerror(self):
             """
             Element betaerror ftype=real(8) pytype=float32
-            Defined at MiddleMan.f95 line 80
+            Defined at MiddleMan.f95 line 84
             """
             return _MiddleMan.f90wrap_particledata__get__betaerror(self._handle)
         
@@ -1073,7 +1116,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def originalbeta(self):
             """
             Element originalbeta ftype=real(8) pytype=float32
-            Defined at MiddleMan.f95 line 81
+            Defined at MiddleMan.f95 line 85
             """
             return _MiddleMan.f90wrap_particledata__get__originalbeta(self._handle)
         
@@ -1085,7 +1128,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def currentbeta(self):
             """
             Element currentbeta ftype=real(8) pytype=float32
-            Defined at MiddleMan.f95 line 82
+            Defined at MiddleMan.f95 line 86
             """
             return _MiddleMan.f90wrap_particledata__get__currentbeta(self._handle)
         
@@ -1097,7 +1140,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def finalstep(self):
             """
             Element finalstep ftype=logical pytype=bool
-            Defined at MiddleMan.f95 line 84
+            Defined at MiddleMan.f95 line 88
             """
             return _MiddleMan.f90wrap_particledata__get__finalstep(self._handle)
         
@@ -1109,7 +1152,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def mindistcheck(self):
             """
             Element mindistcheck ftype=logical pytype=bool
-            Defined at MiddleMan.f95 line 85
+            Defined at MiddleMan.f95 line 89
             """
             return _MiddleMan.f90wrap_particledata__get__mindistcheck(self._handle)
         
@@ -1121,7 +1164,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def escaped(self):
             """
             Element escaped ftype=logical pytype=bool
-            Defined at MiddleMan.f95 line 86
+            Defined at MiddleMan.f95 line 90
             """
             return _MiddleMan.f90wrap_particledata__get__escaped(self._handle)
         
@@ -1133,7 +1176,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def totalbetachecktrigger(self):
             """
             Element totalbetachecktrigger ftype=logical pytype=bool
-            Defined at MiddleMan.f95 line 87
+            Defined at MiddleMan.f95 line 91
             """
             return _MiddleMan.f90wrap_particledata__get__totalbetachecktrigger(self._handle)
         
@@ -1146,7 +1189,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def steps(self):
             """
             Element steps ftype=integer(8) pytype=int32
-            Defined at MiddleMan.f95 line 88
+            Defined at MiddleMan.f95 line 92
             """
             return _MiddleMan.f90wrap_particledata__get__steps(self._handle)
         
@@ -1158,7 +1201,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def counter(self):
             """
             Element counter ftype=integer(4) pytype=int32
-            Defined at MiddleMan.f95 line 89
+            Defined at MiddleMan.f95 line 93
             """
             return _MiddleMan.f90wrap_particledata__get__counter(self._handle)
         
@@ -1170,7 +1213,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         def termtype(self):
             """
             Element termtype ftype=integer(4) pytype=int32
-            Defined at MiddleMan.f95 line 90
+            Defined at MiddleMan.f95 line 94
             """
             return _MiddleMan.f90wrap_particledata__get__termtype(self._handle)
         
@@ -1226,6 +1269,10 @@ class Middleman(f90wrap.runtime.FortranModule):
             ret.append(repr(self.firsth))
             ret.append(',\n    maxgyropercent : ')
             ret.append(repr(self.maxgyropercent))
+            ret.append(',\n    cachedbfield : ')
+            ret.append(repr(self.cachedbfield))
+            ret.append(',\n    cachedbfieldvalid : ')
+            ret.append(repr(self.cachedbfieldvalid))
             ret.append(',\n    distancetraveled : ')
             ret.append(repr(self.distancetraveled))
             ret.append(',\n    mdp : ')
@@ -1264,7 +1311,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         cutoff(self, g8, h8, rigidities, allowed)
-        Defined at MiddleMan.f95 lines 102-224
+        Defined at MiddleMan.f95 lines 106-229
         
         Parameters
         ----------
@@ -1286,7 +1333,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         cone(self, g8, h8, rigidities, allowed, asymlat, asymlong)
-        Defined at MiddleMan.f95 lines 237-373
+        Defined at MiddleMan.f95 lines 242-379
         
         Parameters
         ----------
@@ -1311,7 +1358,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         
         filter, alat, along = trajectory_full(self, g8, h8, rigidity, trajectoryfile, \
             trajectoryfilelen)
-        Defined at MiddleMan.f95 lines 388-528
+        Defined at MiddleMan.f95 lines 394-535
         
         Parameters
         ----------
@@ -1343,7 +1390,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         trajectory(self, g8, h8, rigidities, rigiditieslen, allowed, asymlat, asymlong)
-        Defined at MiddleMan.f95 lines 532-667
+        Defined at MiddleMan.f95 lines 539-675
         
         Parameters
         ----------
@@ -1368,7 +1415,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         transmission(self, g8, h8, rigidities, transmissions)
-        Defined at MiddleMan.f95 lines 678-821
+        Defined at MiddleMan.f95 lines 686-830
         
         Parameters
         ----------
@@ -1390,7 +1437,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         magstrength(pin, data, coordin, coordout, g8, h8, bfield)
-        Defined at MiddleMan.f95 lines 830-886
+        Defined at MiddleMan.f95 lines 839-895
         
         Parameters
         ----------
@@ -1410,7 +1457,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         interface_call=False):
         """
         coordtrans(pin, data, coordin, coordout, g8, h8, pout)
-        Defined at MiddleMan.f95 lines 895-920
+        Defined at MiddleMan.f95 lines 904-929
         
         Parameters
         ----------
@@ -1433,7 +1480,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         fieldtrace(self, filename, filenamelen, g8, h8)
-        Defined at MiddleMan.f95 lines 929-1053
+        Defined at MiddleMan.f95 lines 938-1062
         
         Parameters
         ----------
@@ -1455,7 +1502,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         mhdstartupsorted(xu, yu, zu, mhdposition_in, mhdb_in, nx_split, ny_split, \
             nz_split, mix, max_bn, miy, may, miz, maz, region_order_in, start_x, end_x, \
             start_y, end_y, start_z, end_z, num_regions, xulen, yulen, zulen)
-        Defined at MiddleMan.f95 lines 1059-1106
+        Defined at MiddleMan.f95 lines 1068-1115
         
         Parameters
         ----------
@@ -1497,7 +1544,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         interface_call=False):
         """
         gse2gswtsy15(date, position_gse, wind, gotso, hotso, glen, position_gsw)
-        Defined at MiddleMan.f95 lines 1108-1138
+        Defined at MiddleMan.f95 lines 1117-1147
         
         Parameters
         ----------

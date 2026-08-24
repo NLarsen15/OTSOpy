@@ -95,6 +95,11 @@ type :: ParticleData
     real(8) :: firsth = 1E-6
     real(8) :: MaxGyroPercent = 0.0d0
 
+    ! Cached field from the previous step's NewMax evaluation, reused as this
+    ! step's own starting-position field call when valid (same position/time).
+    real(8) :: CachedBfield(3) = 0.0d0
+    logical :: CachedBfieldValid = .false.
+
     real(8) :: DistanceTraveled = 0.0d0
 
     ! Minimum distance position
@@ -245,7 +250,8 @@ subroutine cutoff(Data, g8, h8, Rigidities, Allowed)
                 Particle%M, Particle%Q, Particle%secondTotal, Particle%mindistcheck, &
                 Particle%DistanceTraveled, Particle%steps, Particle%TimeElapsed, Particle%counter, &
                 Particle%OLDPositionArray, Particle%OLDVelocityArray, &
-                Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth)
+                Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth, &
+                Particle%CachedBfield, Particle%CachedBfieldValid)
 
             if (totalbetacheck) then
 
@@ -285,7 +291,7 @@ subroutine cutoff(Data, g8, h8, Rigidities, Allowed)
             else
                     Allowed(loop) = Particle%Termtype !allowed
                     rigidities(loop) = Particle%R
-                    
+
             endif
 
         end do
@@ -417,7 +423,8 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
                 Particle%M, Particle%Q, Particle%secondTotal, Particle%mindistcheck, &
                 Particle%DistanceTraveled, Particle%steps, Particle%TimeElapsed, Particle%counter, &
                 Particle%OLDPositionArray, Particle%OLDVelocityArray, &
-                Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth)
+                Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth, &
+                Particle%CachedBfield, Particle%CachedBfieldValid)
 
             if (totalbetacheck) then
 
@@ -620,7 +627,8 @@ subroutine trajectory_full(Data, g8, h8, Rigidity, TrajectoryFile, &
                  Particle%M, Particle%Q, Particle%secondTotal, Particle%mindistcheck, &
                  Particle%DistanceTraveled, Particle%steps, Particle%TimeElapsed, Particle%counter, &
                  Particle%OLDPositionArray, Particle%OLDVelocityArray, &
-                 Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth)
+                 Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth, &
+                Particle%CachedBfield, Particle%CachedBfieldValid)
 
                  if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
                      Xnew = Particle%PositionArray(2,:)
@@ -793,7 +801,8 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
                 Particle%M, Particle%Q, Particle%secondTotal, Particle%mindistcheck, &
                 Particle%DistanceTraveled, Particle%steps, Particle%TimeElapsed, Particle%counter, &
                 Particle%OLDPositionArray, Particle%OLDVelocityArray, &
-                Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth)
+                Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth, &
+                Particle%CachedBfield, Particle%CachedBfieldValid)
 
             if (totalbetacheck) then
 
@@ -1002,7 +1011,8 @@ subroutine transmission(Data, g8, h8, Rigidities, Transmissions)
                     Particle%M, Particle%Q, Particle%secondTotal, Particle%mindistcheck, &
                     Particle%DistanceTraveled, Particle%steps, Particle%TimeElapsed, Particle%counter, &
                     Particle%OLDPositionArray, Particle%OLDVelocityArray, &
-                    Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth)
+                    Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth, &
+                Particle%CachedBfield, Particle%CachedBfieldValid)
 
                 if (totalbetacheck) then
 

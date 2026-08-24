@@ -14,7 +14,8 @@
 subroutine BorisBuneman(VelocityArray, PositionArray, h, BetaError, &
                  FinalStep, M, Q, secondTotal, mindistcheck, DistanceTraveled, steps, TimeElapsed, &
                  counter, OLDPositionArray, OLDVelocityArray, &
-                 OLDsecondTotal, MDP, MaxGyroPercent, R, firsth)
+                 OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
+                 CachedBfield, CachedBfieldValid)
 
 USE SharedParameters
 implicit none
@@ -48,6 +49,9 @@ real(8), intent(inout) :: MDP(3)
 real(8), intent(in) :: MaxGyroPercent
 real(8), intent(in) :: R
 real(8), intent(in) :: firsth
+
+real(8), intent(inout) :: CachedBfield(3)
+logical, intent(inout) :: CachedBfieldValid
 
 real(8) :: Bfield(3)
 real(8) :: Bnorm
@@ -109,7 +113,11 @@ gamma0 = 1.0d0 / sqrt(1.0d0 - (Vabs1/c)**2)
 
 10 continue
 
-call MagneticField(xGSM / Re_m, secondTotal, Bfield)
+if (CachedBfieldValid) then
+    Bfield = CachedBfield
+else
+    call MagneticField(xGSM / Re_m, secondTotal, Bfield)
+end if
 
 Bnorm = sqrt(dot_product(Bfield,Bfield))
 
@@ -231,7 +239,9 @@ else
                 MaxGyroPercent, &
                 secondTotal, &
                 R, &
-                Max)
+                Max, CachedBfield)
+
+    CachedBfieldValid = .true.
 
     if (h > Max) then
         h = Max
