@@ -241,7 +241,8 @@ subroutine cutoff(Data, g8, h8, Rigidities, Allowed)
         
         call FirstTimeStep(Particle%PositionArray,Particle%VelocityArray, &
             Particle%secondTotal, Particle%MaxGyroPercent, Particle%R, &
-            Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize)
+            Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize, &
+            Data%IntMode, Particle%M, Particle%Q)
 
         DO WHILE (Particle%Termtype == 0)
 
@@ -414,7 +415,8 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
         
         call FirstTimeStep(Particle%PositionArray,Particle%VelocityArray, &
             Particle%secondTotal, Particle%MaxGyroPercent, Particle%R, &
-            Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize)
+            Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize, &
+            Data%IntMode, Particle%M, Particle%Q)
 
         DO WHILE (Particle%Termtype == 0)
 
@@ -618,7 +620,8 @@ subroutine trajectory_full(Data, g8, h8, Rigidity, TrajectoryFile, &
     
     call FirstTimeStep(Particle%PositionArray,Particle%VelocityArray, &
         Particle%secondTotal, Particle%MaxGyroPercent, Particle%R, &
-        Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize)
+        Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize, &
+        Data%IntMode, Particle%M, Particle%Q)
 
     DO WHILE (Particle%Termtype == 0)
 
@@ -792,7 +795,8 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
         
         call FirstTimeStep(Particle%PositionArray,Particle%VelocityArray, &
             Particle%secondTotal, Particle%MaxGyroPercent, Particle%R, &
-            Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize)
+            Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize, &
+            Data%IntMode, Particle%M, Particle%Q)
 
         DO WHILE (Particle%Termtype == 0)
 
@@ -1002,7 +1006,8 @@ subroutine transmission(Data, g8, h8, Rigidities, Transmissions)
             
             call FirstTimeStep(Particle%PositionArray,Particle%VelocityArray, &
                 Particle%secondTotal, Particle%MaxGyroPercent, Particle%R, &
-                Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize)
+                Particle%h, Particle%hOLD, Particle%firsth, Data%FixedStepSize, &
+                Data%IntMode, Particle%M, Particle%Q)
 
             DO WHILE (Particle%Termtype == 0)
     

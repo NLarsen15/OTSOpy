@@ -80,22 +80,45 @@ end subroutine TimeStep
 ! ************************************************************************************************************************************
 subroutine FirstTimeStep(PositionArray, VelocityArray, &
  secondTotal, MaxGyroPercent, &
- R, h, hOLD, firsth, FixedStep)
+ R, h, hOLD, firsth, FixedStep, IntMode, M, Q)
 use SharedParameters
 implicit none
 
-real(8), intent(in) :: VelocityArray(2,3), secondTotal
+real(8), intent(inout) :: VelocityArray(2,3)
+real(8), intent(in) :: secondTotal
 real(8), intent(in) :: PositionArray(3,3)
 real(8), intent(inout) :: h, hOLD, firsth
 real(8), intent(in) :: MaxGyroPercent, R
 real(8), intent(in) :: FixedStep
+integer(8), intent(in) :: IntMode
+real(8), intent(in) :: M, Q
 real(8) :: Bfield(3), Bmag
 real(8) :: GEOPosition(3), GSMPosition(3)
+real(8) :: Vabs0, gamma0, qhalf_back, Vkicked(3)
 
 if ((.not. adaptivestep) .and. (FixedStep > 0.0d0)) then
     h     = FixedStep
     hOLD  = FixedStep
     firsth = FixedStep
+
+    if (IntMode == 7 .or. IntMode == 4 .or. IntMode == 3) then
+        GEOPosition = PositionArray(2,:)
+        GSMPosition = PositionArray(3,:)
+        if (model(1) == 4) then
+            call MagneticField(GEOPosition, secondTotal, Bfield)
+        else
+            call MagneticField(GSMPosition, secondTotal, Bfield)
+        end if
+        Bmag = sqrt(dot_product(Bfield,Bfield))
+        if (Bmag > 0.0d0) then
+            Vabs0 = sqrt(dot_product(VelocityArray(1,:),VelocityArray(1,:)))
+            gamma0 = 1.0d0 / sqrt(1.0d0 - (Vabs0/c)**2)
+            qhalf_back = -(Q * FixedStep) / (4.0d0 * M)
+            call BorisRotate(VelocityArray(1,:), Bfield, Bmag, M, Q, qhalf_back, gamma0, Vkicked)
+            VelocityArray(1,:) = Vkicked
+        end if
+    end if
+
     return
 end if
 
@@ -115,6 +138,14 @@ call TimeStep(VelocityArray(1,:), Bfield, MaxGyroPercent, R, hOLD, h)
 Bmag = ((Bfield(1)**2.0 + Bfield(2)**2.0 + Bfield(3)**2.0))**(0.5)
 if (Bmag == 0) then
     h = 10**(-6)
+end if
+
+if ((IntMode == 7 .or. IntMode == 4 .or. IntMode == 3) .and. Bmag > 0.0d0) then
+    Vabs0 = sqrt(dot_product(VelocityArray(1,:),VelocityArray(1,:)))
+    gamma0 = 1.0d0 / sqrt(1.0d0 - (Vabs0/c)**2)
+    qhalf_back = -(Q * h) / (4.0d0 * M)
+    call BorisRotate(VelocityArray(1,:), Bfield, Bmag, M, Q, qhalf_back, gamma0, Vkicked)
+    VelocityArray(1,:) = Vkicked
 end if
 
 firsth = h

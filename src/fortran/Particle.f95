@@ -142,6 +142,7 @@ GSMPosition    = 0.0d0
 GEOSPHposition = 0.0d0
 
 TrimStartPosition = real(dnint(StartPosition(:3) * 1.0d8), kind=8) / 1.0d8
+!TrimStartPosition = StartPosition(:3)
 
 call CoordinateTransform(inputcoord, "GDZ", year, day, secondTotal, &
                         TrimStartPosition, Position)
@@ -182,13 +183,23 @@ call CoordinateTransform(inputcoord, "GEO", year, day, secondTotal, &
 call CoordinateTransform("GEO", "SPH", year, day, secondTotal, &
                          temppositionGDZ, GEOSPHposition)
 
-call AzimuthZenith2GEO( &
-    w, &
-    GEOSPHposition(2), &
-    GEOSPHposition(3), &
-    StartPosition(4), &
-    StartPosition(5), &
-    VelocityGEO)
+if (inputcoord == "GDZ") then
+    call AzimuthZenith2GEO( &
+        w, &
+        TrimStartPosition(2), &
+        TrimStartPosition(3), &
+        StartPosition(4), &
+        StartPosition(5), &
+        VelocityGEO)
+else
+    call AzimuthZenith2GEO( &
+        w, &
+        GEOSPHposition(2), &
+        GEOSPHposition(3), &
+        StartPosition(4), &
+        StartPosition(5), &
+        VelocityGEO)
+end if
 
 if (model(1) /= 4 .and. model(1) /= 1 .and. model(1) /= 5) then
 
