@@ -334,34 +334,23 @@ def plot_planet(planet_data):
 
     plt.show()
 
-def extract_gaussian_coeffs(FILENAME):
-    g = []
-    h = []
-
-    with open(FILENAME, newline="") as f:
-        reader = csv.DictReader(f)
-
-        for row in reader:
-            value = float(row["40950"])
-
-            if row["coeff"] == "g":
-                g.append(value)
-            elif row["coeff"] == "h":
-                h.append(value)
-
-    return g, h
-
 
 # ============================================================
 # MAIN
 # ============================================================
 
 if __name__ == "__main__":
+    from pymagglobal import Model, coefficients
+    from transform_to_g_and_h import transform_to_g_and_h
 
-    glist, hlist = extract_gaussian_coeffs("LSMOD2 Laschamps Coeffs.csv")
+    # 1. Obtain coefficients from pymagglobal
+    epoch = 40950   # BP
+    lsmod = Model('LSMOD.2')
+    _, _, coeffs = coefficients(1950-epoch, lsmod)
+    _, _, (glist, hlist) = transform_to_g_and_h(coeffs, lmax_out=13)
 
-    # 1. Run OTSO
+    # 2. Run OTSO
     planet_data = run_otso(glist, hlist)
 
-    # 2. Plot the OTSO output
+    # 3. Plot the OTSO output
     plot_planet(planet_data)
