@@ -11,6 +11,8 @@ def transform_to_g_and_h(coeffs, lmax_out=None):
     ----------
     coeffs : array
         The coefficients to be transformed
+    lmax_out : int, optional
+        If given, pad the output with zeros to match the maximum degree
 
     Returns
     -------
@@ -23,7 +25,7 @@ def transform_to_g_and_h(coeffs, lmax_out=None):
         coeffs_gh[1] the h coefficients
     """
     lmax = i2lm_l(len(coeffs) - 1)
-    if lmax_out is None:
+    if lmax_out is None or lmax_out < lmax:
         lmax_out = lmax
 
     ns = [0]

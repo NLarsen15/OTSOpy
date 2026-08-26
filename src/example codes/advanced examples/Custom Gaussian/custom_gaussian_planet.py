@@ -343,12 +343,14 @@ if __name__ == "__main__":
     from pymagglobal import Model, coefficients
     from transform_to_g_and_h import transform_to_g_and_h
 
+    # 1. Obtain coefficients from pymagglobal
+    epoch = 40950   # BP
     lsmod = Model('LSMOD.2')
-    _, _, coeffs = coefficients(1950-40950, lsmod)
+    _, _, coeffs = coefficients(1950-epoch, lsmod)
     _, _, (glist, hlist) = transform_to_g_and_h(coeffs, lmax_out=13)
 
-    # 1. Run OTSO
+    # 2. Run OTSO
     planet_data = run_otso(glist, hlist)
 
-    # 2. Plot the OTSO output
+    # 3. Plot the OTSO output
     plot_planet(planet_data)
