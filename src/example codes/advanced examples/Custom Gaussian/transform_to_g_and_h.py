@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     coeffs = ggf.coefficients(-38_000)
     print(coeffs)
-    ns, ms, gh = get_g_and_h_list(coeffs)
+    ns, ms, gh = transform_to_g_and_h(coeffs)
     print(ns)
     print(ms)
     print(gh)
