@@ -189,7 +189,7 @@ def Apparent_cutoff(Positioninfo, FortranData, g, h, Data):
         FortranData.endrigidity = Data.endrigidity
 
         if Data.rigidityscan == "ON":
-            FortranData, smallscan = Rigidity_scan(FortranData, Data)
+            FortranData, smallscan = Rigidity_scan(FortranData, g, h,  Data)
 
         if smallscan:
             R_high, R_eff, R_low, transparency = [0.0, 0.0, 0.0, 0.0]
