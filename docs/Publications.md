@@ -6,6 +6,22 @@ This page lists scientific publications utilising **OTSO**.
 
 ## 2026
 
+
+- **Jung, J., Kwak, Y.-S., Sohn, J., Oh, S., Yi, Y., Yang, T.-Y., & Evenson, P. (2026)**  
+  *Observation of the 19 January 2026 Forbush Decrease with the Geochang Neutron Monitor: Comparison with the Global Neutron Monitor Network.*  
+  Journal of Astronomy and Space Sciences, 43(3), 147-155.  
+  https://doi.org/10.5140/JASS.2026.43.3.147
+
+- **Hayakawa, H., Poluianov, S., Koldobskiy, S., Mishev, A., Larsen, N., Usoskina, I., & Usoskin, I. (2026)**  
+  *The first four ground-level enhancements in the 1940s: investigation, digitization and analysis of forgotten data.*  
+  Philosophical Transactions of the Royal Society A, 384(2329), 20250346.  
+  https://doi.org/10.1098/rsta.2025.0346
+
+- **Hertle, L., Baird, F., Schmidt, U., Heber, B., Walter, M., Krebs, N., et al. (2026)**  
+  *Latitude survey of neutrons and muons to determine cosmic ray neutron sensing yield functions.*  
+  Journal of Geophysical Research: Space Physics, 131, e2026JA035434.  
+  https://doi.org/10.1029/2026JA035434
+
 - **Väisänen, P., Larsen, N., Koldobskiy, S., Similä, M., Pelosi, D., & Orcinha, M. (2026)**
   *Near-earth cosmic ray modulation index ϕ and neutron monitor cutoff rigidities at hourly cadence: Toward an improved monitoring of solar-terrestrial radiation environment, space weather, and space climate.*
   Journal of Geophysical Research: Space Physics, 131.
