@@ -109,11 +109,11 @@ def Rigidity_scan(FortranData, g, h, CutoffDataInstance):
     if np.isnan(R_high):
         R_high = R_low
 
-    R_low = R_low - 2
+    R_low = R_low - 0.75
     if (R_low < 0):
        R_low = 0
 
-    R_high = R_high + 2
+    R_high = R_high + 0.75
     if (R_high > FortranData.startrigidity):
        R_high = FortranData.startrigidity
 

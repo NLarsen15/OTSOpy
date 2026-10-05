@@ -218,7 +218,7 @@ class CoordinateParams(TypedDict, total=False):
     
     # Default values
     DEFAULTS = {
-        "coordsystem": "GSM", "inputcoord": "GDZ", "coordout": "GSM"
+        "coordsystem": "GEO", "inputcoord": "GDZ", "coordout": "GSM"
     } # type: ignore
 
 
