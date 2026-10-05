@@ -253,6 +253,21 @@ if (FinalStep) then
     h = Lasth
 end if
 
+! Leapfrog staggering: Vnew is the velocity at t + h_used/2. If the next step uses a different h, re-centre it to
+! t + h_used + h/2 by rotating through (h_used - h)/2 with the field at the new position (cached by NewMax), so the
+! next kick spans (h_used + h)/2 and the scheme stays second order under variable steps.
+if ((adaptivestep .eqv. .TRUE.) .and. (.not. FinalStep) .and. (h /= h_used) .and. CachedBfieldValid) then
+
+    Bnorm = sqrt(dot_product(CachedBfield,CachedBfield))
+
+    if (Bnorm > 0.0d0) then
+        qhalf = (Q * (h_used - h)) / (4.0d0 * M)
+        call BorisRotate(Vnew, CachedBfield, Bnorm, M, Q, qhalf, gamma0, v0)
+        VelocityArray(1,:) = v0
+    end if
+
+end if
+
 counter = counter + 1
 
 steps = steps + 1

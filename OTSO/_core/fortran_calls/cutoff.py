@@ -17,7 +17,7 @@ def FortranCutoff(Data: list, CutoffDataInstance: CutoffData, queue: mp.Queue, c
     cpu_util.set_process_affinity(cpus)
 
     if CutoffDataInstance.model[1] == 99:
-      mhd_utils.MHDinitialise(CutoffDataInstance.MHDfile, CutoffDataInstance.MHDgridtype)
+      mhd_utils.MHDinitialise(CutoffDataInstance.MHDfile, CutoffDataInstance.MHDgridtype, CutoffDataInstance.MHDinterpolation)
 
     for x in Data:
 

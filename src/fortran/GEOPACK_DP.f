@@ -239,13 +239,12 @@ C
       PP=1.D0/R
       P=PP
 C
-C  IN THIS VERSION, THE OPTIMAL VALUE OF THE PARAMETER NM (MAXIMAL ORDER OF THE SPHERICAL
-C  HARMONIC EXPANSION) IS NOT USER-PRESCRIBED, BUT CALCULATED INSIDE THE SUBROUTINE, BASED
-C  ON THE VALUE OF THE RADIAL DISTANCE R:
+C  THE MAXIMAL ORDER OF THE SPHERICAL HARMONIC EXPANSION IS degreemax (USER MAX_DEGREE):
 C
-      IRP3=INT(R+2,4)
-      NM=3+30/IRP3
-      IF (NM.GT.degreemax) NM=degreemax
+      NM=degreemax
+C  (Full degree at every radius. The Geopack radius-based truncation NM=3+30/INT(R+2) made the
+C  field jump at integer radii, which limited convergence and moved sensitive trajectories by
+C  ~0.1 deg versus a full-degree reference; it gave no measurable speed-up here.)
 
       K=NM+1
       DO 150 N=1,K

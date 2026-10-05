@@ -12,7 +12,7 @@ IF (Atomic == -1) THEN ! Muon
     M = mm_0
     Q = -1.0 * q_0A
     E_0 = (M * (c**2)) * Joule2MeV
-    lambda = (((R*Z/(E_0 * A))**2) + 1)**(0.5)
+    lambda = sqrt((R*Z/E_0)**2 + 1.0d0)  ! E_0 is the rest energy of the whole nucleus (M = A*mp), so no extra 1/A
 
 ELSE IF (Atomic == 0) THEN ! Electron
     A = 1.0
@@ -20,7 +20,7 @@ ELSE IF (Atomic == 0) THEN ! Electron
     M = me_0
     Q = -1.0 * q_0A
     E_0 = (M * (c**2)) * Joule2MeV
-    lambda = (((R*Z/(E_0 * A))**2) + 1)**(0.5)
+    lambda = sqrt((R*Z/E_0)**2 + 1.0d0)  ! E_0 is the rest energy of the whole nucleus (M = A*mp), so no extra 1/A
 
  ELSE IF (Atomic == 1) THEN ! Hydrogen
     A = 1.0
@@ -28,7 +28,7 @@ ELSE IF (Atomic == 0) THEN ! Electron
     M = mp_0 * A
     Q = q_0A * Z
     E_0 = (M * (c**2)) * Joule2MeV
-    lambda = (((R*Z/(E_0 * A))**2) + 1)**(0.5)
+    lambda = sqrt((R*Z/E_0)**2 + 1.0d0)  ! E_0 is the rest energy of the whole nucleus (M = A*mp), so no extra 1/A
 
  ELSE IF (Atomic == 2) THEN ! Helium
     A = 4.0
@@ -36,7 +36,7 @@ ELSE IF (Atomic == 0) THEN ! Electron
     M = mp_0 * A
     Q = q_0A * Z
     E_0 = (M * (c**2)) * Joule2MeV
-    lambda = (((R*Z/(E_0 * A))**2) + 1)**(0.5)
+    lambda = sqrt((R*Z/E_0)**2 + 1.0d0)  ! E_0 is the rest energy of the whole nucleus (M = A*mp), so no extra 1/A
 
  ELSE IF (Atomic == 3) THEN ! Lithium
     A = 7.0
@@ -44,7 +44,7 @@ ELSE IF (Atomic == 0) THEN ! Electron
     M = mp_0 * A
     Q = q_0A * Z
     E_0 = (M * (c**2)) * Joule2MeV
-    lambda = (((R*Z/(E_0 * A))**2) + 1)**(0.5)
+    lambda = sqrt((R*Z/E_0)**2 + 1.0d0)  ! E_0 is the rest energy of the whole nucleus (M = A*mp), so no extra 1/A
 
  ELSE IF (Atomic == 4) THEN ! Beryllium
     A = 9.0
@@ -52,7 +52,7 @@ ELSE IF (Atomic == 0) THEN ! Electron
     M = mp_0 * A
     Q = q_0A * Z
     E_0 = (M * (c**2)) * Joule2MeV
-    lambda = (((R*Z/(E_0 * A))**2) + 1)**(0.5)
+    lambda = sqrt((R*Z/E_0)**2 + 1.0d0)  ! E_0 is the rest energy of the whole nucleus (M = A*mp), so no extra 1/A
 
  ELSE IF (Atomic > 4) THEN
     print *, "Values above Z=4 not supported yet."
@@ -141,8 +141,9 @@ GEOPosition    = 0.0d0
 GSMPosition    = 0.0d0
 GEOSPHposition = 0.0d0
 
-TrimStartPosition = real(dnint(StartPosition(:3) * 1.0d8), kind=8) / 1.0d8
-!TrimStartPosition = StartPosition(:3)
+! No rounding of the start position: rounding each frame separately to 1e-8 started the particle at slightly
+! different points in GDZ/GEO/GSM (up to ~6 cm), which visibly moves chaotic trajectories.
+TrimStartPosition = StartPosition(:3)
 
 call CoordinateTransform(inputcoord, "GDZ", year, day, secondTotal, &
                         TrimStartPosition, Position)
@@ -156,10 +157,6 @@ call CoordinateTransform(inputcoord, "GEO", year, day, secondTotal, &
 PositionArray(1,:) = Position
 PositionArray(2,:) = GEOPosition
 PositionArray(3,:) = GSMPosition
-
-PositionArray(1,:) = real(dnint(PositionArray(1,:) * 1.0d8), kind=8) / 1.0d8
-PositionArray(2,:) = real(dnint(PositionArray(2,:) * 1.0d8), kind=8) / 1.0d8
-PositionArray(3,:) = real(dnint(PositionArray(3,:) * 1.0d8), kind=8) / 1.0d8
 
 call Rigidity2velocity(lambda, V)
 

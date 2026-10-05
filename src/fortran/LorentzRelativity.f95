@@ -67,10 +67,9 @@ USE SharedParameters
 implicit none
 real(8), intent(in) :: Vabs, h
 real(8), intent(inout) :: TimeElapsed
-real(8) :: lam
 
-lam = (1 - ((Vabs/c)**2))**(-0.5)
-    
-TimeElapsed = TimeElapsed + h*lam        
-        
+! h is already the lab-frame (coordinate) time step used to advance x by h*v, so it is accumulated directly.
+! (Previously h*gamma was summed, which is neither lab time nor proper time.) Vabs is kept for interface compatibility.
+TimeElapsed = TimeElapsed + h
+
 end subroutine TimeCheck

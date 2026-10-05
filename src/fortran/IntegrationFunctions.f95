@@ -116,7 +116,7 @@ contains
     mindistcheck, DistanceTraveled, steps, TimeElapsed, counter, &
     OLDPositionArray, OLDVelocityArray, &
     OLDsecondTotal, MDP, MaxGyroPercent, R, firsth, &
-    CachedBfield, CachedBfieldValid) ! 5th Order Runge-Kutta (frozen-field, 6-stage)
+    CachedBfield, CachedBfieldValid) ! 5th Order Runge-Kutta (Nystrom, 6-stage)
     real(8), intent(inout) :: VelocityArray(2,3), PositionArray(3,3)
     real(8), intent(inout) :: h, secondTotal
     logical, intent(inout) :: mindistcheck
@@ -257,7 +257,7 @@ contains
   ELSE IF (IntMode == 5) THEN
     IntegrationPointer => function6RK  ! 6th Order Runge-Kutta
   ELSE IF (IntMode == 6) THEN
-    IntegrationPointer => function5RK  ! 5th Order Runge-Kutta (frozen-field, 6-stage)
+    IntegrationPointer => function5RK  ! 5th Order Runge-Kutta (Nystrom, 6-stage)
   ELSE IF (IntMode == 7) THEN
     IntegrationPointer => functionBorisBuneman  ! Boris-Buneman Method
   ELSE

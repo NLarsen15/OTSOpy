@@ -2,15 +2,15 @@ module SharedParameters
     implicit none
 
     ! Physical constants
-    real(8), parameter      :: q_0 = 1.602176634e-19        ! Elementary charge (C)
-    real(8), parameter      :: mp_0 = 1.67262192595e-27     ! Proton mass (kg)
-    real(8), parameter      :: mm_0 = 1.883531627e-28       ! muon mass (kg)
-    real(8), parameter      :: me_0 = 9.1093837139e-31      ! electron mass (kg)
-    real(8), parameter      :: c = 299792458.0              ! Speed of light (m/s)
-    real(8), parameter      :: Re_km = 6371.2               ! Earth radius (km)
-    real(8), parameter      :: Re_m = 6371200               ! Earth radius (m)
-    real(8), parameter      :: Lasth = 1E-6                 ! Last step size (s)
-    real(8), parameter      :: Joule2MeV = 6.241509074461E9 ! Conversion factor for Joules to MeV
+    real(8), parameter      :: q_0 = 1.602176634d-19        ! Elementary charge (C)
+    real(8), parameter      :: mp_0 = 1.67262192595d-27     ! Proton mass (kg)
+    real(8), parameter      :: mm_0 = 1.883531627d-28       ! muon mass (kg)
+    real(8), parameter      :: me_0 = 9.1093837139d-31      ! electron mass (kg)
+    real(8), parameter      :: c = 299792458.0d0              ! Speed of light (m/s)
+    real(8), parameter      :: Re_km = 6371.2d0               ! Earth radius (km)
+    real(8), parameter      :: Re_m = 6371200.0d0               ! Earth radius (m)
+    real(8), parameter      :: Lasth = 1.0d-6                 ! Last step size (s)
+    real(8), parameter      :: Joule2MeV = 6.241509074461d9 ! Conversion factor for Joules to GeV (name kept for compatibility)
     integer(4), parameter   :: backsavelim = 3              ! Number of steps back wards
 
     integer(4) :: coordtranscounter

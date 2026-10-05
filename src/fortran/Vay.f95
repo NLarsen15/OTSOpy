@@ -113,6 +113,8 @@ real(8) :: h_used
 real(8) :: Bnorm0
 logical :: FieldRejected
 
+real(8) :: Bres, qres, Vres(3)
+
 Verr = BetaError / 100.0d0
 LOWVerr = BetaError / 10000.0d0
 
@@ -325,6 +327,23 @@ if (FinalStep) then
     h = Lasth
 end if
 
+! Leapfrog staggering: Vnew is the velocity at t + h_used/2. If the next step uses a different h, re-centre it to
+! t + h_used + h/2 by rotating through (h_used - h)/2 with the field at the new position (cached by NewMax), so the
+! next kick spans (h_used + h)/2 and the scheme stays second order under variable steps.
+if ((adaptivestep .eqv. .TRUE.) .and. (.not. FinalStep) .and. (h /= h_used) .and. CachedBfieldValid) then
+
+    Bres = sqrt(dot_product(CachedBfield,CachedBfield))
+
+    if (Bres > 0.0d0) then
+        qres = (Q * (h_used - h)) / (4.0d0 * M)
+        call BorisRotate(Vnew, CachedBfield, Bres, M, Q, qres, LamndaN1, Vres)
+        VelocityArray(1,:) = Vres
+    end if
+
+end if
+
 counter = counter + 1
+
+steps = steps + 1
 
 end subroutine Vay

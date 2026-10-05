@@ -343,6 +343,7 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
     real(8)     :: test_value
     integer     :: i, l
     real(8)     :: x
+    real(8)     :: SyncVel(2,3)
     real(8)     :: BfieldFinal(3)
     real(8)     :: StartVelocity(3)
 
@@ -387,7 +388,7 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
     call AntiAssignCharge(Data%Anti)
 
     !$omp parallel do schedule(dynamic,1) &
-    !$omp& private(loop, Particle, thread_id)
+    !$omp& private(loop, Particle, thread_id, SyncVel)
     do loop = 1, n
 
         CurrentGyro      = Data%GyroPercent
@@ -466,8 +467,10 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
                     Allowed(loop) = Particle%Termtype !forbidden
                     rigidities(loop) = Particle%R
 
+                    call SyncLeapfrogVelocity(Particle%VelocityArray, Particle%PositionArray, Particle%h, &
+                    Particle%M, Particle%Q, Particle%secondTotal, Data%IntMode, SyncVel)
                     call AsymptoticDirection(Particle%PositionArray, &
-                    Particle%VelocityArray, &
+                    SyncVel, &
                     Particle%secondTotal, Data%CoordSystem, &
                     Particle%Lat, Particle%Long)
                     
@@ -477,8 +480,10 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
                     Allowed(loop) = Particle%Termtype !allowed
                     rigidities(loop) = Particle%R
 
+                    call SyncLeapfrogVelocity(Particle%VelocityArray, Particle%PositionArray, Particle%h, &
+                    Particle%M, Particle%Q, Particle%secondTotal, Data%IntMode, SyncVel)
                     call AsymptoticDirection(Particle%PositionArray, &
-                    Particle%VelocityArray, &
+                    SyncVel, &
                     Particle%secondTotal, Data%CoordSystem, &
                     Particle%Lat, Particle%Long)
 
@@ -538,6 +543,7 @@ subroutine trajectory_full(Data, g8, h8, Rigidity, TrajectoryFile, &
     integer     :: ios
     real(8)     :: Xnew(3), XnewConverted(3)
     real(8)     :: Vnew(3), VnewConverted(3)
+    real(8)     :: SyncVel(2,3)
 
     character(len=256) :: iomsg
 
@@ -637,14 +643,17 @@ subroutine trajectory_full(Data, g8, h8, Rigidity, TrajectoryFile, &
                  Particle%OLDsecondTotal, Particle%MDP, Particle%MaxGyroPercent, Particle%R, Particle%firsth, &
                 Particle%CachedBfield, Particle%CachedBfieldValid)
 
+                 call SyncLeapfrogVelocity(Particle%VelocityArray, Particle%PositionArray, Particle%h, &
+                     Particle%M, Particle%Q, Particle%secondTotal, Data%IntMode, SyncVel)
+
                  if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
                      Xnew = Particle%PositionArray(2,:)
-                     Vnew = Particle%VelocityArray(1,:)/1000   ! slot 1, not slot 2 -- slot 2 is never updated past init
+                     Vnew = SyncVel(1,:)/1000   ! slot 1, not slot 2 -- slot 2 is never updated past init
                      call CoordinateTransform("GEO", Data%CoordSystem, year, day, Particle%secondTotal, Xnew, XnewConverted)
                      call CoordinateTransformVec("GEO", Data%CoordSystem, year, day, Particle%secondTotal, Vnew, VnewConverted)
                  else
                      Xnew = Particle%PositionArray(1,:)
-                     Vnew = Particle%VelocityArray(1,:)/1000
+                     Vnew = SyncVel(1,:)/1000
                      call CoordinateTransform("GDZ", Data%CoordSystem, year, day, Particle%secondTotal, Xnew, XnewConverted)
                      call CoordinateTransformVec("GSM", Data%CoordSystem, year, day, Particle%secondTotal, Vnew, VnewConverted)
                 
@@ -659,6 +668,7 @@ subroutine trajectory_full(Data, g8, h8, Rigidity, TrajectoryFile, &
                     close(unit)
 
                     open(unit, file=trim(TrajectoryFile), status='replace', action='write')
+                    close(unit)
 
                     Particle%TotalBetaCheckTrigger = .false.
 
@@ -683,9 +693,13 @@ subroutine trajectory_full(Data, g8, h8, Rigidity, TrajectoryFile, &
 
     end do
 
+    close(unit)
+
     Filter = Particle%Termtype
+    call SyncLeapfrogVelocity(Particle%VelocityArray, Particle%PositionArray, Particle%h, &
+        Particle%M, Particle%Q, Particle%secondTotal, Data%IntMode, SyncVel)
     call AsymptoticDirection(Particle%PositionArray, &
-        Particle%VelocityArray, &
+        SyncVel, &
         Particle%secondTotal, Data%CoordSystem, &
         Particle%Lat, Particle%Long)
     Alat = Particle%Lat
@@ -725,6 +739,7 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
     real(8)     :: test_value
     integer     :: i, l
     real(8)     :: x
+    real(8)     :: SyncVel(2,3)
     real(8)     :: BfieldFinal(3)
     real(8)     :: StartVelocity(3)
 
@@ -769,7 +784,7 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
     call AntiAssignCharge(Data%Anti)
 
     !$omp parallel do schedule(dynamic,1) &
-    !$omp& private(loop, Particle, thread_id)
+    !$omp& private(loop, Particle, thread_id, SyncVel)
     do loop = 1, RigiditiesLen
 
         CurrentGyro      = Data%GyroPercent
@@ -846,8 +861,10 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
 100         if (Particle%Termtype .ne. 1) then
                     Allowed(loop) = Particle%Termtype !forbidden
 
+                    call SyncLeapfrogVelocity(Particle%VelocityArray, Particle%PositionArray, Particle%h, &
+                    Particle%M, Particle%Q, Particle%secondTotal, Data%IntMode, SyncVel)
                     call AsymptoticDirection(Particle%PositionArray, &
-                    Particle%VelocityArray, &
+                    SyncVel, &
                     Particle%secondTotal, Data%CoordSystem, &
                     Particle%Lat, Particle%Long)
                     
@@ -856,8 +873,10 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
             else
                     Allowed(loop) = Particle%Termtype !allowed
 
+                    call SyncLeapfrogVelocity(Particle%VelocityArray, Particle%PositionArray, Particle%h, &
+                    Particle%M, Particle%Q, Particle%secondTotal, Data%IntMode, SyncVel)
                     call AsymptoticDirection(Particle%PositionArray, &
-                    Particle%VelocityArray, &
+                    SyncVel, &
                     Particle%secondTotal, Data%CoordSystem, &
                     Particle%Lat, Particle%Long)
 
@@ -1231,8 +1250,9 @@ real(8) :: Wind8(25), Date8(6), PositionIN8(5), End8(4)
 real(8) :: g8(Data%gaussianlength), h8(Data%gaussianlength)
 
 real(8), allocatable :: LinePlus(:,:), LineMinus(:,:)
-real(8) :: Xnew(3), XnewConverted(3), Bfield(3)
+real(8) :: Xnew(3), XnewConverted(3), Bfield(3), BfieldGSM(3)
 integer :: io_unit
+character(len=3) :: TraceFrame
 
 integer(4) :: MaxSteps
 MaxSteps = 1000000   ! safety cap
@@ -1313,22 +1333,31 @@ do idir = 1, 2
 
         Xnew = Particle%PositionArray(2,:)
 
+        ! GEO-native internal fields (IGRF, IGRF14, custom Gauss) trace in GEO; the rest trace in GSM.
+        ! The B output is labelled GSM, so rotate it there when tracing in GEO.
+        if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
+            TraceFrame = "GEO"
+            call CoordinateTransformVec("GEO", "GSM", year, day, Particle%secondTotal, Bfield, BfieldGSM)
+        else
+            TraceFrame = "GSM"
+            BfieldGSM = Bfield
+        end if
 
-        call CoordinateTransform("GSM", Data%CoordSystem, year, day, &
+        call CoordinateTransform(TraceFrame, Data%CoordSystem, year, day, &
                                  Particle%secondTotal, &
                                  Xnew, XnewConverted)
 
         if (idir == 1) then
             nMinus = nMinus + 1
             if (nMinus <= MaxSteps) then
-                LineMinus(nMinus,:) = (/ XnewConverted, Bfield*1E9 /)
+                LineMinus(nMinus,:) = (/ XnewConverted, BfieldGSM*1E9 /)
             else
                 exit
             end if
         else
             nPlus = nPlus + 1
             if (nPlus <= MaxSteps) then
-                LinePlus(nPlus,:) = (/ XnewConverted, Bfield*1E9 /)
+                LinePlus(nPlus,:) = (/ XnewConverted, BfieldGSM*1E9 /)
             else
                 exit
             end if
@@ -1401,10 +1430,10 @@ end subroutine FieldTrace
 
 
 
-subroutine MHDstartupSorted(XU, YU, ZU, MHDposition_in, MHDB_in, nx_split, ny_split, nz_split, &
+subroutine MHDstartupSorted(XU, YU, ZU, MHDposition_in, MHDB_in, MHDA_in, nx_split, ny_split, nz_split, &
                             mix,max,miy,may,miz,maz, &
                             region_order_in, start_x, end_x, start_y, end_y, start_z, end_z, &
-                            num_regions,XUlen, YUlen, ZUlen, uniform_grid)
+                            num_regions,XUlen, YUlen, ZUlen, uniform_grid, interp_method_in)
 
   use Interpolation
   implicit none
@@ -1414,6 +1443,10 @@ subroutine MHDstartupSorted(XU, YU, ZU, MHDposition_in, MHDB_in, nx_split, ny_sp
   real(8) :: XU(XUlen), YU(YUlen), ZU(ZUlen)
   real(8) :: MHDposition_in(XUlen, YUlen, ZUlen, 3)
   real(8) :: MHDB_in(XUlen, YUlen, ZUlen, 3)
+  ! MHDA_in: vector potential grid, only meaningful when
+  ! interp_method_in == 3 ("divfree") - see _build_vector_potential in
+  ! mhd_utils.py. A zero array is passed harmlessly for the other methods.
+  real(8) :: MHDA_in(XUlen, YUlen, ZUlen, 3)
   integer(4) :: region_order_in(num_regions)
   integer(4) :: start_x(num_regions), end_x(num_regions)
   integer(4) :: start_y(num_regions), end_y(num_regions)
@@ -1422,6 +1455,10 @@ subroutine MHDstartupSorted(XU, YU, ZU, MHDposition_in, MHDB_in, nx_split, ny_sp
   !integer :: search_range
   real :: mix,max,miy,may,miz,maz
   logical :: uniform_grid
+  ! interp_method_in: 0=trilinear, 1=tricubic, 2=monotonic tricubic,
+  ! 3=divergence-free - see Interpolation module's `interp_method` and
+  ! `Interpolate`/`InterpolateCubic`/`InterpolateDivFree`.
+  integer :: interp_method_in
 
   ! Save grid sizes
   n_x = XUlen
@@ -1441,10 +1478,13 @@ subroutine MHDstartupSorted(XU, YU, ZU, MHDposition_in, MHDB_in, nx_split, ny_sp
   ! calls) - allocating an already-allocated variable is a runtime error.
   if (allocated(MHDposition)) deallocate(MHDposition)
   if (allocated(MHDB)) deallocate(MHDB)
+  if (allocated(MHDA)) deallocate(MHDA)
   allocate(MHDposition(n_x, n_y, n_z, 3))
   allocate(MHDB(n_x, n_y, n_z, 3))
+  allocate(MHDA(n_x, n_y, n_z, 3))
   MHDposition = MHDposition_in
   MHDB = MHDB_in
+  MHDA = MHDA_in
 
   ! Store region bounds
   if (allocated(start_idx_x_region)) deallocate(start_idx_x_region)
@@ -1484,6 +1524,7 @@ subroutine MHDstartupSorted(XU, YU, ZU, MHDposition_in, MHDB_in, nx_split, ny_sp
   allocate(ZU_axis(ZUlen)); ZU_axis = ZU
 
   is_uniform_grid = uniform_grid
+  interp_method = interp_method_in
 
 end subroutine MHDstartupSorted
 

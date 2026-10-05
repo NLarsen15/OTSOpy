@@ -15,7 +15,7 @@ from ..data_classes.trajectory_data import TrajectoryData
 def FortranTrajectory(Data: list, TrajectoryDataInstance: TrajectoryData, queue: mp.Queue, JsonFile: str, lock) -> None:
     
     if TrajectoryDataInstance.model[1] == 99:
-      mhd_utils.MHDinitialise(TrajectoryDataInstance.MHDfile, TrajectoryDataInstance.MHDgridtype)
+      mhd_utils.MHDinitialise(TrajectoryDataInstance.MHDfile, TrajectoryDataInstance.MHDgridtype, TrajectoryDataInstance.MHDinterpolation)
 
     for x in Data:
 

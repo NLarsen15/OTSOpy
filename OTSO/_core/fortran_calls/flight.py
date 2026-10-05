@@ -18,7 +18,7 @@ def FortranFlight(Data: list, DateArray: list, IOPT: list, WindArray: list, GArr
     cpu_util.set_process_affinity(cpus)
 
     if FData.model[1] == 99:
-      mhd_utils.MHDinitialise(FData.MHDfile, FData.MHDgridtype)
+      mhd_utils.MHDinitialise(FData.MHDfile, FData.MHDgridtype, FData.MHDinterpolation)
 
 
     for x,y,z,I,G,H in zip(Data,DateArray,WindArray,IOPT,GArray,HArray):

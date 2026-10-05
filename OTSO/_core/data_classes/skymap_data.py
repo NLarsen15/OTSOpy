@@ -69,6 +69,7 @@ class SkymapData:
     MHDfile: str
     MHDcoordsys: str
     MHDgridtype: str
+    MHDinterpolation: str
     spheresize: float
     inputcoord: str
     Verbose: bool

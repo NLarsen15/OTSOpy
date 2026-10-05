@@ -23,7 +23,7 @@ def FortranPlanet(
     cpu_util.set_process_affinity(cpus)
 
     if DataPlanet.model[1] == 99:
-        mhd_utils.MHDinitialise(DataPlanet.MHDfile, DataPlanet.MHDgridtype)
+        mhd_utils.MHDinitialise(DataPlanet.MHDfile, DataPlanet.MHDgridtype, DataPlanet.MHDinterpolation)
 
     with open(JsonFile, "a", encoding="utf-8") as f:
 

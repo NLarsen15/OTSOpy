@@ -9,7 +9,7 @@ subroutine MHDField(InputPosition,secondTotal,outputBfield)
     integer, allocatable :: x_values(:), y_values(:), z_values(:)
     character(len=3) :: CoordIN
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
     CoordIN = "GEO"
     else
     CoordIN = "GSM"
@@ -31,7 +31,9 @@ subroutine MHDField(InputPosition,secondTotal,outputBfield)
     outputBfieldTemp(2) = By_target
     outputBfieldTemp(3) = Bz_target
 
-    call CoordinateTransformVec(CoordINMHD, CoordOUTMHD, year, day, secondTotal, outputBfieldTemp, outputBfield)
+    ! Return B in the same frame the position came in (GEO for GEO-native internal fields, else GSM), so it can be
+    ! summed with the internal field. (Previously always GSM via CoordOUTMHD, which was wrong with IGRF.)
+    call CoordinateTransformVec(CoordINMHD, CoordIN, year, day, secondTotal, outputBfieldTemp, outputBfield)
 
 end subroutine MHDField
   

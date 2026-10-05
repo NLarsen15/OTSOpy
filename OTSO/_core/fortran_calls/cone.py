@@ -17,7 +17,7 @@ def FortranCone(Data: list, ConeDataInstance: ConeData, queue: mp.Queue, cpus, J
     cpu_util.set_process_affinity(cpus)
 
     if ConeDataInstance.model[1] == 99:
-        mhd_utils.MHDinitialise(ConeDataInstance.MHDfile, ConeDataInstance.MHDgridtype)
+        mhd_utils.MHDinitialise(ConeDataInstance.MHDfile, ConeDataInstance.MHDgridtype, ConeDataInstance.MHDinterpolation)
 
     for x in Data:
 

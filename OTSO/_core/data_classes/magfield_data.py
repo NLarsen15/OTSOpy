@@ -52,6 +52,7 @@ class MagfieldData:
     MHDfile: str
     MHDcoordsys: str
     MHDgridtype: str
+    MHDinterpolation: str
     Verbose: bool
     max_degree: int
 

@@ -10,7 +10,7 @@ from ..data_classes.magfield_data import MagfieldData
 def FortranMagfield(Data: list, MagfieldDataInstance: MagfieldData, queue: mp.Queue) -> None:
     
   if MagfieldDataInstance.model[1] == 99:
-    mhd_utils.MHDinitialise(MagfieldDataInstance.MHDfile, MagfieldDataInstance.MHDgridtype)
+    mhd_utils.MHDinitialise(MagfieldDataInstance.MHDfile, MagfieldDataInstance.MHDgridtype, MagfieldDataInstance.MHDinterpolation)
 
   for x in Data:
     old_altitude = None

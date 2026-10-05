@@ -1,6 +1,6 @@
 ! ************************************************************************************************************************************
 ! subroutine RK5:
-! 6-stage, 5th order explicit Runge-Kutta method 
+! 6-stage, 5th order explicit Runge-Kutta method (Nystrom 1925). The field is evaluated at every stage position.
 !
 ! INPUT:
 ! Variables used from the particle module
@@ -49,7 +49,7 @@ real(8), intent(inout) :: CachedBfield(3)
 logical, intent(inout) :: CachedBfieldValid
 
 real(8) :: d
-real(8) :: B0(3), crossed(3)
+real(8) :: B0(3), crossed(3), Bs(3), Xs(3)
 
 real(8) :: Vs1(3), Vs2(3), Vs3(3), Vs4(3), Vs5(3), Vs6(3)
 real(8) :: K1(3), K2(3), K3(3), K4(3), K5(3), K6(3)
@@ -138,35 +138,45 @@ do while (.not. StepAccepted)
     ! Stage 2  (c2 = 1/3)
     !-------------------------------------------------------------
     Vs2 = v0 + K1/3.0d0
-    call VecCross(Vs2, B0, crossed)
+    Xs  = x0 + h*Vs1/3.0d0
+    call MagneticField(Xs/Re_m, t0 + h/3.0d0, Bs)
+    call VecCross(Vs2, Bs, crossed)
     K2 = h*d*crossed
 
     !-------------------------------------------------------------
     ! Stage 3  (c3 = 2/5)
     !-------------------------------------------------------------
     Vs3 = v0 + (4.0d0*K1 + 6.0d0*K2)/25.0d0
-    call VecCross(Vs3, B0, crossed)
+    Xs  = x0 + h*(4.0d0*Vs1 + 6.0d0*Vs2)/25.0d0
+    call MagneticField(Xs/Re_m, t0 + 0.4d0*h, Bs)
+    call VecCross(Vs3, Bs, crossed)
     K3 = h*d*crossed
 
     !-------------------------------------------------------------
     ! Stage 4  (c4 = 1)
     !-------------------------------------------------------------
     Vs4 = v0 + (K1 - 12.0d0*K2 + 15.0d0*K3)/4.0d0
-    call VecCross(Vs4, B0, crossed)
+    Xs  = x0 + h*(Vs1 - 12.0d0*Vs2 + 15.0d0*Vs3)/4.0d0
+    call MagneticField(Xs/Re_m, t0 + h, Bs)
+    call VecCross(Vs4, Bs, crossed)
     K4 = h*d*crossed
 
     !-------------------------------------------------------------
     ! Stage 5  (c5 = 2/3)
     !-------------------------------------------------------------
     Vs5 = v0 + (6.0d0*K1 + 90.0d0*K2 - 50.0d0*K3 + 8.0d0*K4)/81.0d0
-    call VecCross(Vs5, B0, crossed)
+    Xs  = x0 + h*(6.0d0*Vs1 + 90.0d0*Vs2 - 50.0d0*Vs3 + 8.0d0*Vs4)/81.0d0
+    call MagneticField(Xs/Re_m, t0 + 2.0d0*h/3.0d0, Bs)
+    call VecCross(Vs5, Bs, crossed)
     K5 = h*d*crossed
 
     !-------------------------------------------------------------
     ! Stage 6  (c6 = 4/5)
     !-------------------------------------------------------------
     Vs6 = v0 + (6.0d0*K1 + 36.0d0*K2 + 10.0d0*K3 + 8.0d0*K4)/75.0d0
-    call VecCross(Vs6, B0, crossed)
+    Xs  = x0 + h*(6.0d0*Vs1 + 36.0d0*Vs2 + 10.0d0*Vs3 + 8.0d0*Vs4)/75.0d0
+    call MagneticField(Xs/Re_m, t0 + 0.8d0*h, Bs)
+    call VecCross(Vs6, Bs, crossed)
     K6 = h*d*crossed
 
     !-------------------------------------------------------------
@@ -297,6 +307,8 @@ if (adaptivestep) then
 end if
 
 counter = counter + 1
+
+steps = steps + 1
 
 return
 

@@ -320,6 +320,37 @@ class CustomFieldParams(TypedDict, total=False):
       grid whose resolution varies with position (e.g. finer near Earth,
       coarser further out) - correct for uniform grids too, just not quite
       as fast as the "uniform" fast path.
+
+    MHDinterpolation controls how the field is reconstructed between grid
+    points:
+    • "trilinear" (default): the classic 8-corner-cube linear blend. Cheap,
+      but only C^0 continuous - gradients kink at every cell boundary, which
+      shows up as small unphysical noise/curvature in traced trajectories
+      unless the grid is quite fine.
+    • "tricubic": a smooth (C^1) cubic reconstruction from a 4x4x4 neighbor
+      stencil per component. Dramatically more accurate than trilinear at
+      the same grid resolution in smooth field regions (empirically, a
+      coarser tricubic grid can beat a 2x-finer trilinear grid). Like any
+      unlimited cubic fit, it can overshoot near a sharp gradient or
+      discontinuity (e.g. a bow shock, magnetopause, or hard inner
+      boundary) - use with some caution near such features.
+    • "monotonic": the same tricubic reconstruction, but with
+      Fritsch-Carlson slope limiting so it never overshoots the local range
+      of the input data. Slightly less accurate than plain "tricubic" in
+      smooth regions, but safe to use everywhere, including near sharp
+      gradients - the recommended choice for general use.
+    • "divfree": interpolates the magnetic vector potential A (built once,
+      at grid load time, by line integrals of B in the gauge Ax = 0)
+      instead of interpolating B directly, and returns B = curl(A)
+      evaluated analytically from that interpolant. Divergence-free by
+      construction (not just small error), which matters most for
+      conserving the first adiabatic invariant on long, weakly
+      trapped/quasi-trapped trajectories (e.g. cusp trapping; Mackay,
+      Marchand & Kabin, 2006, JGR 111, A06208). B is a derivative of the
+      interpolant, so it is less point-wise accurate than "tricubic".
+      Works on uniform and stretched grids. The gridded field must itself
+      be divergence-free (normally true for an external-only field); OTSO
+      checks this at load time and warns if not.
     """
     g: Optional[Sequence[float]]  # Gauss coefficients g
     h: Optional[Sequence[float]]  # Gauss coefficients h
@@ -327,12 +358,15 @@ class CustomFieldParams(TypedDict, total=False):
     MHDcoordsys: Optional[str]    # MHD coordinate system
     MHDgridtype: str              # "auto" (default), "uniform", or "stretched" -
                                    # see MagFieldParams docs / OTSO docstrings for details
+    MHDinterpolation: str         # "trilinear" (default), "tricubic", "monotonic", or
+                                   # "divfree" - see MagFieldParams docs / OTSO docstrings
+                                   # for details
     max_degree: Optional[int]
 
     # Default values
     DEFAULTS = {
         "g": None, "h": None, "MHDfile": None, "MHDcoordsys": None,
-        "MHDgridtype": "auto", "max_degree": 13
+        "MHDgridtype": "auto", "MHDinterpolation": "trilinear", "max_degree": 13
     } # type: ignore
 
 

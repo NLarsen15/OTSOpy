@@ -1,0 +1,16 @@
+# Python caches and packaging output
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# MkDocs output
+site/
+
+# Fortran build leftovers (the shipped libraries live in OTSO/_core/libs and stay tracked)
+src/fortran/*.so
+src/fortran/*.pyd
+src/fortran/*.o
+src/fortran/*.mod

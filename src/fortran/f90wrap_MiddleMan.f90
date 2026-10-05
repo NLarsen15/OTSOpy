@@ -2260,8 +2260,9 @@ end subroutine f90wrap_middleman__fieldtrace
 
 subroutine f90wrap_middleman__mhdstartupsorted(f90wrap_n0, f90wrap_n1, f90wrap_n2, f90wrap_n3, f90wrap_n4, f90wrap_n5, &
     f90wrap_n6, f90wrap_n7, f90wrap_n8, f90wrap_n9, f90wrap_n10, f90wrap_n11, f90wrap_n12, f90wrap_n13, f90wrap_n14, &
-    f90wrap_n15, xu, yu, zu, mhdposition_in, mhdb_in, nx_split, ny_split, nz_split, mix, max_bn, miy, may, miz, maz, &
-    region_order_in, start_x, end_x, start_y, end_y, start_z, end_z, num_regions, xulen, yulen, zulen, uniform_grid)
+    f90wrap_n15, f90wrap_n16, f90wrap_n17, f90wrap_n18, xu, yu, zu, mhdposition_in, mhdb_in, mhda_in, nx_split, &
+    ny_split, nz_split, mix, max_bn, miy, may, miz, maz, region_order_in, start_x, end_x, start_y, end_y, start_z, &
+    end_z, num_regions, xulen, yulen, zulen, uniform_grid, interp_method_in)
     use middleman
     implicit none
     
@@ -2284,24 +2285,31 @@ subroutine f90wrap_middleman__mhdstartupsorted(f90wrap_n0, f90wrap_n1, f90wrap_n
     integer :: f90wrap_n8
     !f2py intent(hide), depend(mhdb_in) :: f90wrap_n8 = shape(mhdb_in,2)
     integer :: f90wrap_n9
-    !f2py intent(hide), depend(region_order_in) :: f90wrap_n9 = shape(region_order_in,0)
+    !f2py intent(hide), depend(mhda_in) :: f90wrap_n9 = shape(mhda_in,0)
     integer :: f90wrap_n10
-    !f2py intent(hide), depend(start_x) :: f90wrap_n10 = shape(start_x,0)
+    !f2py intent(hide), depend(mhda_in) :: f90wrap_n10 = shape(mhda_in,1)
     integer :: f90wrap_n11
-    !f2py intent(hide), depend(end_x) :: f90wrap_n11 = shape(end_x,0)
+    !f2py intent(hide), depend(mhda_in) :: f90wrap_n11 = shape(mhda_in,2)
     integer :: f90wrap_n12
-    !f2py intent(hide), depend(start_y) :: f90wrap_n12 = shape(start_y,0)
+    !f2py intent(hide), depend(region_order_in) :: f90wrap_n12 = shape(region_order_in,0)
     integer :: f90wrap_n13
-    !f2py intent(hide), depend(end_y) :: f90wrap_n13 = shape(end_y,0)
+    !f2py intent(hide), depend(start_x) :: f90wrap_n13 = shape(start_x,0)
     integer :: f90wrap_n14
-    !f2py intent(hide), depend(start_z) :: f90wrap_n14 = shape(start_z,0)
+    !f2py intent(hide), depend(end_x) :: f90wrap_n14 = shape(end_x,0)
     integer :: f90wrap_n15
-    !f2py intent(hide), depend(end_z) :: f90wrap_n15 = shape(end_z,0)
+    !f2py intent(hide), depend(start_y) :: f90wrap_n15 = shape(start_y,0)
+    integer :: f90wrap_n16
+    !f2py intent(hide), depend(end_y) :: f90wrap_n16 = shape(end_y,0)
+    integer :: f90wrap_n17
+    !f2py intent(hide), depend(start_z) :: f90wrap_n17 = shape(start_z,0)
+    integer :: f90wrap_n18
+    !f2py intent(hide), depend(end_z) :: f90wrap_n18 = shape(end_z,0)
     real(8), dimension(f90wrap_n0) :: xu
     real(8), dimension(f90wrap_n1) :: yu
     real(8), dimension(f90wrap_n2) :: zu
     real(8), dimension(f90wrap_n3,f90wrap_n4,f90wrap_n5, 3) :: mhdposition_in
     real(8), dimension(f90wrap_n6,f90wrap_n7,f90wrap_n8, 3) :: mhdb_in
+    real(8), dimension(f90wrap_n9,f90wrap_n10,f90wrap_n11, 3) :: mhda_in
     integer :: nx_split
     integer :: ny_split
     integer :: nz_split
@@ -2311,22 +2319,24 @@ subroutine f90wrap_middleman__mhdstartupsorted(f90wrap_n0, f90wrap_n1, f90wrap_n
     real :: may
     real :: miz
     real :: maz
-    integer(4), dimension(f90wrap_n9) :: region_order_in
-    integer(4), dimension(f90wrap_n10) :: start_x
-    integer(4), dimension(f90wrap_n11) :: end_x
-    integer(4), dimension(f90wrap_n12) :: start_y
-    integer(4), dimension(f90wrap_n13) :: end_y
-    integer(4), dimension(f90wrap_n14) :: start_z
-    integer(4), dimension(f90wrap_n15) :: end_z
+    integer(4), dimension(f90wrap_n12) :: region_order_in
+    integer(4), dimension(f90wrap_n13) :: start_x
+    integer(4), dimension(f90wrap_n14) :: end_x
+    integer(4), dimension(f90wrap_n15) :: start_y
+    integer(4), dimension(f90wrap_n16) :: end_y
+    integer(4), dimension(f90wrap_n17) :: start_z
+    integer(4), dimension(f90wrap_n18) :: end_z
     integer(4) :: num_regions
     integer(4) :: xulen
     integer(4) :: yulen
     integer(4) :: zulen
     logical :: uniform_grid
-    call MHDstartupSorted(XU=xu, YU=yu, ZU=zu, MHDposition_in=mhdposition_in, MHDB_in=mhdb_in, nx_split=nx_split, &
-        ny_split=ny_split, nz_split=nz_split, mix=mix, max=max_bn, miy=miy, may=may, miz=miz, maz=maz, &
+    integer :: interp_method_in
+    call MHDstartupSorted(XU=xu, YU=yu, ZU=zu, MHDposition_in=mhdposition_in, MHDB_in=mhdb_in, MHDA_in=mhda_in, &
+        nx_split=nx_split, ny_split=ny_split, nz_split=nz_split, mix=mix, max=max_bn, miy=miy, may=may, miz=miz, maz=maz, &
         region_order_in=region_order_in, start_x=start_x, end_x=end_x, start_y=start_y, end_y=end_y, start_z=start_z, &
-        end_z=end_z, num_regions=num_regions, XUlen=xulen, YUlen=yulen, ZUlen=zulen, uniform_grid=uniform_grid)
+        end_z=end_z, num_regions=num_regions, XUlen=xulen, YUlen=yulen, ZUlen=zulen, uniform_grid=uniform_grid, &
+        interp_method_in=interp_method_in)
 end subroutine f90wrap_middleman__mhdstartupsorted
 
 subroutine f90wrap_middleman__gse2gswtsy15(f90wrap_n0, f90wrap_n1, date, position_gse, wind, gotso, hotso, glen, &

@@ -9,7 +9,7 @@ import weakref
 class Middleman(f90wrap.runtime.FortranModule):
     """
     Module middleman
-    Defined at MiddleMan.f95 lines 1-1182
+    Defined at MiddleMan.f95 lines 1-1221
     """
     @f90wrap.runtime.register_class("MiddleMan.FortranData")
     class FortranData(f90wrap.runtime.FortranDerivedType):
@@ -1347,7 +1347,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         cone(self, g8, h8, rigidities, allowed, asymlat, asymlong)
-        Defined at MiddleMan.f95 lines 245-384
+        Defined at MiddleMan.f95 lines 245-389
         
         Parameters
         ----------
@@ -1372,7 +1372,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         
         filter, alat, along = trajectory_full(self, g8, h8, rigidity, trajectoryfile, \
             trajectoryfilelen)
-        Defined at MiddleMan.f95 lines 399-542
+        Defined at MiddleMan.f95 lines 404-554
         
         Parameters
         ----------
@@ -1404,7 +1404,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         trajectory(self, g8, h8, rigidities, rigiditieslen, allowed, asymlat, asymlong)
-        Defined at MiddleMan.f95 lines 546-684
+        Defined at MiddleMan.f95 lines 558-701
         
         Parameters
         ----------
@@ -1429,7 +1429,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         transmission(self, g8, h8, rigidities, transmissions)
-        Defined at MiddleMan.f95 lines 695-841
+        Defined at MiddleMan.f95 lines 712-858
         
         Parameters
         ----------
@@ -1451,7 +1451,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         magstrength(pin, data, coordin, coordout, g8, h8, bfield)
-        Defined at MiddleMan.f95 lines 850-907
+        Defined at MiddleMan.f95 lines 867-924
         
         Parameters
         ----------
@@ -1471,7 +1471,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         interface_call=False):
         """
         coordtrans(pin, data, coordin, coordout, g8, h8, pout)
-        Defined at MiddleMan.f95 lines 916-941
+        Defined at MiddleMan.f95 lines 933-958
         
         Parameters
         ----------
@@ -1494,7 +1494,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         fieldtrace(self, filename, filenamelen, g8, h8)
-        Defined at MiddleMan.f95 lines 950-1075
+        Defined at MiddleMan.f95 lines 967-1102
         
         Parameters
         ----------
@@ -1508,16 +1508,16 @@ class Middleman(f90wrap.runtime.FortranModule):
             filenamelen=filenamelen, g8=g8, h8=h8)
     
     @staticmethod
-    def mhdstartupsorted(xu, yu, zu, mhdposition_in, mhdb_in, nx_split, ny_split, \
-        nz_split, mix, max_bn, miy, may, miz, maz, region_order_in, start_x, end_x, \
-        start_y, end_y, start_z, end_z, num_regions, xulen, yulen, zulen, \
-        uniform_grid, interface_call=False):
+    def mhdstartupsorted(xu, yu, zu, mhdposition_in, mhdb_in, mhda_in, nx_split, \
+        ny_split, nz_split, mix, max_bn, miy, may, miz, maz, region_order_in, \
+        start_x, end_x, start_y, end_y, start_z, end_z, num_regions, xulen, yulen, \
+        zulen, uniform_grid, interp_method_in, interface_call=False):
         """
-        mhdstartupsorted(xu, yu, zu, mhdposition_in, mhdb_in, nx_split, ny_split, \
-            nz_split, mix, max_bn, miy, may, miz, maz, region_order_in, start_x, end_x, \
-            start_y, end_y, start_z, end_z, num_regions, xulen, yulen, zulen, \
-            uniform_grid)
-        Defined at MiddleMan.f95 lines 1081-1150
+        mhdstartupsorted(xu, yu, zu, mhdposition_in, mhdb_in, mhda_in, nx_split, \
+            ny_split, nz_split, mix, max_bn, miy, may, miz, maz, region_order_in, \
+            start_x, end_x, start_y, end_y, start_z, end_z, num_regions, xulen, yulen, \
+            zulen, uniform_grid, interp_method_in)
+        Defined at MiddleMan.f95 lines 1108-1189
         
         Parameters
         ----------
@@ -1526,6 +1526,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         zu : float array
         mhdposition_in : float array
         mhdb_in : float array
+        mhda_in : float array
         nx_split : int32
         ny_split : int32
         nz_split : int32
@@ -1547,21 +1548,23 @@ class Middleman(f90wrap.runtime.FortranModule):
         yulen : int32
         zulen : int32
         uniform_grid : bool
+        interp_method_in : int32
         """
         _MiddleMan.f90wrap_middleman__mhdstartupsorted(xu=xu, yu=yu, zu=zu, \
-            mhdposition_in=mhdposition_in, mhdb_in=mhdb_in, nx_split=nx_split, \
-            ny_split=ny_split, nz_split=nz_split, mix=mix, max_bn=max_bn, miy=miy, \
-            may=may, miz=miz, maz=maz, region_order_in=region_order_in, start_x=start_x, \
-            end_x=end_x, start_y=start_y, end_y=end_y, start_z=start_z, end_z=end_z, \
+            mhdposition_in=mhdposition_in, mhdb_in=mhdb_in, mhda_in=mhda_in, \
+            nx_split=nx_split, ny_split=ny_split, nz_split=nz_split, mix=mix, \
+            max_bn=max_bn, miy=miy, may=may, miz=miz, maz=maz, \
+            region_order_in=region_order_in, start_x=start_x, end_x=end_x, \
+            start_y=start_y, end_y=end_y, start_z=start_z, end_z=end_z, \
             num_regions=num_regions, xulen=xulen, yulen=yulen, zulen=zulen, \
-            uniform_grid=uniform_grid)
+            uniform_grid=uniform_grid, interp_method_in=interp_method_in)
     
     @staticmethod
     def gse2gswtsy15(date, position_gse, wind, gotso, hotso, glen, position_gsw, \
         interface_call=False):
         """
         gse2gswtsy15(date, position_gse, wind, gotso, hotso, glen, position_gsw)
-        Defined at MiddleMan.f95 lines 1152-1182
+        Defined at MiddleMan.f95 lines 1191-1221
         
         Parameters
         ----------

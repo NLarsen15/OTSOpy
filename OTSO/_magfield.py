@@ -78,6 +78,7 @@ def magfield(Locations, **kwargs):
        MHDfile = kwargs['MHDfile'],
        MHDcoordsys = kwargs['MHDcoordsys'],
        MHDgridtype = kwargs['MHDgridtype'],
+       MHDinterpolation = kwargs['MHDinterpolation'],
        Verbose = kwargs['Verbose'],
        max_degree = kwargs["max_degree"]
    )

@@ -51,7 +51,7 @@ subroutine Boris_FieldTrace_Advanced(PositionArray, &
 
     !print *, "Time step dt:", dt, "meters"
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
         xGSM = PositionArray(2,:)
     end if
 
@@ -129,7 +129,7 @@ subroutine Boris_FieldTrace_Advanced(PositionArray, &
 
     call CoordinateTransform("GSM", "GDZ", year, day, secondTotal, XnewGSM, XnewGDZ)
 
-    if (model(1) == 4) then
+    if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
         call CoordinateTransform("GEO", "GDZ", year, day, secondTotal, XnewGSM, XnewGDZ)
     end if
 

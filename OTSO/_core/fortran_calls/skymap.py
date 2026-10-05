@@ -21,7 +21,7 @@ def FortranSkymap(Data: list, DataSkymap: SkymapData, queue: mp.Queue, cpus, Jso
         station_groups[x[0]].append(x)
 
     if DataSkymap.model[1] == 99:
-        mhd_utils.MHDinitialise(DataSkymap.MHDfile, DataSkymap.MHDgridtype)
+        mhd_utils.MHDinitialise(DataSkymap.MHDfile, DataSkymap.MHDgridtype, DataSkymap.MHDinterpolation)
 
     # Dictionary of DataFrames
     all_results = {}

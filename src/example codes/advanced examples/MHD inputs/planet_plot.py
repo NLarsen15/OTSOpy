@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -26,13 +28,13 @@ date_inputs = {
 
 magfield_inputs       = {"internalmag": "NONE", "externalmag": "MHD",
                         "boberg": False, "bobergtype": "EXTENSION",
-                        "magnetopause": "Sphere", "spheresize": 10,
+                        "magnetopause": "Sphere", "spheresize": 6.6,
                         "AdaptiveExternalModel": False}
 
 rigidity_inputs = {
     "startrigidity": 20,
     "endrigidity": 0,
-    "rigiditystep": 0.01,
+    "rigiditystep": 0.1,
     "rigidityscan": "ON"
 }
 
@@ -85,16 +87,16 @@ tsyganenko_inputs = {
 }
 
 integration_inputs = {
-    "intmodel": "Boris-Buneman",
+    "intmodel": "6RK",
     "gyropercent": 15,
     "minaltitude": 20,
     "maxdistance": 100,
     "maxtime": 0,
     "mintrapdist": 6.6,
     "startaltitude": 20,
-    "betaerror": 0.001,
-    "totalbetacheck": True,
-    "adaptivestep": False,
+    "betaerror": 0.01,
+    "totalbetacheck": False,
+    "adaptivestep": True,
     "maxsteps": 100000
 }
 
@@ -113,7 +115,74 @@ computation_inputs = {
 }
 
 custom_field_inputs   = {"g": None, "h": None, "max_degree": 13, "MHDcoordsys": "GEO",
-                          "MHDfile": "IGRF_grid_2013.csv"}
+                          "MHDfile": "IGRF_grid_uniform_01.csv"}
+
+# Same grid, but the geometrically-stretched one from gen_igrf_stretched.py -
+# 0.001 Re spacing anchored right at Earth's surface (x=+-1 Re), coarsening
+# both inward (unused interior) and outward to +/-6.6 Re (matching the
+# magnetopause spheresize/mintrapdist used below) - instead of the fixed
+# 0.15 Re uniform grid. MHDgridtype must be "stretched" since the spacing
+# isn't constant. Generated separately; run gen_igrf_stretched.py first if
+# this file doesn't exist yet.
+custom_field_inputs_stretched = {"g": None, "h": None, "max_degree": 13, "MHDcoordsys": "GEO",
+                                  "MHDfile": "IGRF_grid_stretched_r1_0001_ext66.csv",
+                                  "MHDgridtype": "stretched"}
+
+# Runs to compare: the MHD field interpolated three ways - "trilinear" (the
+# old default), "tricubic" (smoother, can overshoot near sharp gradients),
+# and "monotonic" (same tricubic fit, but limited so it never overshoots;
+# see CustomFieldParams docs for details) - on both the uniform grid and the
+# near-Earth-refined stretched grid, plus a "normal" baseline that swaps the
+# MHD external field for plain IGRF (internalmag="IGRF", externalmag="NONE"),
+# keeping every other magfield parameter (magnetopause, spheresize, etc.)
+# identical to the MHD runs, so the only thing that differs is the field
+# source itself. Stretched-grid runs get their own labels (not just an
+# overwrite of the uniform-grid ones) so both sets of results - and the
+# skip-if-CSV-exists cache in the main loop below - stay independent.
+RUNS = [
+    {
+        "label": "trilinear",
+        "title": "MHD interpolation: trilinear (uniform grid)",
+        "magfield_params": magfield_inputs,
+        "custom_field_params": {**custom_field_inputs, "MHDinterpolation": "trilinear"},
+    },
+    {
+        "label": "tricubic",
+        "title": "MHD interpolation: tricubic (uniform grid)",
+        "magfield_params": magfield_inputs,
+        "custom_field_params": {**custom_field_inputs, "MHDinterpolation": "tricubic"},
+    },
+    {
+        "label": "monotonic",
+        "title": "MHD interpolation: monotonic (uniform grid)",
+        "magfield_params": magfield_inputs,
+        "custom_field_params": {**custom_field_inputs, "MHDinterpolation": "monotonic"},
+    },
+    {
+        "label": "trilinear_stretched",
+        "title": "MHD interpolation: trilinear (stretched grid)",
+        "magfield_params": magfield_inputs,
+        "custom_field_params": {**custom_field_inputs_stretched, "MHDinterpolation": "trilinear"},
+    },
+    {
+        "label": "tricubic_stretched",
+        "title": "MHD interpolation: tricubic (stretched grid)",
+        "magfield_params": magfield_inputs,
+        "custom_field_params": {**custom_field_inputs_stretched, "MHDinterpolation": "tricubic"},
+    },
+    {
+        "label": "monotonic_stretched",
+        "title": "MHD interpolation: monotonic (stretched grid)",
+        "magfield_params": magfield_inputs,
+        "custom_field_params": {**custom_field_inputs_stretched, "MHDinterpolation": "monotonic"},
+    },
+    {
+        "label": "igrf_baseline",
+        "title": "Baseline: IGRF only (no MHD grid)",
+        "magfield_params": {**magfield_inputs, "internalmag": "IGRF", "externalmag": "NONE"},
+        "custom_field_params": {},
+    },
+]
 
 coord_inputs = {
     "coordsystem": "GEO",
@@ -139,15 +208,19 @@ grid_inputs = {
 # RUN OTSO
 # ============================================================
 
-def run_otso():
+def csv_path_for(label):
+    return f"planet_{label}.csv"
 
-    print("Running OTSO planet calculation...")
+
+def run_otso(run):
+
+    print(f"Running OTSO planet calculation ({run['label']})...")
 
     planet_results = planet(
         cutoff_comp="Vertical",
 
         datetime_params=date_inputs,
-        magfield_params=magfield_inputs,
+        magfield_params=run["magfield_params"],
         rigidity_params=rigidity_inputs,
         asymptotic_params=asymptotic_inputs,
         transmission_params=transmission_inputs,
@@ -158,16 +231,17 @@ def run_otso():
         particle_params=particle_inputs,
         computation_params=computation_inputs,
         coordinate_params=coord_inputs,
-        custom_field_params=custom_field_inputs,
+        custom_field_params=run["custom_field_params"],
         data_retrieval_params=data_retrieval_inputs,
         grid_params=grid_inputs
     )
 
-    # Save the OTSO result
-    planet_results[0].to_csv("planet.csv", index=False)
+    # Save the OTSO result, one CSV per run so they don't overwrite each other.
+    out_csv = csv_path_for(run["label"])
+    planet_results[0].to_csv(out_csv, index=False)
 
     print("OTSO calculation complete.")
-    print("Saved results to planet.csv")
+    print(f"Saved results to {out_csv}")
 
     return planet_results[0]
 
@@ -176,11 +250,8 @@ def run_otso():
 # PLOT PLANET DATA
 # ============================================================
 
-def plot_planet(planet_data):
+def plot_planet(planet_data, label, title):
 
-    # --------------------------------------------------------
-    # Extract columns
-    # --------------------------------------------------------
 
     PlanetLat = np.asarray(planet_data["Latitude"], dtype=float)
     PlanetLong = np.asarray(planet_data["Longitude"], dtype=float)
@@ -189,9 +260,6 @@ def plot_planet(planet_data):
     print("Maximum cut-off rigidity:", np.nanmax(PlanetDose))
     print("Minimum cut-off rigidity:", np.nanmin(PlanetDose))
 
-    # --------------------------------------------------------
-    # Create DataFrame
-    # --------------------------------------------------------
 
     PlanetDf = pd.DataFrame({
         "x": PlanetLong,
@@ -199,16 +267,12 @@ def plot_planet(planet_data):
         "z": PlanetDose
     })
 
-    # --------------------------------------------------------
-    # Create regular grid
-    # --------------------------------------------------------
 
     X_unique = np.sort(PlanetDf["x"].unique())
     Y_unique = np.sort(PlanetDf["y"].unique())
 
     X, Y = np.meshgrid(X_unique, Y_unique)
 
-    # Pivot the data onto the latitude/longitude grid
     Z = (
         PlanetDf
         .pivot_table(
@@ -223,10 +287,6 @@ def plot_planet(planet_data):
         .values
     )
 
-    # --------------------------------------------------------
-    # Figure
-    # --------------------------------------------------------
-
     fig = plt.figure(figsize=(8, 5), dpi=300)
 
     ax = fig.add_subplot(
@@ -238,9 +298,8 @@ def plot_planet(planet_data):
 
     ax.set_global()
 
-    # --------------------------------------------------------
-    # Gridlines
-    # --------------------------------------------------------
+    ax.set_title(title, fontsize=16)
+
 
     gl = ax.gridlines(
         crs=ccrs.PlateCarree(),
@@ -284,10 +343,6 @@ def plot_planet(planet_data):
         "size": 15
     }
 
-    # --------------------------------------------------------
-    # Colour scale
-    # --------------------------------------------------------
-
     values = np.arange(0, 20.5, 0.5)
 
     cmap = plt.get_cmap("viridis")
@@ -305,10 +360,6 @@ def plot_planet(planet_data):
 
     sm.set_array([])
 
-    # --------------------------------------------------------
-    # Contour plot
-    # --------------------------------------------------------
-
     plot = ax.contourf(
         X,
         Y,
@@ -316,20 +367,18 @@ def plot_planet(planet_data):
         levels=values,
         cmap=cmap,
         norm=norm,
-        transform=ccrs.PlateCarree()
+        transform=ccrs.PlateCarree(),
+        # Project the grid first, then contour natively in projected space -
+        # avoids a cartopy/shapely bug where reprojecting filled contour
+        # polygons on a Robinson projection can raise "'GeometryCollection'
+        # object is not subscriptable" (seen in planet_plot_lsmod2.py, e.g.
+        # from a NaN cutoff or a filled band touching the map edge).
+        transform_first=True
     )
-
-    # --------------------------------------------------------
-    # Coastlines
-    # --------------------------------------------------------
 
     ax.coastlines(
         zorder=1
     )
-
-    # --------------------------------------------------------
-    # Colour bar
-    # --------------------------------------------------------
 
     color = fig.colorbar(
         sm,
@@ -349,29 +398,39 @@ def plot_planet(planet_data):
         labelsize=15
     )
 
-    # --------------------------------------------------------
-    # Final formatting
-    # --------------------------------------------------------
-
     plt.tight_layout()
 
+    out_png = f"planetplot_{label}.png"
+
     plt.savefig(
-        "planetplot.png",
+        out_png,
         dpi=300,
         bbox_inches="tight"
     )
 
-    plt.show()
+    print(f"Saved plot to {out_png}")
 
-
-# ============================================================
-# MAIN
-# ============================================================
+    # Batch-generating one plot per run - close each figure instead of
+    # blocking on plt.show() so the loop doesn't stall waiting for a window
+    # to be closed by hand between runs.
+    plt.close(fig)
 
 if __name__ == "__main__":
 
-    # 1. Run OTSO
-    planet_data = run_otso()
+    for run in RUNS:
+        print(f"\n=== {run['title']} ===")
 
-    # 2. Plot the OTSO output
-    plot_planet(planet_data)
+        # 1. Run OTSO, unless this run's CSV is already there from a previous
+        # pass - the planet cutoff scan is the expensive part, so a rerun
+        # (e.g. after tweaking the plot) shouldn't redo it for runs that
+        # already finished. Delete the CSV (or the whole file) to force a
+        # recompute for a given run.
+        out_csv = csv_path_for(run["label"])
+        if os.path.exists(out_csv):
+            print(f"Found existing {out_csv}, skipping computation and loading cached results.")
+            planet_data = pd.read_csv(out_csv)
+        else:
+            planet_data = run_otso(run)
+
+        # 2. Plot the OTSO output
+        plot_planet(planet_data, run["label"], run["title"])

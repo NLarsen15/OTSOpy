@@ -368,6 +368,8 @@ end if
 
 counter = counter + 1
 
+steps = steps + 1
+
 return
 
 end subroutine RK6

@@ -43,7 +43,7 @@ Tgyro = 2.0d0*PI*GyroRadius/Vmag
 Max = MaxGyroPercent * Tgyro
 
 IF (adaptivestep .eqv. .TRUE.) THEN
-    h = 0.01d0 * Tgyro
+    h = min(0.01d0 * Tgyro, Max)
 ELSE
     h = Max
 END IF
@@ -104,7 +104,7 @@ if ((.not. adaptivestep) .and. (FixedStep > 0.0d0)) then
     if (IntMode == 7 .or. IntMode == 4 .or. IntMode == 3) then
         GEOPosition = PositionArray(2,:)
         GSMPosition = PositionArray(3,:)
-        if (model(1) == 4) then
+        if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
             call MagneticField(GEOPosition, secondTotal, Bfield)
         else
             call MagneticField(GSMPosition, secondTotal, Bfield)
@@ -125,7 +125,7 @@ end if
 GEOPosition = PositionArray(2,:)
 GSMPosition = PositionArray(3,:)
 
-if (model(1) == 4) then
+if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
 call MagneticField(GEOPosition, secondTotal, Bfield)
 else
 call MagneticField(GSMPosition, secondTotal, Bfield)
@@ -137,7 +137,7 @@ call TimeStep(VelocityArray(1,:), Bfield, MaxGyroPercent, R, hOLD, h)
 
 Bmag = ((Bfield(1)**2.0 + Bfield(2)**2.0 + Bfield(3)**2.0))**(0.5)
 if (Bmag == 0) then
-    h = 10**(-6)
+    h = 1.0d-6
 end if
 
 if ((IntMode == 7 .or. IntMode == 4 .or. IntMode == 3) .and. Bmag > 0.0d0) then
@@ -192,11 +192,11 @@ call TimeStepMax(Bfield, Velocity, R, MaxGyroPercent, Max)
 
 Bmag = ((Bfield(1)**2.0 + Bfield(2)**2.0 + Bfield(3)**2.0))**(0.5)
 if (Bmag == 0) then
-Max = 10**(-4)
+Max = 1.0d-4
 end if
 
-if (Max < 10E-7) then
-Max = 10E-7
+if (Max < 1.0d-12) then
+Max = 1.0d-12
 end if
 
 end subroutine NewMax
@@ -376,3 +376,55 @@ call VecCross(Uvec, Tvec2, crossed2)
 Vnew = (s_scalar/gammaNew) * ( Uvec + Tvec2*dot_product(Uvec,Tvec2) + crossed2 )
 
 end subroutine BorisRotate
+
+! ************************************************************************************************************************************
+! subroutine SyncLeapfrogVelocity:
+! The leapfrog pushers (Vay = 3, Higuera-Cary = 4, Boris-Buneman = 7) carry the velocity half a step behind the position
+! (t - h/2, with h the step about to be taken). For output and asymptotic directions the velocity must be at the same time
+! as the position, so rotate it forward by h/2 in the field at the current position. Other integrators are returned unchanged.
+!
+! INPUT:
+! VelocityArray, PositionArray - particle state
+! h - the next step size (the one the stored velocity is staggered for) [s]
+! M, Q - particle mass [kg] and charge [C]
+! secondTotal - current time [s]
+! IntMode - integration method code
+!
+! OUTPUT:
+! VelocityOut - copy of VelocityArray with slot 1 synchronised to the position
+!
+! ************************************************************************************************************************************
+subroutine SyncLeapfrogVelocity(VelocityArray, PositionArray, h, M, Q, secondTotal, IntMode, VelocityOut)
+use SharedParameters
+implicit none
+
+real(8), intent(in)  :: VelocityArray(2,3), PositionArray(3,3)
+real(8), intent(in)  :: h, M, Q, secondTotal
+integer(8), intent(in) :: IntMode
+real(8), intent(out) :: VelocityOut(2,3)
+
+real(8) :: Bfield(3), Bnorm, Position(3), v0(3), Vsync(3), gamma0, qhalf
+
+VelocityOut = VelocityArray
+
+if ((IntMode /= 3 .and. IntMode /= 4 .and. IntMode /= 7) .or. h <= 0.0d0) return
+
+if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
+    Position = PositionArray(2,:)
+else
+    Position = PositionArray(3,:)
+end if
+
+call MagneticField(Position, secondTotal, Bfield)
+Bnorm = sqrt(dot_product(Bfield,Bfield))
+if (Bnorm <= 0.0d0) return
+
+v0 = VelocityArray(1,:)
+gamma0 = 1.0d0 / sqrt(1.0d0 - dot_product(v0,v0)/(c*c))
+qhalf = (Q * h) / (4.0d0 * M)
+
+call BorisRotate(v0, Bfield, Bnorm, M, Q, qhalf, gamma0, Vsync)
+
+VelocityOut(1,:) = Vsync
+
+end subroutine SyncLeapfrogVelocity

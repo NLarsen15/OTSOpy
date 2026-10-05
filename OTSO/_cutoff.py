@@ -102,6 +102,7 @@ def cutoff(
         MHDfile = kwargs['MHDfile'], 
         MHDcoordsys = kwargs['MHDcoordsys'],
         MHDgridtype = kwargs['MHDgridtype'],
+        MHDinterpolation = kwargs['MHDinterpolation'],
         spheresize = kwargs['spheresize'], 
         inputcoord = kwargs['inputcoord'], 
         Verbose = kwargs['Verbose'], 

@@ -1,5 +1,6 @@
 import datetime
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -251,3 +252,53 @@ def test_planet(date_inputs, magfield_inputs, solar_wind_inputs, geomagnetic_inp
     )
     assert_nonempty_df(result[0], "planet cutoff grid dataframe")
     assert isinstance(result[-1], str) and result[-1]
+
+
+
+DIPOLE_M = -30000.0  # nT Re^3, dipole along z
+
+
+def _dipole(x, y, z):
+    r = np.sqrt(x * x + y * y + z * z)
+    mdotr = DIPOLE_M * z
+    return np.stack([3 * x * mdotr / r**5, 3 * y * mdotr / r**5, 3 * z * mdotr / r**5 - DIPOLE_M / r**3], axis=-1)
+
+
+def _write_dipole_grid(path, xs, ys, zs):
+    """Small MHD-format grid (X, Y, Z [Re], Bx, By, Bz [nT]) of an analytic dipole, built on the fly so the
+    tests need no bundled CSV files."""
+    X, Y, Z = np.meshgrid(xs, ys, zs, indexing="ij")
+    with np.errstate(divide="ignore", invalid="ignore"):
+        B = _dipole(X, Y, Z)
+    pd.DataFrame(dict(X=X.ravel(), Y=Y.ravel(), Z=Z.ravel(),
+                      Bx=B[..., 0].ravel(), By=B[..., 1].ravel(), Bz=B[..., 2].ravel())).to_csv(path, index=False)
+    return str(path)
+
+
+def _mhd_field(locs, grid, interp):
+    df = magfield(Locations=locs, datetime_params={"year": 2013, "month": 1, "day": 1, "hour": 0},
+                  magfield_params={"internalmag": "NONE", "externalmag": "MHD"},
+                  custom_field_params={"MHDfile": grid, "MHDcoordsys": "GEO", "MHDinterpolation": interp},
+                  coordinate_params={"inputcoord": "GEO", "coordsystem": "GEO", "coordout": "GEO"},
+                  computation_params={"corenum": 1, "Verbose": False})[0]
+    v = df.to_numpy(dtype=float)
+    return np.array([v[np.argmin(np.linalg.norm(v[:, :3] - p, axis=1)), 3:6] for p in np.asarray(locs)])
+
+
+@pytest.mark.parametrize("interp", ["trilinear", "tricubic", "monotonic", "divfree"])
+def test_mhd_interpolation_matches_dipole(tmp_path, interp):
+    """Every interpolation scheme should reproduce an analytic dipole between grid nodes (0.25 Re grid, r > 2 Re)."""
+    axis = np.arange(-2.0, 2.01, 0.25)
+    grid = _write_dipole_grid(tmp_path / "dipole.csv", np.arange(2.0, 6.01, 0.25), axis, axis)
+    locs = [[3.13, 0.41, -0.62], [4.37, -1.12, 0.93], [2.71, 1.38, 1.07], [5.06, -0.27, -1.31]]
+    exact = _dipole(*np.asarray(locs).T)
+    rel = np.linalg.norm(_mhd_field(locs, grid, interp) - exact, axis=1) / np.linalg.norm(exact, axis=1)
+    assert rel.max() < 0.02, rel
+
+
+def test_mhd_divfree_warns_for_non_solenoidal_grid(tmp_path):
+    """A grid through the dipole's singular centre is not divergence-free; divfree must warn rather than fail silently."""
+    axis = np.arange(-3.0, 3.01, 0.5)
+    grid = _write_dipole_grid(tmp_path / "dipole_with_centre.csv", axis, axis, axis)
+    with pytest.warns(RuntimeWarning, match="divfree"):
+        _mhd_field([[2.0, 1.0, 0.5]], grid, "divfree")

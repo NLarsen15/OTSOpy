@@ -195,16 +195,16 @@ def cutoff(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=15): Gyration period percentage
+            - `gyropercent` (`float`, default=10): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum distance (Re)
-            - `maxtime` (`float`, default=0): Maximum time
+            - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
-            - `maxsteps` (`int`, default=None): Maximum number of integration steps
+            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
 
@@ -248,6 +248,7 @@ def cutoff(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [cutoff_dataframe, asymptotic_dataframe, transmission_dataframe, readme_text]
@@ -463,16 +464,16 @@ def cone(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=15): Gyration period percentage
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum distance (Re)
-            - `maxtime` (`float`, default=0): Maximum time
+            - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
-            - `maxsteps` (`int`, default=None): Maximum number of integration steps
+            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
 
@@ -516,6 +517,7 @@ def cone(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [cone_dataframe, cutoff_dataframe, readme_text]
@@ -544,6 +546,8 @@ def cone(
             cone_df, cutoff_df, metadata = cone_result
     ```
     """
+
+    integration_params = dict(integration_params)
 
     if integration_params.get("gyropercent") is None:
         integration_params["gyropercent"] = 1
@@ -741,16 +745,16 @@ def planet(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=15): Gyration period percentage
+            - `gyropercent` (`float`, default=10): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum distance (Re)
-            - `maxtime` (`float`, default=0): Maximum time
+            - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
-            - `maxsteps` (`int`, default=None): Maximum number of integration steps
+            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
 
@@ -806,6 +810,7 @@ def planet(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [planet_dataframe, asymptotic_dataframe, transmission_dataframe, readme_text]
@@ -990,16 +995,16 @@ def trajectory(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=15): Gyration period percentage
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum distance (Re)
-            - `maxtime` (`float`, default=0): Maximum time
+            - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
-            - `maxsteps` (`int`, default=None): Maximum number of integration steps
+            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
 
@@ -1042,6 +1047,7 @@ def trajectory(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [trajectory_data, readme_text]
@@ -1073,6 +1079,8 @@ def trajectory(
             )
     ```
     """
+
+    integration_params = dict(integration_params)
 
     if integration_params.get("gyropercent") is None:
         integration_params["gyropercent"] = 1
@@ -1253,16 +1261,16 @@ def flight(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=15): Gyration period percentage
+            - `gyropercent` (`float`, default=10): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum distance (Re)
-            - `maxtime` (`float`, default=0): Maximum time
+            - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
-            - `maxsteps` (`int`, default=None): Maximum number of integration steps
+            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
 
@@ -1306,6 +1314,7 @@ def flight(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [flight_df, asymptotic_df, transmission_df, readme_text, input_dataframe]
@@ -1541,6 +1550,7 @@ def trace(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [trace_data, readme_text]
@@ -1735,6 +1745,7 @@ def magfield(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [magfield_dataframe, readme_text]
@@ -1922,16 +1933,16 @@ def transmission(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=15): Gyration period percentage
+            - `gyropercent` (`float`, default=10): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum distance (Re)
-            - `maxtime` (`float`, default=0): Maximum time
+            - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
-            - `maxsteps` (`int`, default=None): Maximum number of integration steps
+            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
 
@@ -1973,6 +1984,7 @@ def transmission(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [transmission_df, readme_text]
@@ -2189,16 +2201,16 @@ def skymap(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=15): Gyration period percentage
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum distance (Re)
-            - `maxtime` (`float`, default=0): Maximum time
+            - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
-            - `maxsteps` (`int`, default=None): Maximum number of integration steps
+            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
 
@@ -2238,6 +2250,7 @@ def skymap(
             - `MHDfile` (`str`, default=None): MHD simulation file
             - `MHDcoordsys` (`str`, default=None): MHD coordinate system
             - `MHDgridtype` (`str`, default="auto"): How the MHD grid is looked up - "auto" detects per-axis spacing automatically, "uniform" forces the fast fixed-spacing path (only correct if every axis really is evenly spaced), "stretched" forces the general path needed for a grid whose resolution varies with position (e.g. finer near Earth)
+            - `MHDinterpolation` (`str`, default="trilinear"): How the field is reconstructed between grid points - "trilinear" is the classic fast corner-blend (kinked gradients at cell boundaries), "tricubic" is a smooth C^1 fit that's far more accurate in smooth field regions but can overshoot near sharp gradients/boundaries, "monotonic" is the same tricubic fit with overshoot limiting (recommended for general use), "divfree" returns the curl of an interpolated vector potential so the field is exactly divergence-free (for long quasi-trapped trajectories; less point-wise accurate than "tricubic"; the gridded field must itself be divergence-free, e.g. an external-only field - a warning is issued otherwise)
 
     Returns:
         list: [skymap_dataframe, readme_text]
@@ -2271,6 +2284,8 @@ def skymap(
 
     if rigidity_params.get("startrigidity") is None:
         rigidity_params["startrigidity"] = 50
+
+    integration_params = dict(integration_params)
 
     if integration_params.get("gyropercent") is None:
         integration_params["gyropercent"] = 1
@@ -2431,7 +2446,7 @@ def addstation(*args, **kwargs):
     CLI usage:
         OTSO.addstation NEWSTATION 65.0 25.0
         
-    Note: If station already exists, you will have option to overwrite.
+    Note: If the station already exists, there is an option to overwrite it.
     """
     from .otso_cli import AddStation as addstation_func
     Name, Latitude, Longitude = sys.argv[1], float(sys.argv[2]), float(sys.argv[3])

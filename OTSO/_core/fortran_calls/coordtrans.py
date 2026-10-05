@@ -8,9 +8,9 @@ from ..libs.MiddleMan import Middleman as OTSOLib
 
 def FortranCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, maxdegree, g, h):
     for x,y in zip(Data,DateArray):
-      # Only apply position correction for GDZ input coordinates
+      # GDZ input is given as [lat, lon, alt_km]; the Fortran side expects [alt_km, lat, lon]
       if CoordIN == "GDZ":
-          Position = [1+(x[2]/6371.0),x[0],x[1]]
+          Position = [x[2],x[0],x[1]]
       else:
           Position = x  # Use original position for non-GDZ coordinates
 
