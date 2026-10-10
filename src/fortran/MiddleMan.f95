@@ -220,6 +220,7 @@ subroutine cutoff(Data, g8, h8, Rigidities, Allowed)
         thread_id = omp_get_thread_num()
 
 10      Particle = ParticleData()  ! Initialize the ParticleData type
+        SubResult = 0  ! clear the Tsyganenko magnetopause flag left by the previous particle
 
         Particle%R = real(loop, kind=8)*Data%RigidityStep + Data%EndRigidity
 
@@ -287,6 +288,8 @@ subroutine cutoff(Data, g8, h8, Rigidities, Allowed)
                  GOTO 100
             end if
 
+        end do  ! end of DO WHILE: the block below runs once, after the particle terminates
+
 100         if (Particle%Termtype .ne. 1) then
                     Allowed(loop) = Particle%Termtype !forbidden
                     rigidities(loop) = Particle%R
@@ -297,7 +300,6 @@ subroutine cutoff(Data, g8, h8, Rigidities, Allowed)
 
             endif
 
-        end do
 
     end do
     !$omp end parallel do
@@ -396,6 +398,7 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
         thread_id = omp_get_thread_num()
 
 10      Particle = ParticleData()  ! Initialize the ParticleData type
+        SubResult = 0  ! clear the Tsyganenko magnetopause flag left by the previous particle
 
         Particle%R = real(loop, kind=8)*Data%RigidityStep + Data%EndRigidity
 
@@ -463,6 +466,8 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
                  GOTO 100
             end if
 
+        end do  ! end of DO WHILE: the block below runs once, after the particle terminates
+
 100         if (Particle%Termtype .ne. 1) then
                     Allowed(loop) = Particle%Termtype !forbidden
                     rigidities(loop) = Particle%R
@@ -491,7 +496,6 @@ subroutine cone(Data, g8, h8, Rigidities, Allowed, Asymlat, Asymlong)
                     Asymlong(loop) = Particle%Long
             endif
 
-        end do
 
     end do
     !$omp end parallel do
@@ -607,6 +611,7 @@ subroutine trajectory_full(Data, g8, h8, Rigidity, TrajectoryFile, &
     call AntiAssignCharge(Data%Anti)
 
     Particle = ParticleData()  ! Initialize the ParticleData type
+    SubResult = 0  ! clear the Tsyganenko magnetopause flag left by the previous particle
 
     Particle%R = real(dnint(Rigidity * 1.0d8), kind=8) / 1.0d8
 
@@ -792,6 +797,7 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
         thread_id = omp_get_thread_num()
 
 10      Particle = ParticleData()  ! Initialize the ParticleData type
+        SubResult = 0  ! clear the Tsyganenko magnetopause flag left by the previous particle
 
         Particle%R = Rigidities(loop)
 
@@ -858,6 +864,8 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
                  GOTO 100
             end if
 
+        end do  ! end of DO WHILE: the block below runs once, after the particle terminates
+
 100         if (Particle%Termtype .ne. 1) then
                     Allowed(loop) = Particle%Termtype !forbidden
 
@@ -884,7 +892,6 @@ subroutine trajectory(Data, g8, h8, Rigidities, RigiditiesLen, &
                     Asymlong(loop) = Particle%Long
             endif
 
-        end do
 
     end do
     !$omp end parallel do
@@ -997,6 +1004,7 @@ subroutine transmission(Data, g8, h8, Rigidities, Transmissions)
             CurrentGyro      = Data%GyroPercent
 
 10          Particle = ParticleData()  ! Initialize the ParticleData type
+            SubResult = 0  ! clear the Tsyganenko magnetopause flag left by the previous particle
 
             Particle%R = lowr + (i-1)*Rres
 
@@ -1313,6 +1321,7 @@ do idir = 1, 2
     end if
 
     Particle = ParticleData()
+    SubResult = 0  ! clear the Tsyganenko magnetopause flag left by the previous particle
 
     Particle%R = 1
 
@@ -1369,6 +1378,7 @@ do idir = 1, 2
 
     end do
     Particle = ParticleData()
+    SubResult = 0  ! clear the Tsyganenko magnetopause flag left by the previous particle
 end do
 
 
