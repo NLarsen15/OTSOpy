@@ -1,6 +1,5 @@
 import pandas as pd
 from datetime import datetime, timedelta
-import re
 import os
 import tempfile
 
@@ -163,46 +162,55 @@ def average_30min_prior(df, lookup_time):
     return avg
 
 def extract_dst_value(file_path, current_time):
+    # WDC Dst format is fixed-width: "DSTyymm*dd" header (16 chars), a 4-char base
+    # value, 24 hourly values of 4 chars each, then a 4-char daily mean. Missing
+    # values are written as 9999, which can run into a neighbouring negative value
+    # (e.g. " -179999") so the columns must be sliced rather than regex-split.
     current_day = current_time.day
     current_hour = current_time.hour
 
     lines = _load_lines_cached(file_path)
 
-    dst_values = {}
-    daily_averages = {}
+    def _parse(field):
+        field = field.strip()
+        if not field:
+            return None
+        try:
+            value = int(field)
+        except ValueError:
+            return None
+        return None if abs(value) == 9999 else value
 
-    prev_dst = None
+    latest_dst = None
+    current_dst = None
     daily_avg = None
 
     for line in lines:
-        if line.startswith('DST'):
+        if not line.startswith('DST') or len(line) < 20:
+            continue
+        day = int(line[8:10])
+        if day > current_day:
+            continue
 
-            year_month = line[3:7]
-            day = int(line[8:10])
+        hourly = [_parse(line[20 + 4*i:24 + 4*i]) for i in range(24)]
+        last_hour = current_hour if day == current_day else 23
+        for hour in range(last_hour + 1):
+            if hourly[hour] is not None:
+                latest_dst = hourly[hour]
 
+        if day == current_day:
+            current_dst = hourly[current_hour]
+            daily_avg = _parse(line[116:120])
 
-            if day == current_day:
+    if current_dst is None:
+        if latest_dst is None:
+            print("Warning: no live Dst value available for " + str(current_time) + "; using Dst = 0.")
+            latest_dst = 0
+        else:
+            print("Warning: live Dst for " + str(current_time) + " not yet published; using most recent value (" + str(latest_dst) + " nT).")
+        current_dst = latest_dst
 
-                dst_data = re.findall(r'-?\d+', line[11:])
-                dst_data = dst_data[2:]
-                
-                # Ignore invalid values (e.g., "999") when extracting hourly data
-                hourly_dst_data = [int(val) for val in dst_data[:-1] if int(val) != 999]
-                
-                if len(hourly_dst_data) > current_hour:
-                    prev_dst = hourly_dst_data[current_hour]
-                    dst_values[(year_month, day)] = prev_dst
-
-                try:
-                    daily_average = int(dst_data[-1])
-                    if daily_average != 999:  # Ignore invalid daily averages
-                        daily_averages[(year_month, day)] = daily_average
-                except (ValueError, IndexError):
-                    pass
-
-    daily_avg = daily_averages.get((year_month, current_day), None)
-
-    return prev_dst, daily_avg
+    return current_dst, daily_avg
 
 def extract_kp_index(current_time):
     
