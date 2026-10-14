@@ -7,12 +7,12 @@ from ..utils import mhd_utils
 from ..utils import fortran_data_utils
 from ..data_classes.magfield_data import MagfieldData
 
-def FortranMagfield(Data: list, MagfieldDataInstance: MagfieldData, queue: mp.Queue) -> None:
+def FortranMagfield(Data: list, MagfieldDataInstance: MagfieldData, queue: mp.Queue, Index: list) -> None:
     
   if MagfieldDataInstance.model[1] == 99:
     mhd_utils.MHDinitialise(MagfieldDataInstance.MHDfile, MagfieldDataInstance.MHDgridtype, MagfieldDataInstance.MHDinterpolation)
 
-  for x in Data:
+  for x,i in zip(Data,Index):
     old_altitude = None
     if MagfieldDataInstance.inputcoord == "GDZ":
           old_altitude = x[2]  # Save original altitude
@@ -52,6 +52,7 @@ def FortranMagfield(Data: list, MagfieldDataInstance: MagfieldData, queue: mp.Qu
     columns = position_columns + [f"{CoordOUT}_Bx [nT]", f"{CoordOUT}_By [nT]", f"{CoordOUT}_Bz [nT]"]
     df = pd.DataFrame(columns=columns)
     df.loc[len(df)] = combined_array
+    df.index = [i]
     queue.put(df)
 
   return

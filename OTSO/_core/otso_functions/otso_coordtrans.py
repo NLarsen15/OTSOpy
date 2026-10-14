@@ -34,8 +34,11 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
           hlist.append(gausscoefs['H_coefficients'])
           glist.append(gausscoefs['G_coefficients'])
 
+    IndexList = np.array_split(np.arange(len(Locations)), corenum)
     LocationsList = np.array_split(Locations, corenum)
     DateArrayList = np.array_split(DateArrayList, corenum)
+    glist = np.array_split(glist, corenum)
+    hlist = np.array_split(hlist, corenum)
 
     maxdegree = 13
 
@@ -68,8 +71,8 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
         simple_queue = SimpleQueue()
         processed = 0
         
-        for Data, Date, g, h in zip(LocationsList, DateArrayList, glist, hlist):
-            coordtrans.FortranCoordtrans(Data, Date, CoordIN, CoordOUT, simple_queue, maxdegree, g, h)
+        for Data, Date, g, h, Index in zip(LocationsList, DateArrayList, glist, hlist, IndexList):
+            coordtrans.FortranCoordtrans(Data, Date, CoordIN, CoordOUT, simple_queue, maxdegree, g, h, Index)
             
             processed += len(Data)
             if Verbose:
@@ -93,8 +96,8 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
             pass
         
         ProcessQueue = mp.Manager().Queue()
-        for Data,Date,g,h in zip(LocationsList,DateArrayList,glist,hlist):
-            Child = mp.Process(target=coordtrans.FortranCoordtrans,  args=(Data, Date, CoordIN, CoordOUT, ProcessQueue, g, h))
+        for Data,Date,g,h,Index in zip(LocationsList,DateArrayList,glist,hlist,IndexList):
+            Child = mp.Process(target=coordtrans.FortranCoordtrans,  args=(Data, Date, CoordIN, CoordOUT, ProcessQueue, maxdegree, g, h, Index))
             ChildProcesses.append(Child)
 
         for a in ChildProcesses:
@@ -123,7 +126,9 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
                     sys.stdout.flush()
 
           except queue.Empty:
-            pass
+            if all(not Child.is_alive() for Child in ChildProcesses) and ProcessQueue.empty():
+                print("ERROR: An OTSO worker process stopped before finishing. Please check the error message above.")
+                exit()
           
           time.sleep(0.0001)
 
@@ -133,7 +138,8 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
         for b in ChildProcesses:
             b.join()
 
-    combined_df = pd.concat(results, ignore_index=True)
+    combined_df = pd.concat(results)
+    combined_df[combined_df.columns[1:]] = combined_df[combined_df.columns[1:]].astype(float)
     sorted_df = combined_df.sort_values(by=combined_df.columns[:4].tolist())
 
     stop = time.time()

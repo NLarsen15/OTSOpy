@@ -55,7 +55,7 @@ def FortranCutoff(Data: list, CutoffDataInstance: CutoffData, queue: mp.Queue, c
           AsyAllowed = np.zeros(len(P_List), dtype=np.int32)
           AsyLat = np.zeros(len(P_List), dtype=np.float64)
           AsyLong = np.zeros(len(P_List), dtype=np.float64)
-          Plist_array = np.array(P_List, dtype=np.float64)
+          Plist_array = fortran_data_utils.round_rigidity(P_List)
           OTSOLib.trajectory(FortranData, CutoffDataInstance.g, CutoffDataInstance.h, 
                              Plist_array, len(P_List), AsyAllowed, AsyLat, AsyLong)
 

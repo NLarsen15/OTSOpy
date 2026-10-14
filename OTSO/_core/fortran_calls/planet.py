@@ -136,10 +136,7 @@ def FortranPlanet(
                     dtype=np.float64
                 )
 
-                Plist_array = np.array(
-                    P_List,
-                    dtype=np.float64
-                )
+                Plist_array = fortran_data_utils.round_rigidity(P_List)
 
                 OTSOLib.trajectory(
                     FortranData,

@@ -59,7 +59,7 @@ def FortranFlight(Data: list, DateArray: list, IOPT: list, WindArray: list, GArr
           AsyAllowed = np.zeros(len(P_List), dtype=np.int32)
           AsyLat = np.zeros(len(P_List), dtype=np.float64)
           AsyLong = np.zeros(len(P_List), dtype=np.float64)
-          Plist_array = np.array(P_List, dtype=np.float64)
+          Plist_array = fortran_data_utils.round_rigidity(P_List)
           OTSOLib.trajectory(FortranData, G, H, Plist_array, 
                              len(P_List), AsyAllowed, AsyLat, AsyLong)
 

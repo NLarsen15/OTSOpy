@@ -253,6 +253,10 @@ def prepare_fortran_trajectory(Positioninfo: list, DataInstance: TrajectoryData)
     return FortranData
 #############################################################################################################################
 #############################################################################################################################
+def round_rigidity(Rigidities):
+    Rigidities = np.asarray(Rigidities, dtype=np.float64)
+    return np.sign(Rigidities)*np.floor(np.abs(Rigidities)*1.0e8 + 0.5)/1.0e8
+
 def prepare_fortran_magfield(DataInstance: CutoffData):
 
     DateArray = DataInstance.datearray

@@ -22,6 +22,8 @@ def OTSO_magfield(MagfieldDataInstance: MagfieldData) -> list:
 
     LocationsList = np.array_split(MagfieldDataInstance.locations,
                                    MagfieldDataInstance.corenum)
+    IndexList = np.array_split(np.arange(len(MagfieldDataInstance.locations)),
+                               MagfieldDataInstance.corenum)
 
     start = time.time()
 
@@ -48,8 +50,8 @@ def OTSO_magfield(MagfieldDataInstance: MagfieldData) -> list:
         simple_queue = SimpleQueue()
         processed = 0
         
-        for Data in LocationsList:
-            magfield.FortranMagfield(Data, MagfieldDataInstance, simple_queue)
+        for Data, Index in zip(LocationsList, IndexList):
+            magfield.FortranMagfield(Data, MagfieldDataInstance, simple_queue, Index)
             
             processed += len(Data)
             if MagfieldDataInstance.Verbose:
@@ -73,8 +75,8 @@ def OTSO_magfield(MagfieldDataInstance: MagfieldData) -> list:
             pass
         
         ProcessQueue = mp.Manager().Queue()
-        for Data in LocationsList:
-            Child = mp.Process(target=magfield.FortranMagfield,  args=(Data, MagfieldDataInstance, ProcessQueue))
+        for Data, Index in zip(LocationsList, IndexList):
+            Child = mp.Process(target=magfield.FortranMagfield,  args=(Data, MagfieldDataInstance, ProcessQueue, Index))
             
             ChildProcesses.append(Child)
 
@@ -102,7 +104,9 @@ def OTSO_magfield(MagfieldDataInstance: MagfieldData) -> list:
                     sys.stdout.flush()
 
           except queue.Empty:
-            pass
+            if all(not Child.is_alive() for Child in ChildProcesses) and ProcessQueue.empty():
+                print("ERROR: An OTSO worker process stopped before finishing. Please check the error message above.")
+                exit()
           
           time.sleep(0.0001)
 
@@ -112,7 +116,7 @@ def OTSO_magfield(MagfieldDataInstance: MagfieldData) -> list:
         for b in ChildProcesses:
             b.join()
 
-    combined_df = pd.concat(results, ignore_index=True)
+    combined_df = pd.concat(results).astype(float)
     sorted_df = combined_df.sort_values(by=combined_df.columns[:3].tolist())
 
     stop = time.time()

@@ -195,9 +195,9 @@ def cutoff(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=10): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
+            - `gyropercent` (`float`, default=10): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
-            - `maxdistance` (`float`, default=100): Maximum distance (Re)
+            - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
@@ -464,9 +464,9 @@ def cone(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=1): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
-            - `maxdistance` (`float`, default=100): Maximum distance (Re)
+            - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
@@ -745,9 +745,9 @@ def planet(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=10): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
+            - `gyropercent` (`float`, default=10): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
-            - `maxdistance` (`float`, default=100): Maximum distance (Re)
+            - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
@@ -995,9 +995,9 @@ def trajectory(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=1): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
-            - `maxdistance` (`float`, default=100): Maximum distance (Re)
+            - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
@@ -1053,6 +1053,9 @@ def trajectory(
         list: [trajectory_data, readme_text]
 
             - trajectory_data: Dictionary with positional, velocity, filter and asymptotic viewing directions information for trajectories
+              (the "Filter" value gives why the trace stopped: 1 = escaped (magnetopause / outer boundary),
+              -1 = reached minaltitude (Earth/atmosphere), -2 = maxdistance, -3 = maxsteps, -4 = maxtime,
+              -5 = numerical failure (non-finite positions; the trace is not reliable))
             - readme_text: OTSO computation summary
 
     Examples:
@@ -1261,9 +1264,9 @@ def flight(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=10): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
+            - `gyropercent` (`float`, default=10): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
-            - `maxdistance` (`float`, default=100): Maximum distance (Re)
+            - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
@@ -1750,7 +1753,7 @@ def magfield(
     Returns:
         list: [magfield_dataframe, readme_text]
 
-            - magfield_dataframe: Magnetic field vectors at input locations
+            - magfield_dataframe: Magnetic field vectors (components in `coordout`) at input locations. The index is each point's position in `Locations` (rows are sorted by position; use `.sort_index()` to restore input order)
             - readme_text: OTSO computation summary
 
     Examples:
@@ -1933,9 +1936,9 @@ def transmission(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=10): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
+            - `gyropercent` (`float`, default=10): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
-            - `maxdistance` (`float`, default=100): Maximum distance (Re)
+            - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
@@ -2201,9 +2204,9 @@ def skymap(
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=1): Step size as a percentage of the local gyration period (with adaptivestep=True this is the maximum step)
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
-            - `maxdistance` (`float`, default=100): Maximum distance (Re)
+            - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
             - `mintrapdist` (`float`, default=0): Minimum trapping distance
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
@@ -2375,7 +2378,7 @@ def coordtrans(
     Returns:
         list: [coords_dataframe, summary_text]
 
-            - coords_dataframe: Transformed coordinates
+            - coords_dataframe: Transformed coordinates. The index is each point's position in `Locations` (rows are sorted by date and position; use `.sort_index()` to restore input order)
             - summary_text: Transformation summary
 
     Examples:

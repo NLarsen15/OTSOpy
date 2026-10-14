@@ -55,7 +55,11 @@ def FortranTrajectory(Data: list, TrajectoryDataInstance: TrajectoryData, queue:
           writer.writerow(headers)
           writer.writerows(rows)
 
-      trajectory_df = pd.read_csv(File)
+      trajectory_df = pd.read_csv(File, dtype=str).apply(pd.to_numeric, errors="coerce")
+
+      if not np.isfinite(trajectory_df.iloc[:, :3].to_numpy()).all():
+          print(f"WARNING: Non-finite positions found in the trajectory for {Station}. Filter set to -5 (numerical failure).")
+          filter = -5
 
       #print(f"Trajectory computation for station {Station} completed.")
       #print(trajectory_df)

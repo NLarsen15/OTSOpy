@@ -6,8 +6,8 @@ from ..libs import MiddleMan as OTSOLib
 from ..utils import fortran_data_utils
 from ..libs.MiddleMan import Middleman as OTSOLib
 
-def FortranCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, maxdegree, g, h):
-    for x,y in zip(Data,DateArray):
+def FortranCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, maxdegree, g, h, Index):
+    for x,y,g_point,h_point,i in zip(Data,DateArray,g,h,Index):
       # GDZ input is given as [lat, lon, alt_km]; the Fortran side expects [alt_km, lat, lon]
       if CoordIN == "GDZ":
           Position = [x[2],x[0],x[1]]
@@ -16,11 +16,11 @@ def FortranCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, maxdegree, g, h
 
       datetimeobj = date.convert_to_datetime(y)
 
-      FortranData = fortran_data_utils.prepare_fortran_Coordtrans(y,maxdegree,g,h)
+      FortranData = fortran_data_utils.prepare_fortran_Coordtrans(y,maxdegree,g_point,h_point)
 
       Coords = np.zeros(3, dtype=np.float64)
       
-      OTSOLib.coordtrans(Position,FortranData,CoordIN,CoordOUT, g, h, Coords)
+      OTSOLib.coordtrans(Position,FortranData,CoordIN,CoordOUT, g_point, h_point, Coords)
       combined_array = np.concatenate(([datetimeobj], Position, Coords))
 
       coord_suffix = f"_{CoordIN}"
@@ -45,6 +45,7 @@ def FortranCoordtrans(Data, DateArray, CoordIN, CoordOUT, queue, maxdegree, g, h
       columns = ["Date"] + input_columns + output_columns
       df = pd.DataFrame(columns=columns)
       df.loc[len(df)] = combined_array
+      df.index = [i]
       queue.put(df)
 
     return
