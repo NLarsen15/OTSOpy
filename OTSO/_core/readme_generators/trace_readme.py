@@ -29,7 +29,7 @@ def READMETrace(Data: TraceData, EventDate: date, Printtime: float) -> str:
   result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
   result.append(f"Kp = {Data.Kp}\n")
   result.append(f"IOPT = {Data.IOPT}\n\n")
-  result = solar_wind_readme_section(result, Data.windarray)
+  result = solar_wind_readme_section(result, Data.windarray, Data.defaulted_inputs)
   result = field_models_readme_section(result, Internal, External, PauseModel, Data.max_degree)
   result = boberg_readme_section(result, Data.boberg, Data.bobergtype)
   result.append("Max and Min Latitude and Longitude:"+ "\n")

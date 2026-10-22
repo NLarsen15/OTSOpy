@@ -1,5 +1,7 @@
 from importlib.metadata import version, PackageNotFoundError
 
+from ..custom_classes.parameter_types import DEFAULTS_SOURCE
+
 
 def OTSOVersion() -> str:
     try:
@@ -20,15 +22,16 @@ def ParticleCheck(AntiCheck: int) -> str:
     return "anti-particle" if AntiCheck == 1 else "Normal Particle"
 
 def IntegrationMethodCheck(IntModel: int) -> str:
-    IntegrationMethods = [
-        "4th Order Runge-Kutta Method",
-        "Vay Method",
-        "Higuera-Cary Method",
-        "6th Order Runge-Kutta Method",
-        "5th Order Runge-Kutta Method",
-        "Boris-Buneman Method",
-    ]
-    return IntegrationMethods[IntModel-1] if 1 <= IntModel <= len(IntegrationMethods) else "Unknown Integration Method"
+    # Codes from input_utils.intmodel_check (2 was the removed Boris method)
+    IntegrationMethods = {
+        1: "4th Order Runge-Kutta Method",
+        3: "Vay Method",
+        4: "Higuera-Cary Method",
+        5: "6th Order Runge-Kutta Method",
+        6: "5th Order Runge-Kutta Method",
+        7: "Boris-Buneman Method",
+    }
+    return IntegrationMethods.get(IntModel, "Unknown Integration Method")
 
 def InternalModelCheck(model: str) -> str:
     InternalModels = [
@@ -76,32 +79,42 @@ def CutoffCompCheck(Rcomp: str) -> str:
 def RigidityScanCheck(Rscan: int) -> str:
     return "Rigidity Scan Used" if Rscan != 0 else "No Rigidity Scan"
 
-def solar_wind_readme_section(result: str, WindArray: list) -> str:
+def solar_wind_readme_section(result: str, WindArray: list, defaulted_inputs: list = None) -> str:
+    defaulted = set(defaulted_inputs or [])
+
+    def line(label, key, index, unit=""):
+        value = abs(round(WindArray[index], 3)) if key == "vx" else round(WindArray[index], 3)
+        mark = " (default)" if key in defaulted else ""
+        return f"{label} = {value}{unit}{mark}\n"
+
+    if defaulted:
+        result.append(f"Inputs not provided, so OTSO's defaults were used ({DEFAULTS_SOURCE}):\n")
+        result.append(f"{', '.join(defaulted_inputs)}\n\n")
     result.append(f"Solar Wind Speed [km/s]:\n")
-    result.append(f"Vx = {abs(round(WindArray[0], 3))}\n")
-    result.append(f"Vy = {round(WindArray[1], 3)}\n")
-    result.append(f"Vz = {round(WindArray[2], 3)}\n\n")
+    result.append(line("Vx", "vx", 0))
+    result.append(line("Vy", "vy", 1))
+    result.append(line("Vz", "vz", 2) + "\n")
     result.append(f"IMF [nT]:\n")
-    result.append(f"Bx = {round(WindArray[3], 3)}\n")
-    result.append(f"By = {round(WindArray[4], 3)}\n")
-    result.append(f"Bz = {round(WindArray[5], 3)}\n\n")
-    result.append(f"By Average (30mins) = {round(WindArray[20], 3)}\n")
-    result.append(f"Bz Average (30mins) = {round(WindArray[21], 3)}\n\n")
-    result.append(f"Density = {round(WindArray[6], 3)} cm^-3\n")
-    result.append(f"Pdyn = {round(WindArray[7], 3)} nPa\n\n")
-    result.append(f"Dst = {round(WindArray[8], 3)} nT\n\n")
-    result.append(f"G1 = {round(WindArray[9], 3)}\n")
-    result.append(f"G2 = {round(WindArray[10], 3)}\n")
-    result.append(f"G3 = {round(WindArray[11], 3)}\n\n")
-    result.append(f"W1 = {round(WindArray[12], 3)}\n")
-    result.append(f"W2 = {round(WindArray[13], 3)}\n")
-    result.append(f"W3 = {round(WindArray[14], 3)}\n")
-    result.append(f"W4 = {round(WindArray[15], 3)}\n")
-    result.append(f"W5 = {round(WindArray[16], 3)}\n")
-    result.append(f"W6 = {round(WindArray[17], 3)}\n\n")
-    result.append(f"N = {round(WindArray[22], 3)}\n")
-    result.append(f"B = {round(WindArray[23], 3)}\n\n")
-    result.append(f"SYM-H = {round(WindArray[24], 3)}\n\n")
+    result.append(line("Bx", "bx", 3))
+    result.append(line("By", "by", 4))
+    result.append(line("Bz", "bz", 5) + "\n")
+    result.append(line("By Average (30mins)", "by_avg", 20))
+    result.append(line("Bz Average (30mins)", "bz_avg", 21) + "\n")
+    result.append(line("Density", "density", 6, " cm^-3"))
+    if WindArray[7] == 0:
+        result.append(f"Pdyn = computed from density and solar wind speed\n\n")
+    else:
+        result.append(line("Pdyn", "pdyn", 7, " nPa") + "\n")
+    result.append(line("Dst", "Dst", 8, " nT") + "\n")
+    for i, key in enumerate(("G1", "G2", "G3")):
+        result.append(line(key, key, 9 + i))
+    result.append("\n")
+    for i, key in enumerate(("W1", "W2", "W3", "W4", "W5", "W6")):
+        result.append(line(key, key, 12 + i))
+    result.append("\n")
+    result.append(line("N", "n_index", 22))
+    result.append(line("B", "b_index", 23) + "\n")
+    result.append(line("SYM-H", "sym_h_corrected", 24, " nT") + "\n")
     return result
 
 def field_models_readme_section(result: str, Internal: str, External: str, PauseModel: str, max_degree: int) -> str:

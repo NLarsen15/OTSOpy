@@ -42,6 +42,7 @@ def trace(**kwargs):
        bz = kwargs['bz'],
        density = kwargs['density'], 
        pdyn = kwargs['pdyn'], 
+       defaulted_inputs = kwargs.get('defaulted_inputs'),
        Dst = kwargs['Dst'],
        G1 = kwargs['G1'], 
        G2 = kwargs['G2'], 

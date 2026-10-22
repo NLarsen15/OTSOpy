@@ -102,6 +102,7 @@ class PlanetData:
     particlearray: Optional[Sequence[int]] = field(default=None)
     IOPT: Optional[int] = field(default=None)
     windarray: Optional[Sequence[float]] = field(default=None)
+    defaulted_inputs: Optional[Sequence[str]] = field(default=None)
     magnetopauseinput: Optional[int] = field(default=None)
     coordinatesystem: Optional[str] = field(default=None)
     maxsteppercent: Optional[float] = field(default=None)

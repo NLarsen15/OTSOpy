@@ -9,6 +9,7 @@ def flight(**kwargs):
     from dataclasses import fields
     from ._core.otso_functions import otso_flight
     from ._core.data_classes.flight_data import FlightData
+    from ._core.custom_classes.parameter_types import SolarWindParams, GeomagneticParams, TsyganenkoParams
 
     allowed = {f.name for f in fields(FlightData)}
 
@@ -31,12 +32,11 @@ def flight(**kwargs):
 
     # Handle special flight-specific parameter defaults for arrays
     if kwargs.get("serverdata", "OFF") != "ON" and kwargs.get("livedata", "OFF") != "ON":
-        default_values = {
-            "vx": -500, "vy": 0, "vz": 0, "bx": 0, "by": 5.0, "bz": 5.0, "density": 1, "pdyn": 0, "Dst": 0,
-            "G1": 0.00, "G2": 0.00, "G3": 0.00, "W1": 0, "W2": 0, "W3": 0, "W4": 0, "W5": 0, "W6": 0, "kp": 0,
-            "by_avg": 0, "bz_avg": 0, "n_index": 0, "b_index": 0, "sym_h_corrected": 0
-        }
-        
+        default_values = {**SolarWindParams.DEFAULTS, **GeomagneticParams.DEFAULTS, **TsyganenkoParams.DEFAULTS}
+        # Density or velocity given without pdyn means pdyn is computed from them
+        if not kwargs.get("pdyn") and any(kwargs.get(key) for key in ("density", "vx", "vy", "vz")):
+            default_values["pdyn"] = 0
+
         for var_name, default_value in default_values.items():
             if kwargs.get(var_name) is None or not kwargs.get(var_name):  # If None or empty list
                 kwargs[var_name] = [default_value] * len(kwargs["latitudes"])

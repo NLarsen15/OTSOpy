@@ -18,7 +18,10 @@ For detailed documentation and example uses, visit: https://github.com/NLarsen15
 """
 
 from __future__ import annotations
-import sys
+import difflib
+import functools
+import inspect
+import warnings
 from typing import TYPE_CHECKING, Sequence, Optional, Union
 
 # Import parameter type definitions from custom classes
@@ -38,10 +41,137 @@ from ._core.custom_classes.parameter_types import (
     GridParams,
     AsymptoticParams,
     TransmissionParams,
-    SkymapParams
+    SkymapParams,
+    DEFAULTS_SOURCE
 )
 
-###############################################################################################################################
+_PARAM_GROUPS = {cls.__name__: cls for cls in (
+    SolarWindParams, GeomagneticParams, TsyganenkoParams, DateTimeParams, MagFieldParams,
+    IntegrationParams, CoordinateParams, ParticleParams, RigidityParams, ComputationParams,
+    DataRetrievalParams, CustomFieldParams, GridParams, AsymptoticParams, TransmissionParams, SkymapParams)}
+
+# Inputs each solar-wind-driven Tsyganenko model reads (see SolarWindModule.f95). The Kp-driven
+# models (TSY87, TSY89, TSY89c, TSY89_refit) are left out: TSY89c is the default external model,
+# and its quiet-time default Kp is reported in the metadata instead.
+_TSYGANENKO_INPUTS = {
+    "TSY96": ("pdyn", "Dst", "by", "bz"),
+    "TSY01": ("pdyn", "Dst", "by", "bz", "G1", "G2"),
+    "TSY01S": ("pdyn", "Dst", "by", "bz", "G2", "G3"),
+    "TSY04": ("pdyn", "Dst", "by", "bz", "W1", "W2", "W3", "W4", "W5", "W6"),
+    "TSY15N": ("pdyn", "by_avg", "bz_avg", "n_index"),
+    "TSY15B": ("pdyn", "by_avg", "bz_avg", "b_index"),
+    "TA16_RBF": ("pdyn", "sym_h_corrected", "n_index", "by_avg"),
+}
+
+# Giving any of these without pdyn means pdyn is computed from density and velocity
+_PDYN_SOURCES = {"density", "vx", "vy", "vz"}
+
+def _group_keys(cls):
+    return list(cls.__annotations__) + [key for key in cls.DEFAULTS if key not in cls.__annotations__]
+
+def _closest(name, candidates):
+    """Return the candidate closest to name, ignoring case, or None."""
+    lowered = {candidate.lower(): candidate for candidate in candidates}
+    match = difflib.get_close_matches(name.lower(), list(lowered), n=1)
+    return lowered[match[0]] if match else None
+
+def _check_group_keys(func_name, groups, bound):
+    """Raise a TypeError for any key in a *_params dictionary that does not belong to that group."""
+    for group, cls in groups.items():
+        params = bound.get(group)
+        if not isinstance(params, dict):
+            continue
+        keys = _group_keys(cls)
+        for key in params:
+            if key in keys:
+                continue
+            owner = next((other for other, other_cls in groups.items()
+                          if other != group and key in _group_keys(other_cls)), None)
+            if owner:
+                hint = f"it belongs in {owner}"
+            else:
+                match = _closest(key, keys)
+                hint = f"did you mean '{match}'?" if match else f"valid keys are: {', '.join(keys)}"
+            raise TypeError(f"{func_name}(): '{key}' is not a valid key for {group} ({hint})")
+
+def _merge_wind_inputs(solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params):
+    """Merge the solar wind, geomagnetic and Tsyganenko inputs with OTSO's quiet-time defaults.
+
+    Returns the three merged dictionaries and the names of the inputs that fell back to defaults
+    (empty when server or live data supply the inputs), for reporting in the metadata.
+    """
+    solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
+    geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
+    tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    given = {**solar_wind_params, **geomagnetic_params, **tsyganenko_params}
+    if "pdyn" not in given and _PDYN_SOURCES & set(given):
+        solar_wind["pdyn"] = 0  # computed from the given density and velocity
+        given["pdyn"] = 0
+    retrieval = {**DataRetrievalParams.DEFAULTS, **data_retrieval_params}
+    if str(retrieval["serverdata"]).upper() == "ON" or str(retrieval["livedata"]).upper() == "ON":
+        return solar_wind, geomagnetic, tsyganenko, []
+    defaulted = [key for cls in (SolarWindParams, GeomagneticParams, TsyganenkoParams)
+                 for key in cls.DEFAULTS if key not in given]
+    return solar_wind, geomagnetic, tsyganenko, defaulted
+
+def _warn_default_tsyganenko_inputs(func_name, groups, bound):
+    """Warn when a solar-wind-driven Tsyganenko model will silently run on default inputs."""
+    magfield = {**MagFieldParams.DEFAULTS, **(bound.get("magfield_params") or {})}
+    retrieval = {**DataRetrievalParams.DEFAULTS, **(bound.get("data_retrieval_params") or {})}
+    required = _TSYGANENKO_INPUTS.get(magfield["externalmag"])
+    if (required is None or magfield["AdaptiveExternalModel"]
+            or str(retrieval["serverdata"]).upper() == "ON" or str(retrieval["livedata"]).upper() == "ON"):
+        return
+    input_groups = ("solar_wind_params", "geomagnetic_params", "tsyganenko_params")
+    given = {key for group in input_groups for key in (bound.get(group) or {})}
+    if _PDYN_SOURCES & given:
+        given.add("pdyn")  # computed from the given density and velocity
+    missing = [key for key in required if key not in given]
+    if not missing:
+        return
+    defaults = []
+    for key in missing:
+        group = next(group for group in input_groups if key in groups[group].DEFAULTS)
+        defaults.append(f"{key}={groups[group].DEFAULTS[key]} ({group})")
+    warnings.warn(
+        f"{func_name}(): externalmag='{magfield['externalmag']}' is running with server and live data off, "
+        f"but no value was given for {', '.join(missing)}. Using OTSO's defaults ({DEFAULTS_SOURCE}): "
+        f"{', '.join(defaults)}. "
+        f"Set these explicitly, or use data_retrieval_params={{'serverdata': 'ON'}}.",
+        UserWarning, stacklevel=3)
+
+def _check_arguments(func):
+    """Check a public function's arguments before calling it.
+
+    Raises a TypeError for unknown argument names and for keys that do not belong in a *_params
+    dictionary, suggesting the closest valid name, and warns when a Tsyganenko model would run
+    on default solar wind and geomagnetic inputs.
+    """
+    signature = inspect.signature(func)
+    valid = list(signature.parameters)
+    groups = {name: _PARAM_GROUPS[param.annotation] for name, param in signature.parameters.items()
+              if param.annotation in _PARAM_GROUPS}
+    warn_defaults = {"magfield_params", "solar_wind_params"} <= set(groups)
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        unknown = [key for key in kwargs if key not in valid]
+        if unknown:
+            messages = []
+            for key in unknown:
+                match = _closest(key, valid)
+                messages.append(f"'{key}'" + (f" (did you mean '{match}'?)" if match else ""))
+            accepted = f"Valid arguments are: {', '.join(valid)}" if valid else "It takes no arguments"
+            raise TypeError(f"{func.__name__}() got unexpected keyword argument(s): {', '.join(messages)}. {accepted}")
+        if groups:
+            bound = signature.bind(*args, **kwargs).arguments
+            _check_group_keys(func.__name__, groups, bound)
+            if warn_defaults:
+                _warn_default_tsyganenko_inputs(func.__name__, groups, bound)
+        return func(*args, **kwargs)
+
+    return wrapper
+
 
 from ._cutoff import cutoff as cutoff_func
 from ._cone import cone as cone_func
@@ -55,6 +185,7 @@ from ._transmission import transmission as transmission_func
 from ._skymap import skymap as skymap_func
 
 ###############################################################################################################################
+@_check_arguments
 def cutoff(
     Stations: Union[str, Sequence[str]],
     customlocations: Optional[list] = None,
@@ -151,51 +282,51 @@ def cutoff(
             - `transmissionRstep` (`float`, default=0.001): R ± transmissionRstep defines the transmission rigidity sampling range 
             - `transmissionsamples` (`int`, default=20): the number of sample rigidities to test within the sampling range
         
-        solar_wind_params (SolarWindParams): Solar wind parameters.
+        solar_wind_params (SolarWindParams): Solar wind parameters. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `vx` (`float`, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (`float`, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (`float`, default=0): Solar wind velocity y-component (km/s)
             - `vz` (`float`, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (`float`, default=0): IMF x-component (nT)
-            - `by` (`float`, default=5): IMF y-component (nT)
-            - `bz` (`float`, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (`float`, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (`float`, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (`float`, default=0.11): IMF x-component (nT)
+            - `by` (`float`, default=-0.16): IMF y-component (nT)
+            - `bz` (`float`, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (`float`, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (`float`, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices.
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (`float`, default=0): Dst index (nT)
-            - `kp` (`float`, default=0): Kp index (0-9)
-            - `n_index` (`float`, default=0): Newell coupling function
-            - `b_index` (`float`, default=0): Boynton coupling function
-            - `sym_h_corrected` (`float`, default=0): Corrected SYM-H index (nT)
+            - `Dst` (`float`, default=-4): Dst index (nT)
+            - `kp` (`float`, default=0.7): Kp index (0-9)
+            - `n_index` (`float`, default=0.145): Newell coupling function
+            - `b_index` (`float`, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (`float`, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients.
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `G1` (`float`, default=0): Tsyganenko G1 coefficient
-            - `G2` (`float`, default=0): Tsyganenko G2 coefficient
-            - `G3` (`float`, default=0): Tsyganenko G3 coefficient
-            - `W1` (`float`, default=0): Tsyganenko W1 coefficient
-            - `W2` (`float`, default=0): Tsyganenko W2 coefficient
-            - `W3` (`float`, default=0): Tsyganenko W3 coefficient
-            - `W4` (`float`, default=0): Tsyganenko W4 coefficient
-            - `W5` (`float`, default=0): Tsyganenko W5 coefficient
-            - `W6` (`float`, default=0): Tsyganenko W6 coefficient
+            - `G1` (`float`, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (`float`, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (`float`, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (`float`, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (`float`, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (`float`, default=0.13): Tsyganenko W3 coefficient
+            - `W4` (`float`, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (`float`, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (`float`, default=0.08): Tsyganenko W6 coefficient
 
         integration_params (IntegrationParams): Integration settings.
 
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=10): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=True (default) it caps each step using the local field; with adaptivestep=False the step is fixed for the whole trace at this percentage of the gyration period at the launch point
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
@@ -203,7 +334,7 @@ def cutoff(
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
             - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
@@ -281,9 +412,8 @@ def cutoff(
     """
     
     # Merge user parameters with defaults from parameter classes
-    final_solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
-    final_geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
-    final_tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    final_solar_wind, final_geomagnetic, final_tsyganenko, defaulted_inputs = _merge_wind_inputs(
+        solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params)
     final_datetime = {**DateTimeParams.DEFAULTS, **datetime_params}
     final_magfield = {**MagFieldParams.DEFAULTS, **magfield_params}
     final_integration = {**IntegrationParams.DEFAULTS, **integration_params}
@@ -306,6 +436,7 @@ def cutoff(
         customlocations=customlocations,
         cutoff_comp=cutoff_comp,
         # Solar wind parameters
+        defaulted_inputs=defaulted_inputs,
         **final_solar_wind,
         # Geomagnetic parameters
         **final_geomagnetic,
@@ -336,6 +467,7 @@ def cutoff(
     )
 
 #######################################################################################################################################
+@_check_arguments
 def cone(
     Stations: Union[str, Sequence[str]],
     customlocations: Optional[list] = None,
@@ -420,51 +552,51 @@ def cone(
             - `transmissionRstep` (`float`, default=0.001): R ± transmissionRstep defines the transmission rigidity sampling range 
             - `transmissionsamples` (`int`, default=20): the number of sample rigidities to test within the sampling range
         
-        solar_wind_params (SolarWindParams): Solar wind parameters.
+        solar_wind_params (SolarWindParams): Solar wind parameters. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `vx` (`float`, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (`float`, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (`float`, default=0): Solar wind velocity y-component (km/s)
             - `vz` (`float`, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (`float`, default=0): IMF x-component (nT)
-            - `by` (`float`, default=5): IMF y-component (nT)
-            - `bz` (`float`, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (`float`, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (`float`, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (`float`, default=0.11): IMF x-component (nT)
+            - `by` (`float`, default=-0.16): IMF y-component (nT)
+            - `bz` (`float`, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (`float`, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (`float`, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices.
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (`float`, default=0): Dst index (nT)
-            - `kp` (`float`, default=0): Kp index (0-9)
-            - `n_index` (`float`, default=0): Newell coupling function
-            - `b_index` (`float`, default=0): Boynton coupling function
-            - `sym_h_corrected` (`float`, default=0): Corrected SYM-H index (nT)
+            - `Dst` (`float`, default=-4): Dst index (nT)
+            - `kp` (`float`, default=0.7): Kp index (0-9)
+            - `n_index` (`float`, default=0.145): Newell coupling function
+            - `b_index` (`float`, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (`float`, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients.
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `G1` (`float`, default=0): Tsyganenko G1 coefficient
-            - `G2` (`float`, default=0): Tsyganenko G2 coefficient
-            - `G3` (`float`, default=0): Tsyganenko G3 coefficient
-            - `W1` (`float`, default=0): Tsyganenko W1 coefficient
-            - `W2` (`float`, default=0): Tsyganenko W2 coefficient
-            - `W3` (`float`, default=0): Tsyganenko W3 coefficient
-            - `W4` (`float`, default=0): Tsyganenko W4 coefficient
-            - `W5` (`float`, default=0): Tsyganenko W5 coefficient
-            - `W6` (`float`, default=0): Tsyganenko W6 coefficient
+            - `G1` (`float`, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (`float`, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (`float`, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (`float`, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (`float`, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (`float`, default=0.13): Tsyganenko W3 coefficient
+            - `W4` (`float`, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (`float`, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (`float`, default=0.08): Tsyganenko W6 coefficient
 
         integration_params (IntegrationParams): Integration settings.
 
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=True (default) it caps each step using the local field; with adaptivestep=False the step is fixed for the whole trace at this percentage of the gyration period at the launch point
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
@@ -472,7 +604,7 @@ def cone(
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
             - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
@@ -547,18 +679,10 @@ def cone(
     ```
     """
 
-    integration_params = dict(integration_params)
-
-    if integration_params.get("gyropercent") is None:
-        integration_params["gyropercent"] = 1
-
-    if integration_params.get("adaptivestep") is None:
-        integration_params["adaptivestep"] = False
     
     # Merge user parameters with defaults from parameter classes
-    final_solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
-    final_geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
-    final_tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    final_solar_wind, final_geomagnetic, final_tsyganenko, defaulted_inputs = _merge_wind_inputs(
+        solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params)
     final_datetime = {**DateTimeParams.DEFAULTS, **datetime_params}
     final_magfield = {**MagFieldParams.DEFAULTS, **magfield_params}
     final_integration = {**IntegrationParams.DEFAULTS, **integration_params}
@@ -581,6 +705,7 @@ def cone(
         Stations,
         customlocations=customlocations,
         # Solar wind parameters
+        defaulted_inputs=defaulted_inputs,
         **final_solar_wind,
         # Geomagnetic parameters
         **final_geomagnetic,
@@ -608,6 +733,7 @@ def cone(
         **final_transmission
     )
 #########################################################################################################################
+@_check_arguments
 def planet(
     cutoff_comp: str = "Vertical",
     # Solar wind parameters grouped
@@ -701,51 +827,51 @@ def planet(
             - `transmissionRstep` (`float`, default=0.001): R ± transmissionRstep defines the transmission rigidity sampling range 
             - `transmissionsamples` (`int`, default=20): the number of sample rigidities to test within the sampling range
 
-        solar_wind_params (SolarWindParams): Solar wind parameters.
+        solar_wind_params (SolarWindParams): Solar wind parameters. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `vx` (`float`, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (`float`, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (`float`, default=0): Solar wind velocity y-component (km/s)
             - `vz` (`float`, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (`float`, default=0): IMF x-component (nT)
-            - `by` (`float`, default=5): IMF y-component (nT)
-            - `bz` (`float`, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (`float`, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (`float`, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (`float`, default=0.11): IMF x-component (nT)
+            - `by` (`float`, default=-0.16): IMF y-component (nT)
+            - `bz` (`float`, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (`float`, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (`float`, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices.
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (`float`, default=0): Dst index (nT)
-            - `kp` (`float`, default=0): Kp index (0-9)
-            - `n_index` (`float`, default=0): Newell coupling function
-            - `b_index` (`float`, default=0): Boynton coupling function
-            - `sym_h_corrected` (`float`, default=0): Corrected SYM-H index (nT)
+            - `Dst` (`float`, default=-4): Dst index (nT)
+            - `kp` (`float`, default=0.7): Kp index (0-9)
+            - `n_index` (`float`, default=0.145): Newell coupling function
+            - `b_index` (`float`, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (`float`, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients.
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `G1` (`float`, default=0): Tsyganenko G1 coefficient
-            - `G2` (`float`, default=0): Tsyganenko G2 coefficient
-            - `G3` (`float`, default=0): Tsyganenko G3 coefficient
-            - `W1` (`float`, default=0): Tsyganenko W1 coefficient
-            - `W2` (`float`, default=0): Tsyganenko W2 coefficient
-            - `W3` (`float`, default=0): Tsyganenko W3 coefficient
-            - `W4` (`float`, default=0): Tsyganenko W4 coefficient
-            - `W5` (`float`, default=0): Tsyganenko W5 coefficient
-            - `W6` (`float`, default=0): Tsyganenko W6 coefficient
+            - `G1` (`float`, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (`float`, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (`float`, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (`float`, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (`float`, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (`float`, default=0.13): Tsyganenko W3 coefficient
+            - `W4` (`float`, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (`float`, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (`float`, default=0.08): Tsyganenko W6 coefficient
 
         integration_params (IntegrationParams): Integration settings.
 
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=10): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=True (default) it caps each step using the local field; with adaptivestep=False the step is fixed for the whole trace at this percentage of the gyration period at the launch point
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
@@ -753,7 +879,7 @@ def planet(
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
             - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
@@ -844,9 +970,8 @@ def planet(
     
     
     # Merge user parameters with defaults from parameter classes
-    final_solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
-    final_geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
-    final_tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    final_solar_wind, final_geomagnetic, final_tsyganenko, defaulted_inputs = _merge_wind_inputs(
+        solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params)
     final_datetime = {**DateTimeParams.DEFAULTS, **datetime_params}
     final_magfield = {**MagFieldParams.DEFAULTS, **magfield_params}
     final_integration = {**IntegrationParams.DEFAULTS, **integration_params}
@@ -868,6 +993,7 @@ def planet(
 
     planet_args = {
         'cutoff_comp': cutoff_comp,
+        'defaulted_inputs': defaulted_inputs,
         **final_solar_wind,
         **final_geomagnetic,
         **final_tsyganenko,
@@ -887,6 +1013,7 @@ def planet(
     
     return planet_func(**planet_args)
 ################################################################################################################
+@_check_arguments
 def trajectory(
     Stations: Union[str, Sequence[str]],
     customlocations: Optional[list] = None,
@@ -914,7 +1041,6 @@ def trajectory(
     custom_field_params: CustomFieldParams = {},  # g,h,MHDfile,MHDcoordsys
     # rigidity parameters grouped
     rigidity_params: RigidityParams = {},  # startrigidity,endrigidity,rigiditystep,rigidityscan
-    *args, **kwargs
 ) -> list:
     """
     Compute cosmic-ray particle trajectories using the OTSO framework.
@@ -951,51 +1077,51 @@ def trajectory(
             - `AdaptiveExternalModel` (`bool`, default=False): Auto-select external model
             - `optimise_tsy` (`bool`, default=False): Use the faster implementation of the selected Tsyganenko model (affects externalmag="TSY01", "TSY01S", "TSY04", or "TSY96"; other models are unaffected by this flag). Both settings give numerically identical results (all known bugs are fixed in both); True is just faster
         
-        solar_wind_params (SolarWindParams): Solar wind parameters.
+        solar_wind_params (SolarWindParams): Solar wind parameters. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `vx` (`float`, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (`float`, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (`float`, default=0): Solar wind velocity y-component (km/s)
             - `vz` (`float`, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (`float`, default=0): IMF x-component (nT)
-            - `by` (`float`, default=5): IMF y-component (nT)
-            - `bz` (`float`, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (`float`, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (`float`, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (`float`, default=0.11): IMF x-component (nT)
+            - `by` (`float`, default=-0.16): IMF y-component (nT)
+            - `bz` (`float`, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (`float`, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (`float`, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices.
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (`float`, default=0): Dst index (nT)
-            - `kp` (`float`, default=0): Kp index (0-9)
-            - `n_index` (`float`, default=0): Newell coupling function
-            - `b_index` (`float`, default=0): Boynton coupling function
-            - `sym_h_corrected` (`float`, default=0): Corrected SYM-H index (nT)
+            - `Dst` (`float`, default=-4): Dst index (nT)
+            - `kp` (`float`, default=0.7): Kp index (0-9)
+            - `n_index` (`float`, default=0.145): Newell coupling function
+            - `b_index` (`float`, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (`float`, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients.
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `G1` (`float`, default=0): Tsyganenko G1 coefficient
-            - `G2` (`float`, default=0): Tsyganenko G2 coefficient
-            - `G3` (`float`, default=0): Tsyganenko G3 coefficient
-            - `W1` (`float`, default=0): Tsyganenko W1 coefficient
-            - `W2` (`float`, default=0): Tsyganenko W2 coefficient
-            - `W3` (`float`, default=0): Tsyganenko W3 coefficient
-            - `W4` (`float`, default=0): Tsyganenko W4 coefficient
-            - `W5` (`float`, default=0): Tsyganenko W5 coefficient
-            - `W6` (`float`, default=0): Tsyganenko W6 coefficient
+            - `G1` (`float`, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (`float`, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (`float`, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (`float`, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (`float`, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (`float`, default=0.13): Tsyganenko W3 coefficient
+            - `W4` (`float`, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (`float`, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (`float`, default=0.08): Tsyganenko W6 coefficient
 
         integration_params (IntegrationParams): Integration settings.
 
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=True (default) it caps each step using the local field; with adaptivestep=False the step is fixed for the whole trace at this percentage of the gyration period at the launch point
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
@@ -1003,7 +1129,7 @@ def trajectory(
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
             - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
@@ -1083,18 +1209,10 @@ def trajectory(
     ```
     """
 
-    integration_params = dict(integration_params)
-
-    if integration_params.get("gyropercent") is None:
-        integration_params["gyropercent"] = 1
-
-    if integration_params.get("adaptivestep") is None:
-        integration_params["adaptivestep"] = False
     
     # Merge user parameters with defaults from parameter classes
-    final_solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
-    final_geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
-    final_tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    final_solar_wind, final_geomagnetic, final_tsyganenko, defaulted_inputs = _merge_wind_inputs(
+        solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params)
     final_datetime = {**DateTimeParams.DEFAULTS, **datetime_params}
     final_magfield = {**MagFieldParams.DEFAULTS, **magfield_params}
     final_integration = {**IntegrationParams.DEFAULTS, **integration_params}
@@ -1117,6 +1235,7 @@ def trajectory(
         Stations,
         customlocations=customlocations,
         # Expanded parameters
+        defaulted_inputs=defaulted_inputs,
         **final_solar_wind,
         **final_geomagnetic,
         **final_tsyganenko,
@@ -1131,6 +1250,7 @@ def trajectory(
         **final_custom_field
     )
 #################################################################################################################
+@_check_arguments
 def flight(
     latitudes: Sequence[float],
     longitudes: Sequence[float],
@@ -1163,7 +1283,6 @@ def flight(
     asymptotic_params: AsymptoticParams = {},
     # transmission parameters grouped
     transmission_params: TransmissionParams = {}, # transmission,transmissionsamples,transmissionRstep
-    *args, **kwargs
 ) -> list:
     """
     Compute cosmic-ray cutoff rigidities along a flight path using OTSO.
@@ -1218,53 +1337,53 @@ def flight(
             - `transmissionRstep` (`float`, default=0.001): R ± transmissionRstep defines the transmission rigidity sampling range 
             - `transmissionsamples` (`int`, default=20): the number of sample rigidities to test within the sampling range
         
-        solar_wind_params (SolarWindParams): Solar wind parameters (optional for auto-retrieval).
+        solar_wind_params (SolarWindParams): Solar wind parameters (optional for auto-retrieval). Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             All values should be provided as lists of floats, one per flight point.
 
             Available keys:
 
-            - `vx` (list of float, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (list of float, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (list of float, default=0): Solar wind velocity y-component (km/s)
             - `vz` (list of float, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (list of float, default=0): IMF x-component (nT)
-            - `by` (list of float, default=5): IMF y-component (nT)
-            - `bz` (list of float, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (list of float, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (list of float, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (list of float, default=0.11): IMF x-component (nT)
+            - `by` (list of float, default=-0.16): IMF y-component (nT)
+            - `bz` (list of float, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (list of float, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (list of float, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices (optional for auto-retrieval).
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices (optional for auto-retrieval). Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (list of float,, default=0): Dst index (nT)
-            - `kp` (list of float,, default=0): Kp index (0-9)
-            - `n_index` (list of float,, default=0): Newell coupling function
-            - `b_index` (list of float,, default=0): Boynton coupling function
-            - `sym_h_corrected` (list of float,, default=0): Corrected SYM-H index (nT)
+            - `Dst` (list of float,, default=-4): Dst index (nT)
+            - `kp` (list of float,, default=0.7): Kp index (0-9)
+            - `n_index` (list of float,, default=0.145): Newell coupling function
+            - `b_index` (list of float,, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (list of float,, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients (optional for auto-retrieval).
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients (optional for auto-retrieval). Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
             
-            - `G1` (list of float,, default=0): Tsyganenko G1 coefficient
-            - `G2` (list of float,, default=0): Tsyganenko G2 coefficient
-            - `G3` (list of float,, default=0): Tsyganenko G3 coefficient
-            - `W1` (list of float,, default=0): Tsyganenko W1 coefficient
-            - `W2` (list of float,, default=0): Tsyganenko W2 coefficient
-            - `W3` (list of float,, default=0): Tsyganenko W3 coefficient
-            - `W4` (list of float,, default=0): Tsyganenko W4 coefficient
-            - `W5` (list of float,, default=0): Tsyganenko W5 coefficient
-            - `W6` (list of float,, default=0): Tsyganenko W6 coefficient
+            - `G1` (list of float,, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (list of float,, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (list of float,, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (list of float,, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (list of float,, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (list of float,, default=0.13): Tsyganenko W3 coefficient
+            - `W4` (list of float,, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (list of float,, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (list of float,, default=0.08): Tsyganenko W6 coefficient
 
         integration_params (IntegrationParams): Integration settings.
 
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=10): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=True (default) it caps each step using the local field; with adaptivestep=False the step is fixed for the whole trace at this percentage of the gyration period at the launch point
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
@@ -1272,7 +1391,7 @@ def flight(
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
             - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
@@ -1416,6 +1535,7 @@ def flight(
     return flight_func(**flight_args)
 
 #################################################################################################################
+@_check_arguments
 def trace(
     coordsys: str = "GEO",
     # Solar wind parameters grouped
@@ -1440,7 +1560,6 @@ def trace(
     coordinate_params: CoordinateParams = {},  # coordsystem,inputcoord
     # grid parameters grouped (not used in trace but included for consistency)
     grid_params: GridParams = {},  # latstep,longstep,maxlat,minlat,maxlong,minlong
-    *args, **kwargs
 ) -> list:
     """
     Trace magnetic field lines using the OTSO framework.
@@ -1479,44 +1598,44 @@ def trace(
             - `AdaptiveExternalModel` (`bool`, default=False): Auto-select external model
             - `optimise_tsy` (`bool`, default=False): Use the faster implementation of the selected Tsyganenko model (affects externalmag="TSY01", "TSY01S", "TSY04", or "TSY96"; other models are unaffected by this flag). Both settings give numerically identical results (all known bugs are fixed in both); True is just faster
         
-        solar_wind_params (SolarWindParams): Solar wind parameters.
+        solar_wind_params (SolarWindParams): Solar wind parameters. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `vx` (`float`, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (`float`, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (`float`, default=0): Solar wind velocity y-component (km/s)
             - `vz` (`float`, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (`float`, default=0): IMF x-component (nT)
-            - `by` (`float`, default=5): IMF y-component (nT)
-            - `bz` (`float`, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (`float`, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (`float`, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (`float`, default=0.11): IMF x-component (nT)
+            - `by` (`float`, default=-0.16): IMF y-component (nT)
+            - `bz` (`float`, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (`float`, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (`float`, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices.
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (`float`, default=0): Dst index (nT)
-            - `kp` (`float`, default=0): Kp index (0-9)
-            - `n_index` (`float`, default=0): Newell coupling function
-            - `b_index` (`float`, default=0): Boynton coupling function
-            - `sym_h_corrected` (`float`, default=0): Corrected SYM-H index (nT)
+            - `Dst` (`float`, default=-4): Dst index (nT)
+            - `kp` (`float`, default=0.7): Kp index (0-9)
+            - `n_index` (`float`, default=0.145): Newell coupling function
+            - `b_index` (`float`, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (`float`, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients.
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `G1` (`float`, default=0): Tsyganenko G1 coefficient
-            - `G2` (`float`, default=0): Tsyganenko G2 coefficient
-            - `G3` (`float`, default=0): Tsyganenko G3 coefficient
-            - `W1` (`float`, default=0): Tsyganenko W1 coefficient
-            - `W2` (`float`, default=0): Tsyganenko W2 coefficient
-            - `W3` (`float`, default=0): Tsyganenko W3 coefficient
-            - `W4` (`float`, default=0): Tsyganenko W4 coefficient
-            - `W5` (`float`, default=0): Tsyganenko W5 coefficient
-            - `W6` (`float`, default=0): Tsyganenko W6 coefficient
+            - `G1` (`float`, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (`float`, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (`float`, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (`float`, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (`float`, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (`float`, default=0.13): Tsyganenko W3 coefficient
+            - `W4` (`float`, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (`float`, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (`float`, default=0.08): Tsyganenko W6 coefficient
 
         grid_params (GridParams): Grid configuration parameters. 
         
@@ -1580,9 +1699,8 @@ def trace(
     """
     
     # Merge user parameters with defaults from parameter classes
-    final_solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
-    final_geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
-    final_tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    final_solar_wind, final_geomagnetic, final_tsyganenko, defaulted_inputs = _merge_wind_inputs(
+        solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params)
     final_datetime = {**DateTimeParams.DEFAULTS, **datetime_params}
     final_magfield = {**MagFieldParams.DEFAULTS, **magfield_params}
     final_computation = {**ComputationParams.DEFAULTS, **computation_params}
@@ -1611,7 +1729,7 @@ def trace(
 
     return trace_func(
         coordsys=coordsys,
-        *args,
+        defaulted_inputs=defaulted_inputs,
         **final_solar_wind,
         **final_geomagnetic,
         **final_tsyganenko,
@@ -1622,10 +1740,10 @@ def trace(
         **final_custom_field,
         **final_integration,
         **final_coordinate,
-        **final_grid,
-        **kwargs
+        **final_grid
     )
 #################################################################################################################
+@_check_arguments
 def magfield(
     Locations: Sequence[float],
     # Solar wind parameters grouped
@@ -1646,7 +1764,6 @@ def magfield(
     data_retrieval_params: DataRetrievalParams = {},  # serverdata,livedata
     # custom field parameters grouped
     custom_field_params: CustomFieldParams = {},  # g,h,MHDfile,MHDcoordsys
-    *args, **kwargs
 ) -> list:
     """
     Compute magnetic field vectors at specified locations using OTSO models.
@@ -1678,44 +1795,44 @@ def magfield(
             - `bobergtype` (`str`, default="EXTENSION"): "EXTENSION", "CONTINUOUS", "DST_DEPENDENT", "DST_MIDPOINT"
             - `optimise_tsy` (`bool`, default=False): Use the faster implementation of the selected Tsyganenko model (affects externalmag="TSY01", "TSY01S", "TSY04", or "TSY96"; other models are unaffected by this flag). Both settings give numerically identical results (all known bugs are fixed in both); True is just faster
 
-        solar_wind_params (SolarWindParams): Solar wind parameters (optional for auto-retrieval).
+        solar_wind_params (SolarWindParams): Solar wind parameters (optional for auto-retrieval). Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `vx` (`float`, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (`float`, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (`float`, default=0): Solar wind velocity y-component (km/s)
             - `vz` (`float`, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (`float`, default=0): IMF x-component (nT)
-            - `by` (`float`, default=5): IMF y-component (nT)
-            - `bz` (`float`, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (`float`, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (`float`, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (`float`, default=0.11): IMF x-component (nT)
+            - `by` (`float`, default=-0.16): IMF y-component (nT)
+            - `bz` (`float`, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (`float`, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (`float`, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices (optional for auto-retrieval).
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices (optional for auto-retrieval). Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (`float`, default=0): Dst index (nT)
-            - `kp` (`float`, default=0): Kp index (0-9)
-            - `n_index` (`float`, default=0): Newell coupling function
-            - `b_index` (`float`, default=0): Boynton coupling function
-            - `sym_h_corrected` (`float`, default=0): Corrected SYM-H index (nT)
+            - `Dst` (`float`, default=-4): Dst index (nT)
+            - `kp` (`float`, default=0.7): Kp index (0-9)
+            - `n_index` (`float`, default=0.145): Newell coupling function
+            - `b_index` (`float`, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (`float`, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients (optional for auto-retrieval).
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients (optional for auto-retrieval). Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `G1` (`float`, default=0): Tsyganenko G1 coefficient
-            - `G2` (`float`, default=0): Tsyganenko G2 coefficient
-            - `G3` (`float`, default=0): Tsyganenko G3 coefficient
-            - `W1` (`float`, default=0): Tsyganenko W1 coefficient
-            - `W2` (`float`, default=0): Tsyganenko W2 coefficient
-            - `W3` (`float`, default=0): Tsyganenenko W3 coefficient
-            - `W4` (`float`, default=0): Tsyganenko W4 coefficient
-            - `W5` (`float`, default=0): Tsyganenko W5 coefficient
-            - `W6` (`float`, default=0): Tsyganenko W6 coefficient
+            - `G1` (`float`, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (`float`, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (`float`, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (`float`, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (`float`, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (`float`, default=0.13): Tsyganenenko W3 coefficient
+            - `W4` (`float`, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (`float`, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (`float`, default=0.08): Tsyganenko W6 coefficient
 
         coordinate_params (CoordinateParams): Coordinate systems.
 
@@ -1777,9 +1894,8 @@ def magfield(
     """
     
     # Merge user parameters with defaults from parameter classes
-    final_solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
-    final_geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
-    final_tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    final_solar_wind, final_geomagnetic, final_tsyganenko, defaulted_inputs = _merge_wind_inputs(
+        solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params)
     final_datetime = {**DateTimeParams.DEFAULTS, **datetime_params}
     final_magfield = {**MagFieldParams.DEFAULTS, **magfield_params}
     final_coordinate = {**CoordinateParams.DEFAULTS, **coordinate_params}
@@ -1798,6 +1914,7 @@ def magfield(
     
     return magfield_func(
         Locations,
+        defaulted_inputs=defaulted_inputs,
         **final_solar_wind,
         **final_geomagnetic,
         **final_tsyganenko,
@@ -1806,11 +1923,11 @@ def magfield(
         **final_coordinate,
         **final_computation,
         **final_data_retrieval,
-        **final_custom_field,
-        **kwargs
+        **final_custom_field
     )
 ############################################################################################################
 #######################################################################################################################################
+@_check_arguments
 def transmission(
     Stations: Union[str, Sequence[str]],
     customlocations: Optional[list] = None,
@@ -1892,51 +2009,51 @@ def transmission(
             - `transmissionRstep` (`float`, default=0.001): R ± transmissionRstep defines the transmission rigidity sampling range 
             - `transmissionsamples` (`int`, default=20): the number of sample rigidities to test within the sampling range
         
-        solar_wind_params (SolarWindParams): Solar wind parameters.
+        solar_wind_params (SolarWindParams): Solar wind parameters. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `vx` (`float`, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (`float`, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (`float`, default=0): Solar wind velocity y-component (km/s)
             - `vz` (`float`, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (`float`, default=0): IMF x-component (nT)
-            - `by` (`float`, default=5): IMF y-component (nT)
-            - `bz` (`float`, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (`float`, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (`float`, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (`float`, default=0.11): IMF x-component (nT)
+            - `by` (`float`, default=-0.16): IMF y-component (nT)
+            - `bz` (`float`, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (`float`, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (`float`, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices.
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (`float`, default=0): Dst index (nT)
-            - `kp` (`float`, default=0): Kp index (0-9)
-            - `n_index` (`float`, default=0): Newell coupling function
-            - `b_index` (`float`, default=0): Boynton coupling function
-            - `sym_h_corrected` (`float`, default=0): Corrected SYM-H index (nT)
+            - `Dst` (`float`, default=-4): Dst index (nT)
+            - `kp` (`float`, default=0.7): Kp index (0-9)
+            - `n_index` (`float`, default=0.145): Newell coupling function
+            - `b_index` (`float`, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (`float`, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients.
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `G1` (`float`, default=0): Tsyganenko G1 coefficient
-            - `G2` (`float`, default=0): Tsyganenko G2 coefficient
-            - `G3` (`float`, default=0): Tsyganenko G3 coefficient
-            - `W1` (`float`, default=0): Tsyganenko W1 coefficient
-            - `W2` (`float`, default=0): Tsyganenko W2 coefficient
-            - `W3` (`float`, default=0): Tsyganenko W3 coefficient
-            - `W4` (`float`, default=0): Tsyganenko W4 coefficient
-            - `W5` (`float`, default=0): Tsyganenko W5 coefficient
-            - `W6` (`float`, default=0): Tsyganenko W6 coefficient
+            - `G1` (`float`, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (`float`, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (`float`, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (`float`, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (`float`, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (`float`, default=0.13): Tsyganenko W3 coefficient
+            - `W4` (`float`, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (`float`, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (`float`, default=0.08): Tsyganenko W6 coefficient
 
         integration_params (IntegrationParams): Integration settings.
 
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=10): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=True (default) it caps each step using the local field; with adaptivestep=False the step is fixed for the whole trace at this percentage of the gyration period at the launch point
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
@@ -1944,7 +2061,7 @@ def transmission(
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
             - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
@@ -2017,9 +2134,8 @@ def transmission(
     """
     
     # Merge user parameters with defaults from parameter classes
-    final_solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
-    final_geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
-    final_tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    final_solar_wind, final_geomagnetic, final_tsyganenko, defaulted_inputs = _merge_wind_inputs(
+        solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params)
     final_datetime = {**DateTimeParams.DEFAULTS, **datetime_params}
     final_magfield = {**MagFieldParams.DEFAULTS, **magfield_params}
     final_integration = {**IntegrationParams.DEFAULTS, **integration_params}
@@ -2043,6 +2159,7 @@ def transmission(
         Stations,
         customlocations=customlocations,
         # Solar wind parameters
+        defaulted_inputs=defaulted_inputs,
         **final_solar_wind,
         # Geomagnetic parameters
         **final_geomagnetic,
@@ -2071,6 +2188,7 @@ def transmission(
     )
 #########################################################################################################################
 ###############################################################################################################################
+@_check_arguments
 def skymap(
     Stations: Union[str, Sequence[str]],
     customlocations: Optional[list] = None,
@@ -2160,51 +2278,51 @@ def skymap(
             - `maxazimuth` (`float`, default=360): Maximum azimuth value
             - `minazimuth` (`float`, default=0): Minimum azimuth value
         
-        solar_wind_params (SolarWindParams): Solar wind parameters.
+        solar_wind_params (SolarWindParams): Solar wind parameters. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `vx` (`float`, default=-500): Solar wind velocity x-component (km/s)
+            - `vx` (`float`, default=-359.4): Solar wind velocity x-component (km/s)
             - `vy` (`float`, default=0): Solar wind velocity y-component (km/s)
             - `vz` (`float`, default=0): Solar wind velocity z-component (km/s)
-            - `bx` (`float`, default=0): IMF x-component (nT)
-            - `by` (`float`, default=5): IMF y-component (nT)
-            - `bz` (`float`, default=5): IMF z-component (nT)
-            - `by_avg` (`float`, default=0): Averaged IMF By over last 30mins (nT)
-            - `bz_avg` (`float`, default=0): Averaged IMF Bz over last 30mins (nT)
-            - `density` (`float`, default=1): Solar wind density (particles/cm³)
-            - `pdyn` (`float`, default=0): Solar wind dynamic pressure (nPa)
+            - `bx` (`float`, default=0.11): IMF x-component (nT)
+            - `by` (`float`, default=-0.16): IMF y-component (nT)
+            - `bz` (`float`, default=0.58): IMF z-component (nT)
+            - `by_avg` (`float`, default=-0.17): Averaged IMF By over last 30mins (nT)
+            - `bz_avg` (`float`, default=0.59): Averaged IMF Bz over last 30mins (nT)
+            - `density` (`float`, default=4.94): Solar wind density (particles/cm³)
+            - `pdyn` (`float`, default=1.31): Solar wind dynamic pressure (nPa); computed from density and velocity when 0, or when density or velocity is given without pdyn
             
-        geomagnetic_params (GeomagneticParams): Geomagnetic indices.
+        geomagnetic_params (GeomagneticParams): Geomagnetic indices. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `Dst` (`float`, default=0): Dst index (nT)
-            - `kp` (`float`, default=0): Kp index (0-9)
-            - `n_index` (`float`, default=0): Newell coupling function
-            - `b_index` (`float`, default=0): Boynton coupling function
-            - `sym_h_corrected` (`float`, default=0): Corrected SYM-H index (nT)
+            - `Dst` (`float`, default=-4): Dst index (nT)
+            - `kp` (`float`, default=0.7): Kp index (0-9)
+            - `n_index` (`float`, default=0.145): Newell coupling function
+            - `b_index` (`float`, default=0.032): Boynton coupling function
+            - `sym_h_corrected` (`float`, default=-18.07): Corrected SYM-H index (nT)
             
-        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients.
+        tsyganenko_params (TsyganenkoParams): Tsyganenko model coefficients. Defaults are quiet-time medians (Kp <= 1) of OMNI data, 1996-2025.
 
             Available keys:
 
-            - `G1` (`float`, default=0): Tsyganenko G1 coefficient
-            - `G2` (`float`, default=0): Tsyganenko G2 coefficient
-            - `G3` (`float`, default=0): Tsyganenko G3 coefficient
-            - `W1` (`float`, default=0): Tsyganenko W1 coefficient
-            - `W2` (`float`, default=0): Tsyganenko W2 coefficient
-            - `W3` (`float`, default=0): Tsyganenko W3 coefficient
-            - `W4` (`float`, default=0): Tsyganenko W4 coefficient
-            - `W5` (`float`, default=0): Tsyganenko W5 coefficient
-            - `W6` (`float`, default=0): Tsyganenko W6 coefficient
+            - `G1` (`float`, default=0.38): Tsyganenko G1 coefficient
+            - `G2` (`float`, default=0.12): Tsyganenko G2 coefficient
+            - `G3` (`float`, default=0.47): Tsyganenko G3 coefficient
+            - `W1` (`float`, default=0.07): Tsyganenko W1 coefficient
+            - `W2` (`float`, default=0.06): Tsyganenko W2 coefficient
+            - `W3` (`float`, default=0.13): Tsyganenko W3 coefficient
+            - `W4` (`float`, default=0.03): Tsyganenko W4 coefficient
+            - `W5` (`float`, default=0.05): Tsyganenko W5 coefficient
+            - `W6` (`float`, default=0.08): Tsyganenko W6 coefficient
 
         integration_params (IntegrationParams): Integration settings.
 
             Available keys:
 
             - `intmodel` (`str`, default="Boris-Buneman"): "4RK", "5RK", "6RK", "Vay", "HC", "Boris-Buneman"
-            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=False (default) the step is fixed for the whole trace at this percentage of the gyration period at the launch point; with adaptivestep=True it caps each step using the local field
+            - `gyropercent` (`float`, default=1): Step size as a percentage of the gyration period. With adaptivestep=True (default) it caps each step using the local field; with adaptivestep=False the step is fixed for the whole trace at this percentage of the gyration period at the launch point
             - `minaltitude` (`float`, default=20): Minimum altitude (GDZ = km or other = Re)
             - `maxdistance` (`float`, default=100): Maximum path length travelled (Re), not distance from Earth; 0 disables this check (use 0 for long trapped-particle runs: a 0.6c proton travels 100 Re in ~4 s)
             - `maxtime` (`float`, default=0): Maximum flight time in seconds (lab frame); 0 = no limit
@@ -2212,7 +2330,7 @@ def skymap(
             - `startaltitude` (`float`, default=20): Starting altitude (GDZ = km or other = Re)
             - `betaerror` (`float`, default=0.001): Maximum allowed beta error for integration steps %
             - `totalbetacheck` (`bool`, default=False): Enable cumulative beta check during integration
-            - `adaptivestep` (`bool`, default=False): Enable adaptive time steps
+            - `adaptivestep` (`bool`, default=True): Enable adaptive time steps
             - `maxsteps` (`int`, default=0): Maximum number of integration steps; 0 = no limit
 
         particle_params (ParticleParams): Particle settings.
@@ -2288,15 +2406,10 @@ def skymap(
     if rigidity_params.get("startrigidity") is None:
         rigidity_params["startrigidity"] = 50
 
-    integration_params = dict(integration_params)
-
-    if integration_params.get("gyropercent") is None:
-        integration_params["gyropercent"] = 1
     
     # Merge user parameters with defaults from parameter classes
-    final_solar_wind = {**SolarWindParams.DEFAULTS, **solar_wind_params}
-    final_geomagnetic = {**GeomagneticParams.DEFAULTS, **geomagnetic_params}
-    final_tsyganenko = {**TsyganenkoParams.DEFAULTS, **tsyganenko_params}
+    final_solar_wind, final_geomagnetic, final_tsyganenko, defaulted_inputs = _merge_wind_inputs(
+        solar_wind_params, geomagnetic_params, tsyganenko_params, data_retrieval_params)
     final_datetime = {**DateTimeParams.DEFAULTS, **datetime_params}
     final_magfield = {**MagFieldParams.DEFAULTS, **magfield_params}
     final_integration = {**IntegrationParams.DEFAULTS, **integration_params}
@@ -2318,6 +2431,7 @@ def skymap(
         Stations,
         customlocations=customlocations,
         # Solar wind parameters
+        defaulted_inputs=defaulted_inputs,
         **final_solar_wind,
         # Geomagnetic parameters
         **final_geomagnetic,
@@ -2347,6 +2461,7 @@ def skymap(
 
 #######################################################################################################################################
 
+@_check_arguments
 def coordtrans(
     Locations: Sequence[float],
     dates: Sequence,
@@ -2354,7 +2469,6 @@ def coordtrans(
     CoordOUT: str = "GDZ",
     corenum: Optional[int] = None,
     Verbose: bool = True,
-    *args, **kwargs
 ) -> list:
     """
     Transform coordinates between different coordinate systems using OTSO.
@@ -2410,12 +2524,11 @@ def coordtrans(
         CoordIN = CoordIN, 
         CoordOUT = CoordOUT, 
         corenum = corenum, 
-        Verbose = Verbose, 
-        *args, 
-        **kwargs
+        Verbose = Verbose
     )
 #######################################################################################################################
-def clean(*args, **kwargs):
+@_check_arguments
+def clean():
     """
     Clean OTSO-generated files and temporary data.
     
@@ -2428,9 +2541,10 @@ def clean(*args, **kwargs):
     Can also be used as CLI command: OTSO.clean
     """
     from .otso_cli import clean as clean_func
-    return clean_func(*args, **kwargs)
+    return clean_func()
 
-def addstation(*args, **kwargs):
+@_check_arguments
+def addstation(Name: str, Latitude: float, Longitude: float):
     """
     Add a new neutron monitor station to the OTSO database.
     
@@ -2439,7 +2553,7 @@ def addstation(*args, **kwargs):
     with specific names for repeated use.
     
     Args:
-        StationName (str): Name identifier for the new station.
+        Name (str): Name identifier for the new station.
         Latitude (float): Geographic latitude in degrees.
         Longitude (float): Geographic longitude in degrees.
     
@@ -2452,11 +2566,11 @@ def addstation(*args, **kwargs):
     Note: If the station already exists, there is an option to overwrite it.
     """
     from .otso_cli import AddStation as addstation_func
-    Name, Latitude, Longitude = sys.argv[1], float(sys.argv[2]), float(sys.argv[3])
-    addstation_func(Name, Latitude, Longitude)
+    addstation_func(Name, float(Latitude), float(Longitude))
     return
 
-def removestation(*args, **kwargs):
+@_check_arguments
+def removestation(Name: str):
     """
     Remove a station from the OTSO database.
     
@@ -2464,7 +2578,7 @@ def removestation(*args, **kwargs):
     incorrectly entered station data or removing obsolete stations.
     
     Args:
-        StationName (str): Name of station to remove.
+        Name (str): Name of station to remove.
     
     Usage:
         OTSO.removestation("OLDSTATION")
@@ -2473,11 +2587,11 @@ def removestation(*args, **kwargs):
         OTSO.removestation OLDSTATION
     """
     from .otso_cli import RemoveStation as removestation_func
-    Name = sys.argv[1]
     removestation_func(Name)
     return
 
-def liststations(*args, **kwargs):
+@_check_arguments
+def liststations():
     """
     List all available neutron monitor stations in the OTSO database.
     
@@ -2494,9 +2608,10 @@ def liststations(*args, **kwargs):
         List of all available stations with coordinates.
     """
     from .otso_cli import ListStations as liststations_func
-    return liststations_func(*args, **kwargs)
+    return liststations_func()
 
-def IGRFupdate(*args, **kwargs):
+@_check_arguments
+def IGRFupdate():
     """
     CLI function to update the IGRF model data. Running this CLI function will download the latest
     IGRF coefficients from the official IGRF website and update the local OTSO database.
@@ -2508,9 +2623,10 @@ def IGRFupdate(*args, **kwargs):
         OTSO.IGRFupdate 13
     """
     from .otso_cli import IGRFupdate as IGRFupdate_func
-    return IGRFupdate_func(*args, **kwargs)
+    return IGRFupdate_func()
 
-def serverdownload(*args, **kwargs):
+@_check_arguments
+def serverdownload():
     """
     Download space physics data from online servers for offline use.
     
@@ -2540,10 +2656,11 @@ def serverdownload(*args, **kwargs):
         - World Data Center for Geomagnetism, Kyoto
         - Real-time space weather services
     """
-    from .otso_cli import ServerDownload as serverdownload_func
-    return serverdownload_func(*args, **kwargs)
+    from .otso_cli import serverdownload as serverdownload_func
+    return serverdownload_func()
 
-def chaosdownload(*args, **kwargs):
+@_check_arguments
+def chaosdownload():
     """
     Download CHAOS files for offline use.
     
@@ -2564,7 +2681,7 @@ def chaosdownload(*args, **kwargs):
         - DTU, Denmark
     """
     from .otso_cli import CHAOSdownload as CHAOSdownload_func
-    return CHAOSdownload_func(*args, **kwargs)
+    return CHAOSdownload_func()
 
 
 __all__ = [

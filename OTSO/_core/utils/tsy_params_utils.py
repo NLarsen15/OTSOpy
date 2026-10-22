@@ -3,10 +3,9 @@ import pandas
 import numpy as np
 
 def IOPTprocess(Kp:float) -> int:
-    if Kp >= 6:
-        IOPT = 7
-    else:
-        IOPT = Kp + 1
+    # TSY89 IOPT bins: 1 = Kp 0,0+; 2 = Kp 1-,1,1+; ...; 7 = Kp >= 6-
+    # Rounding puts fractional Kp values (e.g. 1- = 0.67) into the correct bin
+    IOPT = min(int(round(Kp)) + 1, 7)
 
     return IOPT
 

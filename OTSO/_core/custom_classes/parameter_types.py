@@ -9,20 +9,28 @@ from __future__ import annotations
 from typing import TypedDict, Sequence, Optional
 
 
+# The solar wind, geomagnetic and Tsyganenko defaults below are quiet-time medians: the median of
+# each input over all 5-minute OMNI intervals from 1996 to 2025 with Kp <= 1 (38% of the record),
+# taken from OTSO's server data files (OMNI high- and low-resolution data plus the derived
+# Tsyganenko G, W, N-index, B-index and corrected SYM-H inputs). vy and vz have no OMNI median and are 0.
+DEFAULTS_SOURCE = "quiet-time medians (Kp <= 1) of OMNI 5-minute data and derived Tsyganenko inputs, 1996-2025"
+
+
 class SolarWindParams(TypedDict, total=False):
     """Solar wind velocity and magnetic field parameters.
     
-    Available keys (all optional):
-    • vx: float = -500      # Solar wind velocity x-component (km/s)
+    Available keys (all optional; defaults are quiet-time OMNI medians, see DEFAULTS_SOURCE):
+    • vx: float = -359.4    # Solar wind velocity x-component (km/s)
     • vy: float = 0         # Solar wind velocity y-component (km/s) 
     • vz: float = 0         # Solar wind velocity z-component (km/s)
-    • bx: float = 0         # IMF x-component (nT)
-    • by: float = 5         # IMF y-component (nT)
-    • bz: float = 5         # IMF z-component (nT)
-    • by_avg: float = 0     # Averaged IMF By (nT)
-    • bz_avg: float = 0     # Averaged IMF Bz (nT)
-    • density: float = 1    # Solar wind density (particles/cm³)
-    • pdyn: float = 0       # Solar wind dynamic pressure (nPa)
+    • bx: float = 0.11      # IMF x-component (nT)
+    • by: float = -0.16     # IMF y-component (nT)
+    • bz: float = 0.58      # IMF z-component (nT)
+    • by_avg: float = -0.17 # Averaged IMF By (nT)
+    • bz_avg: float = 0.59  # Averaged IMF Bz (nT)
+    • density: float = 4.94 # Solar wind density (particles/cm³)
+    • pdyn: float = 1.31    # Solar wind dynamic pressure (nPa); 0 = compute from density and velocity,
+                            # which is also done when density or velocity is given without pdyn
     
     Example: solar_wind = {"vx": -400, "by": 3.0, "bz": -2.0}
     """
@@ -37,22 +45,22 @@ class SolarWindParams(TypedDict, total=False):
     by_avg: float  # Averaged IMF By (nT)
     bz_avg: float  # Averaged IMF Bz (nT)
     
-    # Default values
+    # Default values (quiet-time OMNI medians, see DEFAULTS_SOURCE)
     DEFAULTS = {
-        "vx": -500, "vy": 0, "vz": 0, "bx": 0, "by": 5, "bz": 5, 
-        "density": 1, "pdyn": 0, "by_avg": 0, "bz_avg": 0
+        "vx": -359.4, "vy": 0, "vz": 0, "bx": 0.11, "by": -0.16, "bz": 0.58,
+        "density": 4.94, "pdyn": 1.31, "by_avg": -0.17, "bz_avg": 0.59
     } # type: ignore
 
 
 class GeomagneticParams(TypedDict, total=False):
     """Geomagnetic activity indices and coupling functions.
     
-    Available keys (all optional):
-    • Dst: float = 0              # Dst index (nT)
-    • kp: float = 0               # Kp index (0-9)
-    • n_index: float = 0          # Newell coupling function
-    • b_index: float = 0          # Boynton coupling function  
-    • sym_h_corrected: float = 0  # Corrected SYM-H index (nT)
+    Available keys (all optional; defaults are quiet-time OMNI medians, see DEFAULTS_SOURCE):
+    • Dst: float = -4                  # Dst index (nT)
+    • kp: float = 0.7                  # Kp index (0-9)
+    • n_index: float = 0.145           # Newell coupling function
+    • b_index: float = 0.032           # Boynton coupling function  
+    • sym_h_corrected: float = -18.07  # Corrected SYM-H index (nT)
     
     Example: geomagnetic = {"Dst": -50, "kp": 4.0}
     """
@@ -62,25 +70,25 @@ class GeomagneticParams(TypedDict, total=False):
     b_index: float  # Boynton coupling function
     sym_h_corrected: float  # Corrected SYM-H index
     
-    # Default values
+    # Default values (quiet-time OMNI medians, see DEFAULTS_SOURCE)
     DEFAULTS = {
-        "Dst": 0, "kp": 0, "n_index": 0, "b_index": 0, "sym_h_corrected": 0
+        "Dst": -4, "kp": 0.7, "n_index": 0.145, "b_index": 0.032, "sym_h_corrected": -18.07
     } # type: ignore
 
 
 class TsyganenkoParams(TypedDict, total=False):
     """Tsyganenko model coefficients for external field models.
     
-    Available keys (all optional):
-    • G1: float = 0    # Tsyganenko G1 coefficient
-    • G2: float = 0    # Tsyganenko G2 coefficient  
-    • G3: float = 0    # Tsyganenko G3 coefficient
-    • W1: float = 0    # Tsyganenko W1 coefficient
-    • W2: float = 0    # Tsyganenko W2 coefficient
-    • W3: float = 0    # Tsyganenko W3 coefficient
-    • W4: float = 0    # Tsyganenko W4 coefficient
-    • W5: float = 0    # Tsyganenko W5 coefficient
-    • W6: float = 0    # Tsyganenko W6 coefficient
+    Available keys (all optional; defaults are quiet-time OMNI medians, see DEFAULTS_SOURCE):
+    • G1: float = 0.38    # Tsyganenko G1 coefficient
+    • G2: float = 0.12    # Tsyganenko G2 coefficient  
+    • G3: float = 0.47    # Tsyganenko G3 coefficient
+    • W1: float = 0.07    # Tsyganenko W1 coefficient
+    • W2: float = 0.06    # Tsyganenko W2 coefficient
+    • W3: float = 0.13    # Tsyganenko W3 coefficient
+    • W4: float = 0.03    # Tsyganenko W4 coefficient
+    • W5: float = 0.05    # Tsyganenko W5 coefficient
+    • W6: float = 0.08    # Tsyganenko W6 coefficient
     
     Example: tsyganenko = {"G1": 2.5, "G2": -1.8, "W1": 0.5}
     Used with TSY89, TSY96, TSY01, TSY04, and newer models.
@@ -95,9 +103,9 @@ class TsyganenkoParams(TypedDict, total=False):
     W5: float  # Tsyganenko W5 coefficient
     W6: float  # Tsyganenko W6 coefficient
     
-    # Default values
+    # Default values (quiet-time OMNI medians, see DEFAULTS_SOURCE)
     DEFAULTS = {
-        "G1": 0, "G2": 0, "G3": 0, "W1": 0, "W2": 0, "W3": 0, "W4": 0, "W5": 0, "W6": 0
+        "G1": 0.38, "G2": 0.12, "G3": 0.47, "W1": 0.07, "W2": 0.06, "W3": 0.13, "W4": 0.03, "W5": 0.05, "W6": 0.08
     } # type: ignore
 
 
@@ -196,9 +204,9 @@ class IntegrationParams(TypedDict, total=False):
 
     # Default values
     DEFAULTS = {
-        "intmodel": "Boris-Buneman", "gyropercent": 10, "minaltitude": 20,
+        "intmodel": "Boris-Buneman", "gyropercent": 1, "minaltitude": 20,
         "maxdistance": 100, "maxtime": 0, "mintrapdist": 0, "startaltitude": 20,
-        "betaerror": 0.001, "totalbetacheck": False, "adaptivestep": False, "maxsteps": 0,
+        "betaerror": 0.001, "totalbetacheck": False, "adaptivestep": True, "maxsteps": 0,
         "fixedstep": 0.0} # type: ignore
     
 

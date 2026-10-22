@@ -60,6 +60,7 @@ class MagfieldData:
     model: Optional[Sequence[int]] = field(default=None)
     IOPT: Optional[int] = field(default=None)
     windarray: Optional[Sequence[float]] = field(default=None)
+    defaulted_inputs: Optional[Sequence[str]] = field(default=None)
     Kp: Optional[float] = field(default=None)
     citationlist: list = field(default_factory=list)
     citationstring: Optional[str] = field(default=None)

@@ -9,7 +9,7 @@ import weakref
 class Middleman(f90wrap.runtime.FortranModule):
     """
     Module middleman
-    Defined at MiddleMan.f95 lines 1-1221
+    Defined at MiddleMan.f95 lines 1-1228
     """
     @f90wrap.runtime.register_class("MiddleMan.FortranData")
     class FortranData(f90wrap.runtime.FortranDerivedType):
@@ -1325,7 +1325,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         cutoff(self, g8, h8, rigidities, allowed)
-        Defined at MiddleMan.f95 lines 107-232
+        Defined at MiddleMan.f95 lines 107-233
         
         Parameters
         ----------
@@ -1347,7 +1347,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         cone(self, g8, h8, rigidities, allowed, asymlat, asymlong)
-        Defined at MiddleMan.f95 lines 245-389
+        Defined at MiddleMan.f95 lines 246-391
         
         Parameters
         ----------
@@ -1372,7 +1372,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         
         filter, alat, along = trajectory_full(self, g8, h8, rigidity, trajectoryfile, \
             trajectoryfilelen)
-        Defined at MiddleMan.f95 lines 404-554
+        Defined at MiddleMan.f95 lines 406-557
         
         Parameters
         ----------
@@ -1404,7 +1404,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         trajectory(self, g8, h8, rigidities, rigiditieslen, allowed, asymlat, asymlong)
-        Defined at MiddleMan.f95 lines 558-701
+        Defined at MiddleMan.f95 lines 561-705
         
         Parameters
         ----------
@@ -1429,7 +1429,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         transmission(self, g8, h8, rigidities, transmissions)
-        Defined at MiddleMan.f95 lines 712-858
+        Defined at MiddleMan.f95 lines 716-863
         
         Parameters
         ----------
@@ -1451,7 +1451,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         magstrength(pin, data, coordin, coordout, g8, h8, bfield)
-        Defined at MiddleMan.f95 lines 867-924
+        Defined at MiddleMan.f95 lines 872-929
         
         Parameters
         ----------
@@ -1471,7 +1471,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         interface_call=False):
         """
         coordtrans(pin, data, coordin, coordout, g8, h8, pout)
-        Defined at MiddleMan.f95 lines 933-958
+        Defined at MiddleMan.f95 lines 938-963
         
         Parameters
         ----------
@@ -1494,7 +1494,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         ------------------------------------------------------------------
         
         fieldtrace(self, filename, filenamelen, g8, h8)
-        Defined at MiddleMan.f95 lines 967-1102
+        Defined at MiddleMan.f95 lines 972-1109
         
         Parameters
         ----------
@@ -1517,7 +1517,7 @@ class Middleman(f90wrap.runtime.FortranModule):
             ny_split, nz_split, mix, max_bn, miy, may, miz, maz, region_order_in, \
             start_x, end_x, start_y, end_y, start_z, end_z, num_regions, xulen, yulen, \
             zulen, uniform_grid, interp_method_in)
-        Defined at MiddleMan.f95 lines 1108-1189
+        Defined at MiddleMan.f95 lines 1115-1196
         
         Parameters
         ----------
@@ -1564,7 +1564,7 @@ class Middleman(f90wrap.runtime.FortranModule):
         interface_call=False):
         """
         gse2gswtsy15(date, position_gse, wind, gotso, hotso, glen, position_gsw)
-        Defined at MiddleMan.f95 lines 1191-1221
+        Defined at MiddleMan.f95 lines 1198-1228
         
         Parameters
         ----------

@@ -44,7 +44,7 @@ def READMESkymap(Data: SkymapData, EventDate, Printtime) -> str:
     result.append(f"Start Altitude = {Data.station_array[0][3]}km \n")
     result.append(f"Kp = {Data.Kp}\n")
     result.append(f"IOPT = {Data.IOPT}\n\n")
-    result = solar_wind_readme_section(result, Data.windarray)
+    result = solar_wind_readme_section(result, Data.windarray, Data.defaulted_inputs)
     result.append(f"Atomic Number = {Data.particlearray[0]}\n\n")
     result.append(f"Particle Type = {particle}\n\n")
     result = field_models_readme_section(result, Internal, External, PauseModel, Data.max_degree)

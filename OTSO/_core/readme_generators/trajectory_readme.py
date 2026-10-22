@@ -41,7 +41,7 @@ def READMETrajectory(Data: TrajectoryData, EventDate: date, Printtime: float) ->
   result.append(f"Azimuth = {Data.station_array[0][5]}\n\n")
   result.append(f"Kp = {Data.kp}\n")
   result.append(f"IOPT = {Data.IOPT}\n\n")
-  result = solar_wind_readme_section(result, Data.windarray)
+  result = solar_wind_readme_section(result, Data.windarray, Data.defaulted_inputs)
   result.append(f"Atomic Number = {Data.particlearray[0]}\n\n")
   result.append(f"Particle Type = {particle}\n\n")
   result = field_models_readme_section(result, Internal, External, PauseModel, Data.max_degree)

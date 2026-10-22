@@ -29,7 +29,7 @@ def READMEMagfield(EventDate: date, Data: MagfieldData, Printtime: float) -> str
     result.append(f"Simulation Date: {EventDate.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
     result.append(f"Kp = {Data.Kp}\n")
     result.append(f"IOPT = {Data.IOPT}\n\n")
-    result = solar_wind_readme_section(result, Data.windarray)
+    result = solar_wind_readme_section(result, Data.windarray, Data.defaulted_inputs)
     result.append(f"Magnetic Field Models:\n")
     result.append(f"Internal Model = {Internal}\n")
     result.append(f"Max Spherical Harmonics Order/Degree = {Data.max_degree}\n")

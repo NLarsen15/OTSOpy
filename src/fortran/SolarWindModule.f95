@@ -20,17 +20,27 @@ contains
 !
 !
 ! INPUT:
-! X(10) - list of important solar wind parameters
+! X(25) - list of important solar wind parameters (built by solar_wind.SolarWind in Python)
 !         X(1) - Solar wind velocity (x axis) [km/s]
 !         X(2) - Solar wind velocity (y axis) [km/s]
 !         X(3) - Solar wind velocity (z axis) [km/s]
-!         X(4) - IMF (y axis) [nT]
-!         X(5) - IMF (z axis) [nT]
-!         X(6) - Solar wind density [cm^-2]
-!         X(7) - Dst Index [nT]
-!         X(8) - G1 (Needed for the use of Tsyganenko 2001)
-!         X(9) - G2 (Needed for the use of Tsyganenko 2001)
-!         X(10) - G3 (Needed for the use of Tsyganenko 2001 - Storm)
+!         X(4) - IMF (x axis) [nT]
+!         X(5) - IMF (y axis) [nT]
+!         X(6) - IMF (z axis) [nT]
+!         X(7) - Solar wind density [cm^-3]
+!         X(8) - Solar wind dynamic pressure [nPa] (0 = compute from density and velocity)
+!         X(9) - Dst Index [nT]
+!         X(10) - G1 (Needed for the use of Tsyganenko 2001)
+!         X(11) - G2 (Needed for the use of Tsyganenko 2001)
+!         X(12) - G3 (Needed for the use of Tsyganenko 2001 - Storm)
+!         X(13:18) - W1-W6 (Needed for the use of Tsyganenko 2004)
+!         X(19) - Kp Index
+!         X(20) - Dst used by the Boberg extension [nT]
+!         X(21) - Averaged IMF By [nT]
+!         X(22) - Averaged IMF Bz [nT]
+!         X(23) - N-index (Newell coupling function)
+!         X(24) - B-index (Boynton coupling function)
+!         X(25) - Corrected SYM-H index [nT]
 !
 ! D - IOPT
 ! Model - Magnetic field models to be used
@@ -70,7 +80,8 @@ Bmag = (X(4)**2 + X(5)**2 + X(6)**2)**(0.5)
 Dst = X(9)
 Vmax = (SW(1)**2 + SW(2)**2 + SW(3)**2)**0.5
 
-IF (X(9) == 0) THEN
+! Compute the dynamic pressure from density and velocity only when no pdyn was given
+IF (X(8) == 0) THEN
     PDYN = ((X(7)*10**6.0) * (1.672621898e-27) * ((Vmax*1000)**2))
 ELSE
     PDYN = X(8)*10**(-9.0)
