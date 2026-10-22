@@ -6,7 +6,6 @@ This page lists scientific publications utilising **OTSO**.
 
 ## 2026
 
-
 - **Jung, J., Kwak, Y.-S., Sohn, J., Oh, S., Yi, Y., Yang, T.-Y., & Evenson, P. (2026)**  
   *Observation of the 19 January 2026 Forbush Decrease with the Geochang Neutron Monitor: Comparison with the Global Neutron Monitor Network.*  
   Journal of Astronomy and Space Sciences, 43(3), 147-155.  
@@ -22,9 +21,9 @@ This page lists scientific publications utilising **OTSO**.
   Journal of Geophysical Research: Space Physics, 131, e2026JA035434.  
   https://doi.org/10.1029/2026JA035434
 
-- **Väisänen, P., Larsen, N., Koldobskiy, S., Similä, M., Pelosi, D., & Orcinha, M. (2026)**
-  *Near-earth cosmic ray modulation index ϕ and neutron monitor cutoff rigidities at hourly cadence: Toward an improved monitoring of solar-terrestrial radiation environment, space weather, and space climate.*
-  Journal of Geophysical Research: Space Physics, 131.
+- **Väisänen, P., Larsen, N., Koldobskiy, S., Similä, M., Pelosi, D., & Orcinha, M. (2026)**  
+  *Near-earth cosmic ray modulation index ϕ and neutron monitor cutoff rigidities at hourly cadence: Toward an improved monitoring of solar-terrestrial radiation environment, space weather, and space climate.*  
+  Journal of Geophysical Research: Space Physics, 131.  
   https://doi.org/10.1029/2026JA035445
 
 - **Larsen, N., Usoskin, I., Mishev, A., Koldobskiy, S., & Väisänen, P. (2026)**  
@@ -47,10 +46,15 @@ This page lists scientific publications utilising **OTSO**.
   Advances in Space Research.  
   https://doi.org/10.1016/j.asr.2026.03.023
 
-- **Tsvetkov, T., Petrov, N., Mishev, A., Poluianov, S., & Minev, M. (2026)**
- *New mini neutron monitor at National Astronomical Observatory Rozhen: First measurements. Advances in Space Research.*
- Advances in Space Research
- https://doi.org/10.1016/j.asr.2026.07.017
+- **Tsvetkov, T., Petrov, N., Mishev, A., Poluianov, S., & Minev, M. (2026)**  
+  *New mini neutron monitor at National Astronomical Observatory Rozhen: First measurements.*  
+  Advances in Space Research.  
+  https://doi.org/10.1016/j.asr.2026.07.017
+
+- **Baird, F., Clewer, B., Ryden, K., Morris, P., Lei, F., Davis, C., et al. (2026)**  
+  *Observations of atmospheric radiation increases during GLE 77 from new airborne and ground level instruments.*  
+  Space Weather, 24, e2026SW005279.  
+  https://doi.org/10.1029/2026SW005279
 
 ---
 
@@ -59,7 +63,7 @@ This page lists scientific publications utilising **OTSO**.
 - **Larsen, N., & Mishev, A. (2025)**  
   *Radiation impact of the Halloween GLE events during the October–November 2003 period.*  
   Space Weather, 23, e2024SW004199.  
-  https://doi.org/10.1029/2024SW004199  
+  https://doi.org/10.1029/2024SW004199
 
 - **Jung, J., Kwak, Y.-S., Sohn, J., Oh, S., Yi, Y., Kim, Y., Choi, S., & Evenson, P. (2025)**  
   *Establishment of a Mid-Latitude Neutron Monitoring Site at Mt. Gamak in Korea.*  
@@ -98,32 +102,32 @@ This page lists scientific publications utilising **OTSO**.
 - **Larsen, N., & Mishev, A. (2024)**  
   *Relationship between NM data and radiation dose at aviation altitudes during GLE events.*  
   Space Weather, 22, e2024SW003885.  
-  https://doi.org/10.1029/2024SW003885  
+  https://doi.org/10.1029/2024SW003885
 
 - **Hayakawa, H., Koldobskiy, S., Mishev, A., Poluianov, S., Gil, A., Usoskin, I., et al. (2024)**  
   *Revision of the strongest solar energetic particle event of 23 February 1956 (GLE #5) based on rediscovered original records.*  
   Astronomy & Astrophysics, 684, A46.  
-  https://doi.org/10.1051/0004-6361/202348699  
+  https://doi.org/10.1051/0004-6361/202348699
 
 - **Mishev, A., Larsen, N., Asvestari, E., Sáiz, A., et al. (2024)**  
   *Anisotropic Forbush decrease of 24 March 2024: First look.*  
   Advances in Space Research, 74(8).  
-  https://doi.org/10.1016/j.asr.2024.08.027  
+  https://doi.org/10.1016/j.asr.2024.08.027
 
 - **Mishev, A., Koldobskiy, S., Larsen, N., et al. (2024)**  
   *Spectra and anisotropy of solar energetic protons during GLE #65 on 28 October 2003 and GLE #66 on 29 October 2003.*  
   Solar Physics, 299, 24.  
-  https://doi.org/10.1007/s11207-024-02269-z  
+  https://doi.org/10.1007/s11207-024-02269-z
 
 - **Gil, A., Asvestari, E., Mishev, A., et al. (2024)**  
   *New anisotropic cosmic-ray enhancement (ACRE) event on 5 November 2023 due to complex heliospheric conditions.*  
   Solar Physics, 299, 97.  
-  https://doi.org/10.1007/s11207-024-02338-3  
+  https://doi.org/10.1007/s11207-024-02338-3
 
 - **Walter, M., Gnebner, C., Heber, B., Herbst, K., Krüger, H., et al. (2024)**  
   *Measurements of cosmic rays by a mini-neutron monitor at Neumayer III from 2014 to 2017.*  
   Space Weather, 22, e2023SW003596.  
-  https://doi.org/10.1029/2023SW003596  
+  https://doi.org/10.1029/2023SW003596
 
 ---
 
@@ -137,7 +141,7 @@ This page lists scientific publications utilising **OTSO**.
 - **Larsen, N., & Mishev, A. (2023)**  
   *Analysis of the ground level enhancement GLE 60 on 15 April 2001, and its space weather effects: Comparison with dosimetric measurements.*  
   Space Weather, 21, e2023SW003488.  
-  https://doi.org/10.1029/2023SW003488  
+  https://doi.org/10.1029/2023SW003488
 
 ---
 
@@ -146,11 +150,11 @@ This page lists scientific publications utilising **OTSO**.
 - **Mishev, A., Kocharov, L., Koldobskiy, A., et al. (2022)**  
   *High-resolution spectral and anisotropy characteristics of solar protons during GLE №73 on 28 October 2021 derived with neutron-monitor data analysis.*  
   Solar Physics, 297, 88.  
-  https://doi.org/10.1007/s11207-022-02026-0  
+  https://doi.org/10.1007/s11207-022-02026-0
 
 - **Mishev, A., Binios, A., Turunen, E., et al. (2022)**  
   *Measurements of natural radiation with an MDU Liulin-type device at ground and in the atmosphere in Arctic conditions.*  
   Radiation Measurements, 154, 106757.  
-  https://doi.org/10.1016/j.radmeas.2022.106757  
+  https://doi.org/10.1016/j.radmeas.2022.106757
 
 ---
