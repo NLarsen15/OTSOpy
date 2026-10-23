@@ -195,8 +195,6 @@ def DownloadServerFile(OMNIYEAR, g, h):
     if soho_data_pull.celias_url_exists(OMNIYEAR) and OMNIYEAR >= 1996:
         soho_data_pull.download_and_unpack_celias(OMNIYEAR)
     omni_data_pull.PullOMNI(OMNIYEAR)
-    omni_data_pull.TSY01(f'omni_{OMNIYEAR}_high_res.csv')
-    omni_data_pull.TSY01(f'omni_{OMNIYEAR}_low_res.csv')
     omni_data_pull.Combine(f'omni_{OMNIYEAR}_high_res.csv', f'omni_{OMNIYEAR}_low_res.csv',
                      f'TSY15_{OMNIYEAR}.csv', OMNIYEAR)
     tsy04_param_generator.TSY04_param_generator(OMNIYEAR)

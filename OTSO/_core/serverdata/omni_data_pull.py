@@ -255,37 +255,20 @@ def PullOMNI(year):
 def PullOMNILowRes(year):
     download_omni_low_res_data(year)
 
-def TSY01(File):
+def compute_G_parameters(df):
     """
-    Computes rolling G1/G2/G3 (TSY01 storm-time indices) for each row from a trailing,
-    time-based window: up to 12 rows (~1h at 5-min resolution) further restricted to
-    Date > current_row_time - 1h. G1 and G2 are the window MEAN of a per-row term; G3
-    is the window SUM (not mean) of a different per-row term divided by 2000 - this
-    mirrors the original per-row implementation exactly (verified by fuzz-testing
-    against it across thousands of synthetic rows, including gaps, filler V==9999.0,
-    negative V, and the By==Bz==0 edge case).
+    G1/G2/G3 driving parameters of TSY01 and TSY01S as means over the trailing 1-hour
+    window (Date - 1h, Date]: G1 = <V h(B_perp) sin^3(theta/2)> and G2 = <V Bs>/200
+    (Tsyganenko 2002b), G3 = <N V Bs>/2000 (Tsyganenko, Singer & Kasper 2003).
 
-    Vectorized because the original ran a full Python loop with a fresh pandas window
-    slice per row - about 105k rows/year of 5-minute data, which made this the slowest
-    step in downloading a new year's server data.
-
-    One deliberate behavior change: if Bz is NaN, the original crashes with
-    UnboundLocalError (its if/elif on Bz<0 / Bz>=0 leaves `Bs` unassigned for NaN).
-    Here it propagates as NaN instead, poisoning just that row's window - NaN Bz is not
-    expected in practice (OMNI files always populate the field, filler value or not),
-    but crashing on it serves nothing.
+    `df` is the combined 5-minute series indexed by Date with By, Bz, V and Density,
+    after hourly fallback and gap filling, so every row uses the same window whichever
+    source its values came from. A window containing any missing value gives NaN.
     """
-    filepath = os.path.join(SCRATCH_DIR, File)
-    data = pd.read_csv(filepath)
-
-    data['Date'] = pd.to_datetime(data['Date'])
-
-    By = data['By'].to_numpy(dtype=float)
-    Bz = data['Bz'].to_numpy(dtype=float)
-    V = data['V'].to_numpy(dtype=float)
-    N = data['Density'].to_numpy(dtype=float)
-
-    V = np.where(V == 9999.0, np.nan, np.abs(V))
+    By = df['By'].to_numpy(dtype=float)
+    Bz = df['Bz'].to_numpy(dtype=float)
+    V = np.abs(df['V'].to_numpy(dtype=float))
+    N = df['Density'].to_numpy(dtype=float)
 
     B = np.sqrt(By ** 2 + Bz ** 2)
     h = (B / 40) ** 2 / (1 + B / 40)
@@ -296,34 +279,17 @@ def TSY01(File):
 
     Bs = np.where(Bz < 0, np.abs(Bz), np.where(Bz >= 0, 0.0, np.nan))
 
-    term1 = V * h * np.sin(phi / 2) ** 3  # feeds G1 (window mean)
-    term2 = V * Bs                        # feeds G2 (window mean)
-    term3 = N * V * Bs                    # feeds G3 (window sum)
-
-    dt_index = pd.DatetimeIndex(data['Date'])
-    row_count = pd.Series(1.0, index=dt_index).rolling('1h', min_periods=1).sum()
-
-    def rolling_sum_poisoned(term):
-        s = pd.Series(term, index=dt_index)
-        window_sum = s.rolling('1h', min_periods=1).sum()
+    def window_mean(term):
+        s = pd.Series(term, index=df.index)
+        mean = s.rolling('1h', min_periods=1).mean()
         any_nan_in_window = s.isna().astype(float).rolling('1h', min_periods=1).max() > 0
-        return window_sum.where(~any_nan_in_window, np.nan)
+        return mean.where(~any_nan_in_window, np.nan)
 
-    sum1 = rolling_sum_poisoned(term1)
-    sum2 = rolling_sum_poisoned(term2)
-    sum3 = rolling_sum_poisoned(term3)
-
-    G1_values = np.round((sum1 / row_count).to_numpy(), 2)
-    G2_values = np.round((0.005 * sum2 / row_count).to_numpy(), 2)
-    G3_values = np.round((sum3 / 2000).to_numpy(), 2)
-
-    pdyn_index = data.columns.get_loc('Pdyn') + 1
-
-    data.insert(pdyn_index, 'G1', G1_values)
-    data.insert(pdyn_index + 1, 'G2', G2_values)
-    data.insert(pdyn_index + 2, 'G3', G3_values)
-
-    data.to_csv(filepath, index=False)
+    return pd.DataFrame({
+        'G1': window_mean(V * h * np.sin(phi / 2) ** 3).round(2),
+        'G2': (window_mean(V * Bs) / 200).round(2),
+        'G3': (window_mean(N * V * Bs) / 2000).round(2),
+    }, index=df.index)
 
 def CombineLowRes(input_file, year):
     df = pd.read_csv(input_file)
@@ -356,7 +322,6 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
     high_res_file = os.path.join(base_dir, high_res_file)
     low_res_file = os.path.join(base_dir, low_res_file)
     TSY15file = os.path.join(base_dir, TSY15file)
-    futurefile = os.path.join(base_dir, f'omni_{year+1}_low_res.csv')
 
     high_res_df = pd.read_csv(high_res_file, parse_dates=['Date']).set_index('Date')
     low_res_df = pd.read_csv(low_res_file, parse_dates=['Date']).set_index('Date')
@@ -394,12 +359,13 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
         print(f"TSY15 file not found: {TSY15file}")
     
 
+    # An OMNI hourly record stamped HH:00 covers HH:00-HH:59 (Dst and Kp included), so
+    # each value is repeated over its own hour; reindex so the last hour of the file
+    # also gets its :05-:55 rows instead of ending at its HH:00 stamp
     low_res_5min = low_res_df.resample('5min').ffill()
-    
-
-    if 'Dst' in low_res_df.columns:
-        low_res_df.index = low_res_df.index + pd.Timedelta(hours=1)
-        low_res_5min['Dst'] = low_res_df['Dst'].resample('5min').ffill().astype(int)
+    last_hour = pd.date_range(low_res_5min.index.min(),
+                              low_res_5min.index.max() + pd.Timedelta(minutes=55), freq='5min')
+    low_res_5min = low_res_5min.reindex(last_hour).ffill(limit=11)
 
     # Copy By and Bz to By_avg and Bz_avg for low resolution data
     if 'By' in low_res_5min.columns:
@@ -428,25 +394,6 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
     
     if 'V' in combined_df.columns:
         combined_df['V'] = combined_df['V'].abs()
-
-    # Fill final Dec 31 values from following year if available
-    # Only attempt if not the current year (future file won't exist yet)
-    current_year = datetime.now().year
-    if year < current_year and os.path.exists(futurefile):
-        future_df = pd.read_csv(futurefile)
-        dst_value = future_df.loc[0, 'Dst'] if 'Dst' in future_df.columns else None
-        kp_value = future_df.loc[0, 'Kp'] if 'Kp' in future_df.columns else None
-        kp_raw_value = future_df.loc[0, 'Kp_raw'] if 'Kp_raw' in future_df.columns else None
-        if dst_value is not None and kp_value is not None:
-            mask = (combined_df['Date'].dt.year == year) & \
-                   (combined_df['Date'].dt.month == 12) & \
-                   (combined_df['Date'].dt.day == 31) & \
-                   (combined_df['Date'].dt.hour == 23) & \
-                   (combined_df['Date'].dt.minute >= 5)
-            combined_df.loc[mask, 'Dst'] = dst_value
-            combined_df.loc[mask, 'Kp'] = kp_value
-            if kp_raw_value is not None:
-                combined_df.loc[mask, 'Kp_raw'] = kp_raw_value
 
     # Ensure column completeness and order
     desired_order = ['Date', 'Bx', 'By', 'Bz', 'By_avg', 'Bz_avg', 'V', 'Density', 'Pdyn', 'Dst', 'Kp', 'Kp_raw',
@@ -529,6 +476,18 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
         df.loc[interpolated, 'Source'] = df.loc[interpolated, 'Source'].clip(lower=4)
         df.loc[still_missing.any(axis=1), 'Source'] = 5
         df['Source'] = df['Source'].astype(int)
+
+    # G1-G3 from the final series; the prior year's last hour warms up the window
+    g_inputs = df[['By', 'Bz', 'V', 'Density']]
+    prior_tail = load_prior_year_tail(year, hours=1)
+    if prior_tail is not None and not prior_tail.empty and {'By', 'Density'} <= set(prior_tail.columns):
+        warmup = prior_tail.set_index('Date')[['By', 'Bz', 'V', 'Density']].apply(pd.to_numeric, errors='coerce')
+        g_inputs = pd.concat([warmup[warmup.index < df.index.min()], g_inputs])
+    G = compute_G_parameters(g_inputs).loc[df.index]
+    df = df.drop(columns=['G1', 'G2', 'G3'], errors='ignore')
+    position = df.columns.get_loc('Kp_raw') + 1 if 'Kp_raw' in df.columns else len(df.columns)
+    for i, col in enumerate(['G1', 'G2', 'G3']):
+        df.insert(position + i, col, G[col])
     df = df.reset_index()
     df.to_csv(tsy_inputs_path, index=False)
 

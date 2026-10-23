@@ -27,3 +27,5 @@ When more than one applies, a row gets the highest code.
 | 6 | Before 1981: hourly OMNI Kp and Dst only. No solar wind or IMF data exist, and those values are set to 0. |
 
 Codes 2–6 mark inputs that are not direct 5-minute OMNI measurements, which may be worth stating in publications. Files downloaded with OTSO versions before 1.3.9 have no `Source` column; delete them (`OTSO.clean`) to rebuild them with it.
+
+G1–G3 are means over the preceding hour of the final 5-minute series: G1 = ⟨V h(B⊥) sin³(θ/2)⟩, G2 = ⟨V Bs⟩/200 (Tsyganenko 2002b) and G3 = ⟨N V Bs⟩/2000 (Tsyganenko et al. 2003).
