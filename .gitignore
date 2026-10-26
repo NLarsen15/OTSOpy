@@ -14,3 +14,6 @@ src/fortran/*.so
 src/fortran/*.pyd
 src/fortran/*.o
 src/fortran/*.mod
+
+# Server data downloaded at run time
+OTSO/_core/serverdata/ServerData/

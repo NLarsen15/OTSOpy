@@ -263,11 +263,11 @@ class RigidityParams(TypedDict, total=False):
     startrigidity: float  # Initial rigidity (GV)
     endrigidity: float    # Final rigidity (GV)
     rigiditystep: float   # Rigidity step size (GV)
-    rigidityscan: str     # Enable/disable scanning
+    rigidityscan: str     # "ADAPTIVE", "ON" or "OFF"
     
     # Default values
     DEFAULTS = {
-        "startrigidity": 20, "endrigidity": 0, "rigiditystep": 0.01, "rigidityscan": "ON"
+        "startrigidity": 20, "endrigidity": 0, "rigiditystep": 0.01, "rigidityscan": "ADAPTIVE"
     } # type: ignore
 
 
@@ -395,11 +395,14 @@ class GridParams(TypedDict, total=False):
     maxlong: float
     minlong: float
     array_of_lats_and_longs: Optional[list]
+    grid_type: str
+    nside: int
     
     # Default values
     DEFAULTS = {
         "latstep": -5, "longstep": 5, "maxlat": 90, "minlat": -90,
-        "maxlong": 360, "minlong": 0, "array_of_lats_and_longs": None
+        "maxlong": 360, "minlong": 0, "array_of_lats_and_longs": None,
+        "grid_type": "regular", "nside": 12
     } # type: ignore
 
 

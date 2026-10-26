@@ -82,6 +82,8 @@ class PlanetData:
     AdaptiveExternalModel: bool
     array_of_lats_and_longs: Optional[Sequence[float]]
     grid_params_user_set: Optional[bool]
+    grid_type: str
+    nside: int
     mintrapdist: float
     delim: str
     adaptivestep: bool

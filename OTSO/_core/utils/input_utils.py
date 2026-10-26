@@ -248,8 +248,10 @@ def rigidityscan_check(rigidityscan: str) -> int:
          return 1
     elif rigidityscan == "OFF":
          return 0
+    elif rigidityscan == "ADAPTIVE":
+         return 2
     else:
-         print("Please enter a valid rigidityscan value: ""ON"" or ""OFF"" ")
+         print("Please enter a valid rigidityscan value: ""ADAPTIVE"", ""ON"" or ""OFF"" ")
          exit()
 
 def cutoff_comp_check(cutoff_comp: str, zenith: float = None, azimuth: float = None) -> tuple[int, float, float]:

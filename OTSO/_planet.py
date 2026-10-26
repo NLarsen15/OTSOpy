@@ -113,6 +113,8 @@ def planet(
         AdaptiveExternalModel = kwargs['AdaptiveExternalModel'], 
         array_of_lats_and_longs = kwargs['array_of_lats_and_longs'],
         grid_params_user_set = grid_params_user_set,  # Pass the flag indicating user-set grid params
+        grid_type = kwargs.get('grid_type', 'regular'),
+        nside = kwargs.get('nside', 12),
         mintrapdist = kwargs['mintrapdist'], 
         unit = kwargs['unit'], 
         asymptotic = kwargs['asymptotic'],

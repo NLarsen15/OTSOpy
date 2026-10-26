@@ -3,7 +3,7 @@ from datetime import datetime
 import warnings # Import warnings
 import psutil
 
-from ..utils import input_utils, tsy_params_utils
+from ..utils import input_utils, tsy_params_utils, grid_utils
 from ..citation_generator import get_citations
 from ..custom_classes import date, solar_wind
 from ..livedata import pull_live_data
@@ -165,7 +165,20 @@ def PlanetInputs(Data: 'PlanetData') -> None: # Add flag
         if Data.grid_params_user_set:
         # if latstep is not None or longstep is not None or maxlat is not None or minlat is not None or maxlong is not None or minlong is not None: # Old check
             warnings.warn("Both array_of_lats_and_longs and step/range parameters were provided. The array_of_lats_and_longs will be used.", UserWarning)
+        if Data.grid_type != "regular":
+            warnings.warn(f"Both array_of_lats_and_longs and grid_type={Data.grid_type!r} were provided. The array_of_lats_and_longs will be used.", UserWarning)
         # --- End Conditional Warning ---
+    elif Data.grid_type != "regular":
+        # Equal-area grid (HEALPix, optionally in centred-dipole coordinates for this date, or Fibonacci); geodetic latitudes for GDZ input
+        if Data.grid_params_user_set:
+            warnings.warn(f"grid_type={Data.grid_type!r} ignores latstep, longstep and the latitude/longitude bounds.", UserWarning)
+        points = grid_utils.generate_grid(Data.grid_type, Data.nside, Data.g, Data.h,
+                                          geodetic=Data.inputcoord == "GDZ")
+        coordinate_pairs = points.tolist()
+        LatitudeList_meta = sorted(np.unique(points[:, 0]), reverse=True)
+        LongitudeList_meta = sorted(np.unique(points[:, 1]))
+        Data.LatitudeList_meta = LatitudeList_meta
+        Data.LongitudeList_meta = LongitudeList_meta
     else:
         # Generate grid using step/range parameters (which now have defaults)
         # Remove the check for missing parameters, as they have defaults now.

@@ -264,7 +264,9 @@ def cutoff(
             - `startrigidity` (`float`, default=20): Initial rigidity (GV)
             - `endrigidity` (`float`, default=0): Final rigidity (GV)
             - `rigiditystep` (`float`, default=0.01): Step size (GV)
-            - `rigidityscan` (`str`, default="ON"): Enable scanning ("ON"/"OFF")
+            - `rigidityscan` (`str`, default="ADAPTIVE"): Penumbra scanning ("ADAPTIVE"/"ON"/"OFF").
+              "ADAPTIVE" extends the fine scan until the penumbra is bounded by clean guard bands;
+              "ON" uses a fixed ±0.75 GV window around a 0.25 GV coarse scan; "OFF" scans the full range
 
         asymptotic_params (AsymptoticParams): Asymptotic computation parameters.
 
@@ -809,7 +811,9 @@ def planet(
             - `startrigidity` (`float`, default=20): Initial rigidity (GV)
             - `endrigidity` (`float`, default=0): Final rigidity (GV)
             - `rigiditystep` (`float`, default=0.01): Step size (GV)
-            - `rigidityscan` (`str`, default="ON"): Enable scanning ("ON"/"OFF")
+            - `rigidityscan` (`str`, default="ADAPTIVE"): Penumbra scanning ("ADAPTIVE"/"ON"/"OFF").
+              "ADAPTIVE" extends the fine scan until the penumbra is bounded by clean guard bands;
+              "ON" uses a fixed ±0.75 GV window around a 0.25 GV coarse scan; "OFF" scans the full range
 
         asymptotic_params (AsymptoticParams): Asymptotic computation parameters.
 
@@ -902,6 +906,8 @@ def planet(
             - `maxlong` (`float`, default=360):  Maximum longitude for grid
             - `minlong` (`float`, default=0):  Minimum longitude for grid
             - `array_of_lats_and_longs` (`list`, default=None):  Custom grid points
+            - `grid_type` (`str`, default="regular"):  "regular" (latstep/longstep grid), "healpix" (equal-area HEALPix points), "healpix_geomag" (HEALPix rings laid out in centred-dipole coordinates for the date; most accurate per point) or "fibonacci" (golden-angle spiral)
+            - `nside` (`int`, default=12):  Resolution for the equal-area grid types: 12 * nside**2 points (12 -> 1728 points, ~550 km spacing, like a 5° grid at the equator)
 
         coordinate_params (CoordinateParams): Coordinate systems.
 
@@ -1319,7 +1325,9 @@ def flight(
             - `startrigidity` (`float`, default=20): Initial rigidity (GV)
             - `endrigidity` (`float`, default=0): Final rigidity (GV)
             - `rigiditystep` (`float`, default=0.01): Step size (GV)
-            - `rigidityscan` (`str`, default="ON"): Enable scanning ("ON"/"OFF")
+            - `rigidityscan` (`str`, default="ADAPTIVE"): Penumbra scanning ("ADAPTIVE"/"ON"/"OFF").
+              "ADAPTIVE" extends the fine scan until the penumbra is bounded by clean guard bands;
+              "ON" uses a fixed ±0.75 GV window around a 0.25 GV coarse scan; "OFF" scans the full range
 
         asymptotic_params (AsymptoticParams): Asymptotic computation parameters.
 
@@ -1725,6 +1733,8 @@ def trace(
     final_computation.pop("threadnum", None)
     final_computation.pop("delim", None)
     final_grid.pop("array_of_lats_and_longs", None)
+    final_grid.pop("grid_type", None)
+    final_grid.pop("nside", None)
 
 
     return trace_func(
@@ -2265,7 +2275,9 @@ def skymap(
             - `startrigidity` (`float`, default=20): Initial rigidity (GV)
             - `endrigidity` (`float`, default=0): Final rigidity (GV)
             - `rigiditystep` (`float`, default=0.01): Step size (GV)
-            - `rigidityscan` (`str`, default="ON"): Enable scanning ("ON"/"OFF")
+            - `rigidityscan` (`str`, default="ADAPTIVE"): Penumbra scanning ("ADAPTIVE"/"ON"/"OFF").
+              "ADAPTIVE" extends the fine scan until the penumbra is bounded by clean guard bands;
+              "ON" uses a fixed ±0.75 GV window around a 0.25 GV coarse scan; "OFF" scans the full range
 
         skymap_params (SkymapParams): Sky map zenith and azimuth resolution parameters
 
