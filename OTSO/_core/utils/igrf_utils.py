@@ -177,13 +177,13 @@ def extrapolate_beyond_last_epoch(df: pd.DataFrame, target_year: float, last_yea
             sv_value = float(sv_value)
         
         index = geopack_index(degree, order)
-        
-    if 1 <= index <= 136:
+
+        if 1 <= index <= 136:
             if coeff_type == 'g':
                 G_sv[index] = sv_value
             elif coeff_type == 'h':
                 H_sv[index] = sv_value
-    
+
     G_extrap = G_base.copy()
     H_extrap = H_base.copy()
     for i in range(1, min(46, 137)):

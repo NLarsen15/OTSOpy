@@ -340,12 +340,12 @@
 
 
        IF (model(4) == 4) THEN
-       IF (Zscore .GT. 1.2D0) THEN
-       !print *, "DST is much higher than expected for this Kp, using refit parameters"
-       AK5= A(5)
-       ELSE
-       !print *, "DST is within expected range or below for the given Kp."
+       IF (Zscore .LT. -1.2D0) THEN
+       !print *, "DST is much stronger than expected for this Kp, averaging refit and Boberg"
        AK5 = ((-2923.09D0*(abs(DST)+2.01D0)**0.78) + A(5)) / 2
+       ELSE
+       !print *, "DST is within the expected range for this Kp, using refit parameters"
+       AK5= A(5)
        END IF
        END IF
 
