@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from .extract import *
 from ..utils.tsy_params_utils import TSY01_Constants
+from ..utils import net_utils
 
 output_directory = LIVEDATA_DIR
 
@@ -29,22 +30,22 @@ def _fetch_with_retry(fetch_fn, url, label):
     return None
 
 def fetch_data_Space(urlSpace: str) -> dict:
-    response = requests.get(urlSpace, timeout=REQUEST_TIMEOUT)
+    response = net_utils.get(urlSpace, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     return response.json()
 
 def fetch_data_Mag(urlMag: str) -> dict:
-    response = requests.get(urlMag, timeout=REQUEST_TIMEOUT)
+    response = net_utils.get(urlMag, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     return response.json()
 
 def fetch_data_Dst(urlDst: str) -> str:
-    responseDst = requests.get(urlDst, timeout=REQUEST_TIMEOUT)
+    responseDst = net_utils.get(urlDst, timeout=REQUEST_TIMEOUT)
     responseDst.raise_for_status()
     return responseDst.text
 
 def fetch_data_Kp(urlKp: str) -> str:
-    responseKp = requests.get(urlKp, timeout=REQUEST_TIMEOUT)
+    responseKp = net_utils.get(urlKp, timeout=REQUEST_TIMEOUT)
     responseKp.raise_for_status()
     return responseKp.text
 

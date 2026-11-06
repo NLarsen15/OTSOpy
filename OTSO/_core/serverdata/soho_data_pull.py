@@ -6,11 +6,12 @@ import re
 import os
 
 from .scratch_dir import SCRATCH_DIR
+from ..utils import net_utils
 
 def celias_url_exists(year: int) -> bool:
     data_url = f"https://l1.umd.edu/data/{year}_CELIAS_Proton_Monitor_5min.zip"
     try:
-        response = requests.head(data_url, allow_redirects=True, timeout=10)
+        response = net_utils.head(data_url, allow_redirects=True, timeout=10)
         return response.status_code == 200
     except Exception:
         return False
@@ -18,7 +19,7 @@ def celias_url_exists(year: int) -> bool:
 def download_and_unpack_celias(YEAR: int) -> None:
         
     data_url = f"https://l1.umd.edu/data/{YEAR}_CELIAS_Proton_Monitor_5min.zip"
-    response = requests.get(data_url, timeout=30)
+    response = net_utils.get(data_url, timeout=30)
     response.raise_for_status()
     script_dir = SCRATCH_DIR
 

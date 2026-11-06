@@ -11,6 +11,7 @@ from ..libs.MiddleMan import Middleman as OTSOLib
 from ..utils.tsy_params_utils import N_index_normalized, B_index
 from .scratch_dir import SCRATCH_DIR
 from .prior_year import load_prior_year_tail
+from ..utils import net_utils
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -526,7 +527,7 @@ def check_and_download_tsy15_data(year):
     # print(f"URL: {tsy15_url}")
     
     try:
-        response = requests.get(tsy15_url, stream=True, verify=False, timeout=30)
+        response = net_utils.get(tsy15_url, stream=True, verify=False, timeout=30)
         response.raise_for_status()
         
         with open(local_filename, 'wb') as f:
@@ -552,14 +553,14 @@ def download_omni_file(year):
     try:
         total_size = 0
         try:
-            response = requests.head(url, timeout=10)
+            response = net_utils.head(url, timeout=10)
             response.raise_for_status()
             total_size = int(response.headers.get('content-length', 0))
         except requests.exceptions.RequestException:
             #print("Could not determine file size, showing download amount only...")
             pass
 
-        response = requests.get(url, stream=True, timeout=30)
+        response = net_utils.get(url, stream=True, timeout=30)
         response.raise_for_status()
         
         downloaded_size = 0

@@ -3,6 +3,8 @@ import json
 import hashlib
 from pathlib import Path
 
+from .. import net_utils
+
 
 ZENODO_API = "https://zenodo.org/api"
 TIMEOUT = 30
@@ -36,6 +38,7 @@ def download_mat_only(doi, out_dir=None):
         Paths to the downloaded/existing .mat files.
     """
 
+    net_utils.check_ipv6(ZENODO_API)   # IPv4 fallback if Zenodo's IPv6 is unreachable
     s = requests.Session()
 
     s.headers.update({

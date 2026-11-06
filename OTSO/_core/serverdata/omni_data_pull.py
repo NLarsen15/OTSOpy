@@ -6,6 +6,8 @@ import shutil
 import os
 import requests
 
+from ..utils import net_utils
+
 from ..utils.tsy_params_utils import Pdyn_comp
 from . import soho_data_pull
 from .scratch_dir import SCRATCH_DIR
@@ -42,7 +44,7 @@ def download_omni_data(year):
     #print(f"Saving to: {save_path}")
 
     try:
-        response = requests.get(url, stream=True, timeout=30)
+        response = net_utils.get(url, stream=True, timeout=30)
         response.raise_for_status()
 
         with open(save_path, 'wb') as f:
@@ -75,7 +77,7 @@ def download_omni_low_res_data(year):
     #print(f"Downloading {file_name}...")
     
     try:
-        response = requests.get(url, stream=True, timeout=30)
+        response = net_utils.get(url, stream=True, timeout=30)
         response.raise_for_status()
 
         with open(file_path, 'wb') as f:

@@ -1,9 +1,9 @@
 import sys, os, csv
 import shutil
 import pandas as pd
-import urllib.request
 from typing import List, Tuple
 from ._core.utils.chaos_utils import chaos_download
+from ._core.utils import net_utils
 
 def clean():
     print("Cleaning OTSO...")
@@ -101,16 +101,17 @@ def find_latest_igrf_url(base_url: str = "https://www.ngdc.noaa.gov/IAGA/vmod/co
         test_url = f"{base_url}igrf{generation}coeffs.txt"
         try:
             # Try to open the URL and read just the first few bytes to check if it exists
-            with urllib.request.urlopen(test_url) as response:
-                # If we can read the first 100 characters without error, the file exists
-                first_bytes = response.read(100)
-                if b'Generation International Geomagnetic Reference Field' in first_bytes or b'IGRF' in first_bytes:
-                    latest_valid_generation = generation
-                    latest_valid_url = test_url
-                    generation += 1  # Check the next generation
-                else:
-                    # File exists but doesn't seem to be an IGRF file
-                    break
+            response = net_utils.get(test_url, timeout=30)
+            response.raise_for_status()
+            # If we can read the first 100 characters without error, the file exists
+            first_bytes = response.content[:100]
+            if b'Generation International Geomagnetic Reference Field' in first_bytes or b'IGRF' in first_bytes:
+                latest_valid_generation = generation
+                latest_valid_url = test_url
+                generation += 1  # Check the next generation
+            else:
+                # File exists but doesn't seem to be an IGRF file
+                break
         except Exception:
             # File doesn't exist or can't be accessed, we've found the latest
             break
@@ -128,8 +129,9 @@ def download_igrf_data(url: str = None) -> List[str]:
         url, _ = find_latest_igrf_url()
 
     try:
-        with urllib.request.urlopen(url) as response:
-            data = response.read().decode('utf-8')
+        response = net_utils.get(url, timeout=60)
+        response.raise_for_status()
+        data = response.content.decode('utf-8')
         return data.strip().split('\n')
     except Exception as e:
         print(f"Error downloading IGRF data from {url}: {e}")
