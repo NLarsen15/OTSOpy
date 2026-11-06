@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+from functools import lru_cache
 from typing import Tuple
 
 def decimal_year_from_date_array(date_array) -> float:
@@ -20,13 +21,20 @@ def decimal_year_from_date_array(date_array) -> float:
     
     return decimal_year
 
+@lru_cache(maxsize=4)
+def _read_igrf_csv(csv_file_path: str, mtime: float) -> pd.DataFrame:
+    # Cached per file version (mtime), so an IGRF update (OTSO.IGRFupdate) is picked up.
+    return pd.read_csv(csv_file_path)
+
 def load_igrf_data(csv_file: str) -> pd.DataFrame:
+    """The coefficient table; read once per file version and shared between calls (treat
+    it as read-only)."""
     script_dir = os.path.dirname(os.path.realpath(__file__))
     subfolder_name = ''
     csv_file_name = csv_file
     
     csv_file_path = os.path.join(script_dir, subfolder_name, csv_file_name)
-    return pd.read_csv(csv_file_path)
+    return _read_igrf_csv(csv_file_path, os.path.getmtime(csv_file_path))
 
 def get_coefficient_value(df: pd.DataFrame, coeff_type: str, degree: int, order: int, year_col: str) -> float:
     mask = (df['coeff'] == coeff_type) & (df['SH_degree'] == degree) & (df['SH_order'] == order)
@@ -56,29 +64,30 @@ def geopack_index(degree: int, order: int) -> int:
     
     return count
 
-def create_coefficient_arrays(df: pd.DataFrame, year_col: str) -> Tuple[np.ndarray, np.ndarray]:
+def _geopack_indices(df: pd.DataFrame) -> np.ndarray:
+    """Vectorised geopack_index: (n, m) -> n(n+1)/2 + m + 1 (and 1 for degree 0)."""
+    degree = df['SH_degree'].to_numpy(dtype=np.int64)
+    order = df['SH_order'].to_numpy(dtype=np.int64)
+    return np.where(degree == 0, 1, degree * (degree + 1) // 2 + order + 1)
+
+def _scatter_coefficients(df: pd.DataFrame, year_col: str) -> Tuple[np.ndarray, np.ndarray]:
+    """G/H arrays (index 0-136) from one column of the table; NaN -> 0. As with the former
+    row loop, a later row wins if two rows map to the same index."""
     G = np.zeros(137)  # Index 0-136 for 15th order
     H = np.zeros(137)
-    
-    for _, row in df.iterrows():
-        coeff_type = row['coeff']
-        degree = int(row['SH_degree'])
-        order = int(row['SH_order'])
-        if year_col not in df.columns:
-            continue
-        value = row[year_col]
-        if pd.isna(value):
-            value = 0.0
-        else:
-            value = float(value)
-        index = geopack_index(degree, order)
-        if 1 <= index <= 136:
-            if coeff_type == 'g':
-                G[index] = value
-            elif coeff_type == 'h':
-                H[index] = value
-    
+    if year_col not in df.columns:
+        return G, H
+    index = _geopack_indices(df)
+    values = pd.to_numeric(df[year_col], errors='coerce').fillna(0.0).to_numpy(dtype=float)
+    coeff = df['coeff'].to_numpy()
+    keep = (index >= 1) & (index <= 136)
+    for name, target in (('g', G), ('h', H)):
+        sel = keep & (coeff == name)
+        target[index[sel]] = values[sel]
     return G, H
+
+def create_coefficient_arrays(df: pd.DataFrame, year_col: str) -> Tuple[np.ndarray, np.ndarray]:
+    return _scatter_coefficients(df, year_col)
 
 def interpolate_coefficients(df: pd.DataFrame, target_year: float) -> Tuple[np.ndarray, np.ndarray, float]:
     year_cols = [col for col in df.columns if col not in ['coeff', 'SH_degree', 'SH_order']]
@@ -159,30 +168,7 @@ def extrapolate_beyond_last_epoch(df: pd.DataFrame, target_year: float, last_yea
     last_year_col = str(int(last_year))
     G_base, H_base = create_coefficient_arrays(df, last_year_col)
     
-    G_sv = np.zeros(137)
-    H_sv = np.zeros(137)
-    
-    for _, row in df.iterrows():
-        coeff_type = row['coeff']
-        degree = int(row['SH_degree'])
-        order = int(row['SH_order'])
-        
-        if sv_col not in df.columns:
-            continue
-            
-        sv_value = row[sv_col]
-        if pd.isna(sv_value):
-            sv_value = 0.0
-        else:
-            sv_value = float(sv_value)
-        
-        index = geopack_index(degree, order)
-
-        if 1 <= index <= 136:
-            if coeff_type == 'g':
-                G_sv[index] = sv_value
-            elif coeff_type == 'h':
-                H_sv[index] = sv_value
+    G_sv, H_sv = _scatter_coefficients(df, sv_col)
 
     G_extrap = G_base.copy()
     H_extrap = H_base.copy()

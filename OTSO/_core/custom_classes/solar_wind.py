@@ -9,6 +9,11 @@ class SolarWind:
     self.By = By
     self.Bz = Bz
     self.Density = Density
+    # Pdyn = 0 means "compute from density and velocity". Done here, with OMNI's convention
+    # P = 2e-6 Np V^2 (nPa; see tsy_params_utils.Pdyn_comp), so the Fortran never falls back
+    # to its own proton-only formula (~17% lower than OMNI's pressure).
+    if Pdyn == 0 and Density > 0:
+      Pdyn = 2e-6 * Density * (Vx**2 + Vy**2 + Vz**2)
     self.Pdyn = Pdyn
     self.Dst = Dst
     self.G1 = G1

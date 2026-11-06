@@ -133,25 +133,20 @@ def compute_corrected_symh_basic(symh_values, pdyn_values):
     return result
 
 def compute_rolling_average_centered(values, window_size=6):
-    try:
-        import numpy as np
-        n = len(values)
-        rolling_avg = np.full(n, np.nan)
-        half_window = window_size // 2
-        
-        input_values = np.array(values)
-        
-        for i in range(n):
-            start_idx = max(0, i - half_window)
-            end_idx = min(n, i + half_window + 1)
-            window_values = input_values[start_idx:end_idx]
-            
-            valid_values = window_values[~np.isnan(window_values)]
-            if len(valid_values) > 0:
-                rolling_avg[i] = np.mean(valid_values)
-        return rolling_avg
-    except ImportError:
-        return compute_rolling_average_centered_basic(values, window_size)
+    """Mean of the valid values in [i - w//2, i + w//2] (truncated at the ends; NaN where a
+    window has none). Vectorised: NaN contributes 0 to the sum and not to the count, which
+    adds the same values in the same order as averaging the valid values row by row."""
+    import numpy as np
+    from numpy.lib.stride_tricks import sliding_window_view
+    values = np.asarray(values, dtype=float)
+    half = window_size // 2
+    padded = np.concatenate([np.full(half, np.nan), values, np.full(half, np.nan)])
+    windows = sliding_window_view(padded, 2 * half + 1)
+    valid = ~np.isnan(windows)
+    count = valid.sum(axis=1)
+    total = np.where(valid, windows, 0.0).sum(axis=1)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        return np.where(count > 0, total / np.maximum(count, 1), np.nan)
 
 def compute_rolling_average_centered_basic(values, window_size=6):
     n = len(values)
@@ -668,88 +663,114 @@ def build_warmup_rows(year, window_size):
         })
     return warmup_rows
 
+_GSE_COLUMNS = ['BX_nT_GSE_GSM', 'BY_nT_GSE', 'BZ_nT_GSE',
+                'Vx_Velocity_km_s', 'Vy_Velocity_km_s', 'Vz_Velocity_km_s', 'Proton_Density_n_cc']
+
+
+def _to_float(text):
+    try:
+        return float(text)
+    except (TypeError, ValueError):
+        return np.nan
+
+
+def _fmt(values, spec):
+    return [format(v, spec) if v == v else "" for v in values]
+
+
 def process_omni_with_instantaneous_indices(g, h, year):
-    # Get the directory of the current script (OTSO package location)
+    """Instantaneous N-index / B-index for every valid row (IMF rotated to GSW with the
+    Fortran gse2gswTSY15), then their 7-point trailing mean (at least 3 valid points),
+    warm-started from the previous year's tail. Writes TSY15_{year}.csv.
+
+    Same rules and output as the former row-by-row version (see compute_instantaneous_indices
+    and calculate_rolling_average_indices), with the bookkeeping vectorised."""
     script_dir = SCRATCH_DIR
     input_file = os.path.join(script_dir, 'tempfile.csv')
     output_file = os.path.join(script_dir, f'TSY15_{year}.csv')
     window_size = 7  # 30 minutes = 7 points for 5-minute resolution
-    
-    #print(f"\nProcessing tempfile.csv with CORRECTED methodology...")
-    #print(f"Note: Solar wind parameters were interpolated during conversion")
-    #print(f"Step 1: Computing instantaneous indices for each point")
-    #print(f"Step 2: Applying {window_size}-point rolling average to indices")
-    
-    # Load all data
-    all_rows = []
-    with open(input_file, 'r') as infile:
-        reader = csv.DictReader(infile)
-        for row in reader:
-            all_rows.append(row)
-    
-    #print(f"Loaded {len(all_rows)} rows of data")
-    
-    # Step 1: Compute instantaneous indices for each point
-    #print("\nComputing instantaneous indices...")
-    processed_rows = []
-    
-    for i, row in enumerate(all_rows):
-        (N_norm, B_idx, bx_gsw, by_gsw, bz_gsw, bt_gsw, V, thetac_gsw, Vx, Vy, Vz, Np) = compute_instantaneous_indices(row, g, h)
-        
-        processed_row = row.copy()
-        processed_row['BX_nT_GSW'] = f"{bx_gsw:.3f}" if bx_gsw is not None else ""
-        processed_row['BY_nT_GSW'] = f"{by_gsw:.3f}" if by_gsw is not None else ""
-        processed_row['BZ_nT_GSW'] = f"{bz_gsw:.3f}" if bz_gsw is not None else ""
-        processed_row['Bt_nT_GSW'] = f"{bt_gsw:.3f}" if bt_gsw is not None else ""
-        processed_row['V_km_s'] = f"{V:.2f}" if V is not None else ""
-        processed_row['Vx_km_s'] = f"{Vx:.2f}" if Vx is not None else ""
-        processed_row['Vy_km_s'] = f"{Vy:.2f}" if Vy is not None else ""
-        processed_row['Vz_km_s'] = f"{Vz:.2f}" if Vz is not None else ""
-        processed_row['Np_cm3'] = f"{Np:.3f}" if Np is not None else ""
-        processed_row['Clock_angle_rad'] = f"{thetac_gsw:.4f}" if thetac_gsw is not None else ""
-        processed_row['N_index_inst'] = f"{N_norm:.6f}" if N_norm is not None else ""
-        processed_row['B_index_inst'] = f"{B_idx:.6f}" if B_idx is not None else ""
-        
-        processed_rows.append(processed_row)
-        
-        #if (i + 1) % 1000 == 0:
-            #print(f"  Processed {i + 1} rows...")
-    
-    #print(f"Instantaneous indices computed for {len(processed_rows)} rows")
 
-    # Step 2: Apply rolling average to the indices, warm-started from the previous
-    # year's tail (if cached) so the year's first points aren't a cold start.
-    #print(f"\nApplying {window_size}-point rolling average to indices...")
+    text = pd.read_csv(input_file, dtype=str, keep_default_na=False)
+    n = len(text)
+
+    invalid_markers = {9999.99, 99999.9, 99.99, 999.99, -9999.99, -99999.9, -99.99, -999.99}
+    numeric = {}
+    valid = np.ones(n, dtype=bool)
+    for col in _GSE_COLUMNS:
+        values = np.array([_to_float(v) for v in text[col]], dtype=float)  # float(), as before
+        numeric[col] = values
+        valid &= np.isfinite(values) & ~np.isin(values, list(invalid_markers))
+
+    bx = np.full(n, np.nan); by = np.full(n, np.nan); bz = np.full(n, np.nan); bt = np.full(n, np.nan)
+    speed = np.full(n, np.nan); theta = np.full(n, np.nan)
+    n_inst = np.full(n, np.nan); b_inst = np.full(n, np.nan)
+    vx, vy, vz = numeric['Vx_Velocity_km_s'], numeric['Vy_Velocity_km_s'], numeric['Vz_Velocity_km_s']
+    np_cm3 = numeric['Proton_Density_n_cc']
+    dates = text['DateTime'].to_numpy()
+
+    for i in np.flatnonzero(valid):
+        x, y, z, t = convert_to_gsw_coordinates(dates[i], vx[i], vy[i], vz[i],
+                                                numeric['BX_nT_GSE_GSM'][i], numeric['BY_nT_GSE'][i],
+                                                numeric['BZ_nT_GSE'][i], g, h)
+        if x is None:
+            valid[i] = False
+            continue
+        V = math.sqrt(vx[i]**2 + vy[i]**2 + vz[i]**2)
+        thetac = math.atan2(y, z)
+        if thetac < 0:
+            thetac += 2 * math.pi
+        bx[i], by[i], bz[i], bt[i], speed[i], theta[i] = x, y, z, t, V, thetac
+        n_inst[i] = N_index_normalized(V, t, thetac)
+        b_inst[i] = B_index(np_cm3[i], V, t, thetac)
+
+    def keep_valid(values):
+        return np.where(valid, values, np.nan)
+
+    out = pd.DataFrame({
+        'DateTime': dates,
+        'BX_nT_GSW': _fmt(bx, '.3f'), 'BY_nT_GSW': _fmt(by, '.3f'), 'BZ_nT_GSW': _fmt(bz, '.3f'),
+        'Bt_nT_GSW': _fmt(bt, '.3f'), 'V_km_s': _fmt(speed, '.2f'),
+        'Vx_km_s': _fmt(keep_valid(vx), '.2f'), 'Vy_km_s': _fmt(keep_valid(vy), '.2f'),
+        'Vz_km_s': _fmt(keep_valid(vz), '.2f'), 'Np_cm3': _fmt(keep_valid(np_cm3), '.3f'),
+        'Clock_angle_rad': _fmt(theta, '.4f'),
+        'Instantaneous_N_index': _fmt(n_inst, '.6f'), 'Instantaneous_B_index': _fmt(b_inst, '.6f'),
+    })
+
+    # The rolling mean works on the values as written (6 decimals), as before
+    n_written = np.array([float(v) if v else np.nan for v in out['Instantaneous_N_index']])
+    b_written = np.array([float(v) if v else np.nan for v in out['Instantaneous_B_index']])
     warmup_rows = build_warmup_rows(year, window_size)
-    results = calculate_rolling_average_indices(warmup_rows + processed_rows, window_size)
-    results = results[len(warmup_rows):]
+    n_warm = len(warmup_rows)
+    if n_warm:
+        n_written = np.concatenate([[float(r['N_index_inst']) if r['N_index_inst'] else np.nan
+                                     for r in warmup_rows], n_written])
+        b_written = np.concatenate([[float(r['B_index_inst']) if r['B_index_inst'] else np.nan
+                                     for r in warmup_rows], b_written])
 
-    # Write results
-    with open(output_file, 'w', newline='') as outfile:
-        fieldnames = ['DateTime', 'BX_nT_GSW', 'BY_nT_GSW', 'BZ_nT_GSW', 'Bt_nT_GSW',
-                     'V_km_s', 'Vx_km_s', 'Vy_km_s', 'Vz_km_s', 'Np_cm3', 'Clock_angle_rad',
-                     'Instantaneous_N_index', 'Instantaneous_B_index',
-                     'N_index', 'B_index', 'SYM_H', 'Valid_points_in_window']
-        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(results)
-    
-    #print(f"\nProcessing complete!")
-    #print(f"Output saved as: {output_file}")
-    
-    # Show preview
-    #print(f"\nPreview of results (first 10 rows with rolling indices):")
-    #print(f"{'DateTime':<20} {'N_inst':>12} {'N_roll':>12} {'B_inst':>12} {'B_roll':>12}")
-    #print(f"{'-'*70}")
-    
-    count = 0
-    for row in results:
-        if row['N_index'] and row['B_index']:
-            #print(f"{row['DateTime']:<20} {row['Instantaneous_N_index']:>12} {row['N_index']:>12} "
-            #      f"{row['Instantaneous_B_index']:>12} {row['B_index']:>12}")
-            count += 1
-            if count >= 10:
-                break
+    def trailing(values):
+        from numpy.lib.stride_tricks import sliding_window_view
+        m = len(values)
+        mean = np.full(m, np.nan)
+        count = np.zeros(m, dtype=int)
+        if m >= window_size:
+            windows = sliding_window_view(values, window_size)
+            ok = ~np.isnan(windows)
+            count[window_size - 1:] = ok.sum(axis=1)
+            total = np.where(ok, windows, 0.0).sum(axis=1)
+            with np.errstate(invalid='ignore', divide='ignore'):
+                mean[window_size - 1:] = np.where(count[window_size - 1:] >= 3,
+                                                  total / np.maximum(count[window_size - 1:], 1), np.nan)
+        return mean[n_warm:], count[n_warm:]
+
+    n_mean, n_count = trailing(n_written)
+    b_mean, b_count = trailing(b_written)
+    full_window = (np.arange(n) + n_warm) >= window_size - 1
+    out['N_index'] = _fmt(n_mean, '.6f')
+    out['B_index'] = _fmt(b_mean, '.6f')
+    out['SYM_H'] = text['SYM_H'].to_numpy() if 'SYM_H' in text.columns else ""
+    out['Valid_points_in_window'] = np.where(full_window, np.minimum(n_count, b_count).astype(str), "")
+
+    out.to_csv(output_file, index=False)
 
 def process_year(year, g, h, check_tsy15=False):
     # Validate year

@@ -80,9 +80,11 @@ Bmag = (X(4)**2 + X(5)**2 + X(6)**2)**(0.5)
 Dst = X(9)
 Vmax = (SW(1)**2 + SW(2)**2 + SW(3)**2)**0.5
 
-! Compute the dynamic pressure from density and velocity only when no pdyn was given
+! Compute the dynamic pressure from density and velocity only when no pdyn was given.
+! OMNI's convention, P = 2e-6 Np V^2 nPa (includes a nominal 4% alpha contribution), as in
+! the Python layer (tsy_params_utils.Pdyn_comp), which normally supplies Pdyn already.
 IF (X(8) == 0) THEN
-    PDYN = ((X(7)*10**6.0) * (1.672621898e-27) * ((Vmax*1000)**2))
+    PDYN = 2.0d-6 * X(7) * Vmax**2 * 1.0d-9
 ELSE
     PDYN = X(8)*10**(-9.0)
 END IF

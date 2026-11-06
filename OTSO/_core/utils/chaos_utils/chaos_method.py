@@ -1,5 +1,6 @@
 import numpy as np
-import chaosmagpy as cp
+# chaosmagpy is imported inside get_chaos_g_h: it takes ~0.6 s to import and is only
+# needed when the CHAOS field is used, but this module is imported by every OTSO function.
 from datetime import datetime, timezone
 import re
 import os
@@ -77,6 +78,8 @@ def get_chaos_g_h(dt, model_path=None, nmax=15):
         model_path = get_latest_chaos_model(data_path)
 
     #print(f"Using CHAOS model: {model_path}")
+
+    import chaosmagpy as cp
 
     # load model
     model = cp.load_CHAOS_matfile(model_path)

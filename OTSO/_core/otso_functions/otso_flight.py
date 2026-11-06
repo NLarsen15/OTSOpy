@@ -8,6 +8,7 @@ import numpy as np
 import tempfile
 from tqdm import tqdm
 import json
+import copy
 
 from ..custom_classes import cores
 from ..livedata import file_clean
@@ -15,6 +16,25 @@ from ..inputs import flight_inputs
 from ..fortran_calls import flight
 from ..readme_generators import flight_readme
 from ..data_classes.flight_data import FlightData
+
+
+# Per-point inputs. Each child process gets its own chunk of these through its arguments, so
+# they are dropped from the copy of the instance sent to the children: pickling every point to
+# every child (several MB for long flights) made process start-up slow and serial.
+_PER_POINT_FIELDS = (
+    "latitudes", "longitudes", "dates", "altitudes", "vx", "vy", "vz", "bx", "by", "bz",
+    "density", "pdyn", "Dst", "G1", "G2", "G3", "W1", "W2", "W3", "W4", "W5", "W6", "kp",
+    "by_avg", "bz_avg", "n_index", "b_index", "sym_h_corrected",
+    "glist", "hlist", "windarraylist", "IOPTlist", "Kplist", "datearraylist", "station_array",
+)
+
+
+def _worker_copy(instance: FlightData) -> FlightData:
+    worker = copy.copy(instance)
+    for name in _PER_POINT_FIELDS:
+        if hasattr(worker, name):
+            setattr(worker, name, None)
+    return worker
 
 
 def OTSO_flight(FlightDataInstance: FlightData) -> list:
@@ -65,6 +85,7 @@ def OTSO_flight(FlightDataInstance: FlightData) -> list:
          pass
 
     ProcessQueue = mp.Queue()
+    WorkerInstance = _worker_copy(FlightDataInstance)
     for Data, Date, I, Wind, worker_file, G, H in zip(Positionlists,DateArrayLists, IOPTLists, WindLists, worker_files, GArrayLists, HArrayLists):
         threads = FlightDataInstance.threadnum
 
@@ -75,7 +96,7 @@ def OTSO_flight(FlightDataInstance: FlightData) -> list:
 
         next_cpu = (next_cpu + threads) % num_available
 
-        Child = mp.Process(target=flight.FortranFlight,  args=(Data, Date, I, Wind, G, H, worker_file, FlightDataInstance, ProcessQueue, cpus))
+        Child = mp.Process(target=flight.FortranFlight,  args=(Data, Date, I, Wind, G, H, worker_file, WorkerInstance, ProcessQueue, cpus))
         ChildProcesses.append(Child)
 
     for a in ChildProcesses:

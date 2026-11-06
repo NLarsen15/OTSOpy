@@ -20,4 +20,4 @@ Defaults are quiet-time values: the median of each input over OMNI data from 199
 | `by_avg` | float | -0.17 | IMF By averaged over the preceding 30 minutes (nT). Needed by TSY15N/TSY15B/TA16. |
 | `bz_avg` | float | 0.59 | IMF Bz averaged over the preceding 30 minutes (nT). Needed by TSY15N/TSY15B/TA16. |
 | `density` | float | 4.94 | Solar wind proton density (particles/cm³). |
-| `pdyn` | float | 1.31 | Solar wind dynamic pressure (nPa). If you set it to 0, or give `density` or a velocity without `pdyn`, OTSO computes it from the density and velocity. |
+| `pdyn` | float | 1.31 | Solar wind dynamic pressure (nPa). If you set it to 0, or give `density` or a velocity without `pdyn`, OTSO computes it from the density and velocity as P = 2×10⁻⁶·N·V² (OMNI's convention, which includes a nominal 4% alpha-particle contribution). |

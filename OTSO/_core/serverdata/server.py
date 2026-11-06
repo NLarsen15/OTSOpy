@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from functools import lru_cache
 import pandas as pd
 import numpy as np
 
@@ -53,16 +54,9 @@ def GetServerData(Date, External, AdaptiveExternalModel=False):
 def _tsy_file_path(year: int) -> str:
     return os.path.join(SERVERDATA_DIR, f'{year}_TSY_Inputs.csv')
 
-def _load_year_dataframe(year: int) -> pd.DataFrame:
-    """Loads and validates one year's TSY input CSV. Raises a clear, specific error if
-    the file is missing/unreadable/malformed instead of returning None, which used to
-    make callers crash several frames away with an opaque "cannot unpack NoneType" error."""
-    TSY_file = _tsy_file_path(year)
-    if not os.path.exists(TSY_file):
-        raise FileNotFoundError(
-            f"Server data for {year} not found at {TSY_file}. "
-            f"Call DownloadServerFile({year}, g, h) first."
-        )
+@lru_cache(maxsize=4)
+def _read_year_csv(TSY_file: str, mtime: float) -> pd.DataFrame:
+    # Cached per file version (mtime): repeated lookups no longer re-read a ~17 MB file.
     try:
         df = pd.read_csv(TSY_file)
     except Exception as e:
@@ -72,11 +66,33 @@ def _load_year_dataframe(year: int) -> pd.DataFrame:
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     return df
 
+def _load_year_dataframe(year: int) -> pd.DataFrame:
+    """Loads and validates one year's TSY input CSV. Raises a clear, specific error if
+    the file is missing/unreadable/malformed instead of returning None, which used to
+    make callers crash several frames away with an opaque "cannot unpack NoneType" error.
+    The DataFrame is cached and shared between calls: treat it as read-only."""
+    TSY_file = _tsy_file_path(year)
+    if not os.path.exists(TSY_file):
+        raise FileNotFoundError(
+            f"Server data for {year} not found at {TSY_file}. "
+            f"Call DownloadServerFile({year}, g, h) first."
+        )
+    return _read_year_csv(TSY_file, os.path.getmtime(TSY_file))
+
+def _match_positions(df: pd.DataFrame, RoundedDates) -> np.ndarray:
+    """Row position of the first row for each date, -1 where there is none."""
+    dates = pd.DatetimeIndex(pd.to_datetime(list(RoundedDates)))
+    index = pd.Index(df['Date'])
+    if index.is_unique:
+        return index.get_indexer(dates)
+    first = pd.Series(np.arange(len(df)), index=index).groupby(level=0).first()
+    return first.reindex(dates).fillna(-1).astype(int).to_numpy()
+
 def _match_row(df: pd.DataFrame, RoundedDate) -> pd.Series:
-    matching_row = df[df['Date'] == RoundedDate]
-    if matching_row.empty:
+    position = _match_positions(df, [RoundedDate])[0]
+    if position < 0:
         raise ValueError(f"No matching server data row found for datetime: {RoundedDate}")
-    return matching_row.iloc[0]
+    return df.iloc[position]
 
 # Magnetospheric model checks, newest to oldest. Each check tells whether the row has
 # everything that model needs; used both for adaptive fallback (try each in turn) and
@@ -223,11 +239,14 @@ def GetServerDataFlight(Dates, External, AdaptiveExternalModel=False):
     unique_years = list(set(dt.year for dt in Dates))
     datadf = load_all_csvs(unique_years)
 
+    rounded = [round_to_nearest_five_minutes(x) for x in Dates]
+    positions = _match_positions(datadf, rounded)      # one indexed lookup for all dates
     serverdata = []
-    for x in Dates:
-        RoundedDate = round_to_nearest_five_minutes(x)
-        data = ExtractServerFlightData(RoundedDate, External, datadf, AdaptiveExternalModel)
-        serverdata.append(data)
+    for RoundedDate, position in zip(rounded, positions):
+        if position < 0:
+            raise ValueError(f"No matching server data row found for datetime: {RoundedDate}")
+        fields, ext = _process_row(datadf.iloc[position], External, AdaptiveExternalModel)
+        serverdata.append(_flight_record(fields, ext))
 
     return serverdata
 
@@ -239,7 +258,9 @@ def load_all_csvs(unique_years):
 def ExtractServerFlightData(RoundedDate, External, datadf, AdaptiveExternalModel=False):
     row_data = _match_row(datadf, RoundedDate)
     fields, External = _process_row(row_data, External, AdaptiveExternalModel)
+    return _flight_record(fields, External)
 
+def _flight_record(fields, External):
     return [fields['Bx'], fields['By'], fields['Bz'], fields['V'], fields['Density'], fields['Pdyn'],
             fields['Kp'], fields['Dst'], fields['G1'], fields['G2'], fields['G3'],
             fields['W1'], fields['W2'], fields['W3'], fields['W4'], fields['W5'], fields['W6'],

@@ -1,6 +1,7 @@
 import requests
 import zipfile
 import pandas as pd
+import numpy as np
 import re
 import os
 
@@ -59,18 +60,14 @@ def download_and_unpack_celias(YEAR: int) -> None:
 
     df = pd.DataFrame(parsed, columns=columns)
 
-    month_map = {m: i for i, m in enumerate(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], 1)}
-    def parse_datetime(row):
-        try:
-            year = int(row['YY'])
-            year += 1900 if year > 50 else 2000
-            doy, hour, minute, second = map(int, re.split('[:]', row['DOY:HH:MM:SS']))
-            from datetime import datetime, timedelta
-            dt = datetime(year, 1, 1) + timedelta(days=doy-1, hours=hour, minutes=minute, seconds=second)
-            return dt
-        except Exception:
-            return pd.NaT
-    df['datetime'] = df.apply(parse_datetime, axis=1)
+    # Vectorised date parsing (same result as the former row-wise apply): two-digit year
+    # (> 50 -> 19xx), day of year and time from the "DOY:HH:MM:SS" field; bad rows -> NaT.
+    yy = pd.to_numeric(df['YY'], errors='coerce')
+    year = yy + np.where(yy > 50, 1900, 2000)
+    parts = df['DOY:HH:MM:SS'].str.split(':', expand=True).apply(pd.to_numeric, errors='coerce')
+    df['datetime'] = (pd.to_datetime(year.astype('Int64').astype(str), format='%Y', errors='coerce')
+                      + pd.to_timedelta(parts[0] - 1, unit='D') + pd.to_timedelta(parts[1], unit='h')
+                      + pd.to_timedelta(parts[2], unit='m') + pd.to_timedelta(parts[3], unit='s'))
     df = df.drop(['YY', 'MON', 'DY', 'DOY:HH:MM:SS'], axis=1)
     cols = ['datetime'] + [c for c in df.columns if c != 'datetime']
     df = df[cols]

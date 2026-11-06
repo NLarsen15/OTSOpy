@@ -118,7 +118,14 @@ def B_index(Np:float, V:float, Bt:float, thetac:float) -> float:
     return B
 
 def Pdyn_comp(Density:float, Vx:float) -> float:
-    Pressure = ((((Density))*10**6)*(1.672621898e-27)*((Vx*1000)**2))*10**(9)
+    """Solar wind dynamic pressure (nPa) from proton density (cm^-3) and speed (km/s).
+
+    Uses OMNI's convention, P = 2e-6 * Np * V^2, which includes a nominal 4% alpha-particle
+    contribution (1.67e-6 * Np * V^2 * (1 + 4 * 0.05)). The server data take their pressure
+    from OMNI, so pressures computed here (SOHO CELIAS fill-in, live data) now match them;
+    the former proton-only formula (1.6726e-6 * Np * V^2) was ~17% lower.
+    """
+    Pressure = 2e-6 * Density * Vx**2
     Pressure = round(Pressure,3)
     return Pressure
 

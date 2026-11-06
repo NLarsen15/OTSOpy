@@ -30,6 +30,13 @@ def download_omni_data(year):
 
     save_path = os.path.join(SCRATCH_DIR, f'omni_5min_{year}.lst')
 
+    # The TSY15 step (tsy15_download.process_year) has normally just downloaded this same
+    # file; reuse it rather than downloading ~35 MB again.
+    already = os.path.join(SCRATCH_DIR, f'omni_5min{year}.asc')
+    if os.path.exists(already) and os.path.getsize(already) > 0:
+        parse_and_convert_to_csv_high_res(already, f'omni_{year}_high_res.csv', year=year)
+        return
+
     #print(f"Downloading OMNI 5-minute data for year {year}...")
     #print(f"URL: {url}")
     #print(f"Saving to: {save_path}")
@@ -82,25 +89,7 @@ def download_omni_low_res_data(year):
         print(f"Error downloading {file_name}: {e}")
         return
 
-    # Only download next year's file if not processing the current year
-    current_year = datetime.now().year
-    if year < current_year:
-        url2 = base_url + file_name2
-        
-        try:
-            response2 = requests.get(url2, stream=True, timeout=30)
-            response2.raise_for_status()
-
-            with open(file_path2, 'wb') as f:
-                for chunk in response2.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-
-            #print(f"Downloaded successfully: {file_path2}")
-            parse_and_convert_to_csv_low_res(file_path2, f'omni_{year+1}_low_res.csv')
-
-        except requests.exceptions.RequestException as e:
-            print(f"Could not download {file_name2}: {e} (this is normal if the file doesn't exist yet)")
+    # (The next year's hourly file used to be downloaded here too, but nothing reads it.)
 
 
 
@@ -118,43 +107,41 @@ def convert_to_datetime(year, decimal_day, hour, minute):
     return datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
 
 def parse_and_convert_to_csv_high_res(input_file, output_file, year=None):
-    """ Parse high-res OMNI data file and convert to CSV with specific columns. """
-    with open(input_file, 'r') as datfile:
-        lines = datfile.readlines()
+    """ Parse high-res OMNI data file and convert to CSV with specific columns.
 
+    Rows with any fill value among the kept fields, or too few fields, are skipped; the
+    values are written as the original text. (Vectorised; same output as the former
+    row-by-row loop.) """
     FILLER_VALUES = {"99999", "9999999", "-999.9", "9999.99", "9999.9", "999.9",
                       "99999.0", "-1.00e+05", "999999", "999.99", "99.99", "9999.0"}
 
-
-    rows = [line.split() for line in lines]
-
     output_headers = ["Date", "Bx", "By", "Bz", "V", "Density", "Pdyn"]
-
     output_path = os.path.join(SCRATCH_DIR, output_file)
 
-    with open(output_path, mode='w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(output_headers)
+    width = 28
+    try:
+        raw = pd.read_csv(input_file, sep=r'\s+', header=None, dtype=str, usecols=range(width),
+                          engine='c')
+    except (ValueError, pd.errors.EmptyDataError):
+        raw = pd.DataFrame(columns=range(width), dtype=str)
+    fields = raw[[14, 17, 18, 21, 25, 27]]
+    keep = raw[width - 1].notna() & ~fields.isin(FILLER_VALUES).any(axis=1)
 
-        for row in rows:
-            try:
-                datetime_str = convert_to_datetime(row[0], row[1], row[2],row[3])  # Year, DOY, Hour, Minute
-                Bx_value = row[14]
-                By_value = row[17]
-                Bz_value = row[18]
-                V_value = row[21]
-                Density_value = row[25]
-                Pdyn_value = row[27]
+    year_col = pd.to_numeric(raw[0], errors='coerce')
+    doy = pd.to_numeric(raw[1], errors='coerce')
+    hour = pd.to_numeric(raw[2], errors='coerce')
+    minute = pd.to_numeric(raw[3], errors='coerce')
+    keep &= year_col.notna() & doy.notna() & hour.notna() & minute.notna()
 
-                values_to_check = {Bx_value, By_value, Bz_value, V_value, Density_value, Pdyn_value}
-
-                # Skip the row if any value is a filler
-                if any(val in FILLER_VALUES for val in values_to_check):
-                    continue
-
-                csv_writer.writerow([datetime_str, Bx_value, By_value, Bz_value, V_value, Density_value, Pdyn_value])
-            except (IndexError, ValueError):
-                continue
+    raw, fields = raw[keep], fields[keep]
+    dates = (pd.to_datetime(year_col[keep].astype(int).astype(str), format='%Y')
+             + pd.to_timedelta(doy[keep].astype(float).astype(int) - 1, unit='D')
+             + pd.to_timedelta(hour[keep].astype(int), unit='h')
+             + pd.to_timedelta(minute[keep].astype(int), unit='m'))
+    out = pd.DataFrame({"Date": dates.dt.strftime('%Y-%m-%d %H:%M:%S').to_numpy()})
+    for name, col in zip(output_headers[1:], [14, 17, 18, 21, 25, 27]):
+        out[name] = fields[col].to_numpy()
+    out.to_csv(output_path, index=False)
 
     add_rolling_averages(output_path, year=year)
 
@@ -290,6 +277,18 @@ def compute_G_parameters(df):
         'G2': (window_mean(V * Bs) / 200).round(2),
         'G3': (window_mean(N * V * Bs) / 2000).round(2),
     }, index=df.index)
+
+def short_gap_mask(isnan, max_len):
+    """True on runs of NaN no longer than max_len samples (interior and at either end)."""
+    isnan = np.asarray(isnan, dtype=bool)
+    mask = np.zeros(len(isnan), dtype=bool)
+    if not isnan.any():
+        return mask
+    edges = np.flatnonzero(np.diff(np.concatenate([[0], isnan.astype(np.int8), [0]])))
+    for start, end in zip(edges[::2], edges[1::2]):
+        if end - start <= max_len:
+            mask[start:end] = True
+    return mask
 
 def CombineLowRes(input_file, year):
     df = pd.read_csv(input_file)
@@ -447,27 +446,7 @@ def Combine(high_res_file, low_res_file, TSY15file, year):
 
     for col in df.columns:
         if df[col].isnull().any():
-            isnan = df[col].isnull()
-            mask = isnan.copy()
-            start = None
-            for i, val in enumerate(isnan):
-                if val and start is None:
-                    start = i
-                if not val and start is not None:
-                    end = i
-                    if end - start <= 36:
-                        mask.iloc[start:end] = True
-                    else:
-                        mask.iloc[start:end] = False
-                    start = None
-
-            if start is not None:
-                end = len(isnan)
-                if end - start <= 36:
-                    mask.iloc[start:end] = True
-                else:
-                    mask.iloc[start:end] = False
-
+            mask = pd.Series(short_gap_mask(df[col].isnull().to_numpy(), 36), index=df.index)
             df.loc[mask, col] = df[col].interpolate(limit=36, limit_direction='both')[mask]
 
     if 'Source' in df.columns:
@@ -539,33 +518,42 @@ def SohoCombine(TSYfile, celias_file, year):
 
 
 
-    def usable(value):
-        return pd.notna(value) and value not in (9999.0, 999.9)
+    def usable(values):
+        values = pd.Series(values)
+        return values.notna() & ~values.isin([9999.0, 999.9])
 
-    for idx, row in tsy_df.iterrows():
-        if 'V' in tsy_df.columns and idx in celias_df.index:
-            if row['V'] == 9999.0:
-                new_v = celias_df.at[idx, 'V']
-                tsy_df.at[idx, 'V'] = new_v
-                if 'Source' in tsy_df.columns and usable(new_v):
-                    tsy_df.at[idx, 'Source'] = max(tsy_df.at[idx, 'Source'], 3)
-        if 'Density' in tsy_df.columns and idx in celias_df.index:
-            if row['Density'] == 999.9:
-                new_density = celias_df.at[idx, 'Density']
-                tsy_df.at[idx, 'Density'] = new_density
-                if 'Source' in tsy_df.columns and usable(new_density):
-                    tsy_df.at[idx, 'Source'] = max(tsy_df.at[idx, 'Source'], 3)
-        if 'Pdyn' in tsy_df.columns:
-            if row['Pdyn'] == 99.99:
-                new_v = tsy_df.at[idx, 'V']
-                new_density = tsy_df.at[idx, 'Density']
-                # Only recompute from real values; OMNI fill values here gave Pdyn = 167212 nPa
-                if usable(new_v) and usable(new_density):
-                    try:
-                        new_pdyn = Pdyn_comp(float(new_density), float(new_v))
-                        tsy_df.at[idx, 'Pdyn'] = new_pdyn
-                    except Exception:
-                        pass
+    # Same rules as the former row-by-row loop, vectorised: speed / density that are fill
+    # values in the hourly data take the CELIAS value at that time (Source >= 3 if it is
+    # usable), and fill-value pressures are recomputed from the (updated) speed and density.
+    celias_df = celias_df[~celias_df.index.duplicated(keep='first')]
+    in_celias = tsy_df.index.isin(celias_df.index)
+    celias_at = celias_df.reindex(tsy_df.index)
+    original = tsy_df.copy()
+    has_source = 'Source' in tsy_df.columns
+
+    for col, fill in (('V', 9999.0), ('Density', 999.9)):
+        if col not in tsy_df.columns or col not in celias_df.columns:
+            continue
+        replace = in_celias & (original[col] == fill).to_numpy()
+        if not replace.any():
+            continue
+        new = celias_at.loc[replace, col]
+        tsy_df.loc[replace, col] = new
+        if has_source:
+            bump = replace.copy()
+            bump[replace] = usable(new).to_numpy()
+            tsy_df.loc[bump, 'Source'] = np.maximum(tsy_df.loc[bump, 'Source'], 3)
+
+    if 'Pdyn' in tsy_df.columns:
+        redo = (original['Pdyn'] == 99.99).to_numpy()
+        if redo.any():
+            v = tsy_df.loc[redo, 'V']
+            n = tsy_df.loc[redo, 'Density']
+            ok = (usable(v) & usable(n)).to_numpy()
+            rows = tsy_df.index[redo][ok]
+            # Only recompute from real values; OMNI fill values here gave Pdyn = 167212 nPa
+            tsy_df.loc[rows, 'Pdyn'] = [Pdyn_comp(float(d), float(s_))
+                                        for d, s_ in zip(n[ok].to_numpy(), v[ok].to_numpy())]
 
     combined_df = tsy_df.reset_index()
 

@@ -203,11 +203,10 @@ def FortranPlanet(
 
                 tf_column = Transmissiondf.columns[1]
 
-                for _, row in Transmissiondf.iterrows():
+                for r_value, tf_value in zip(Transmissiondf["R [GV]"].to_numpy(),
+                                             Transmissiondf[tf_column].to_numpy()):
 
-                    transmission[
-                        f'{row["R [GV]"]} [GV]'
-                    ] = row[tf_column]
+                    transmission[f'{r_value} [GV]'] = tf_value
 
                 record["transmission"] = transmission
 

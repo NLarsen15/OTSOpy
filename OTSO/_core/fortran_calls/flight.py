@@ -104,8 +104,8 @@ def FortranFlight(Data: list, DateArray: list, IOPT: list, WindArray: list, GArr
         if FData.transmission:
             transmission = {}
             tf_column = Transmissiondf.columns[1]
-            for _, row in Transmissiondf.iterrows():
-                transmission[f'{row["R [GV]"]} [GV]'] = row[tf_column]
+            for r_value, tf_value in zip(Transmissiondf["R [GV]"].to_numpy(), Transmissiondf[tf_column].to_numpy()):
+                transmission[f'{r_value} [GV]'] = tf_value
         
             record["transmission"] = transmission
 
