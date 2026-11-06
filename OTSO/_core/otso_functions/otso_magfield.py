@@ -93,11 +93,11 @@ def OTSO_magfield(MagfieldDataInstance: MagfieldData) -> list:
           try:
             result_df = ProcessQueue.get(timeout=0.001)
             results.append(result_df)
-            processed += 1
+            processed += len(result_df)          # one DataFrame per worker chunk
 
             if MagfieldDataInstance.Verbose:
                 if progress_bar is not None:
-                    progress_bar.update(1)
+                    progress_bar.update(len(result_df))
                 else:
                     percent_complete = (processed / total_stations) * 100
                     sys.stdout.write(f"\r{percent_complete:.2f}% complete")

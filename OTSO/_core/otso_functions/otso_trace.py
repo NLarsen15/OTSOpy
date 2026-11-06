@@ -109,7 +109,7 @@ def OTSO_trace(TraceDataInstance: TraceData) -> list:
             if result_collector:
                 totalp = totalp + sum(result_collector)
             
-            gc.collect()
+            pass  # gc.collect() here ran every ~1 ms while waiting on the workers
             if TraceDataInstance.Verbose:
                 if progress_bar is not None:
                     progress_bar.update(sum(result_collector) if result_collector else 0)

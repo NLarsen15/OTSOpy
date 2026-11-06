@@ -644,6 +644,18 @@ C  CALCULATE THE ARRAY REC, CONTAINING COEFFICIENTS FOR THE RECURSION RELATIONS,
 C  USED IN THE IGRF SUBROUTINE FOR CALCULATING THE ASSOCIATE LEGENDRE POLYNOMIALS
 C  AND THEIR DERIVATIVES:
 c
+C  RE-SIZE REC, G, H WHEN THE COEFFICIENT LENGTH CHANGES BETWEEN CALLS (E.G. IGRF
+C  TRIMMED TO DEGREE 13 AFTER A LONGER ARRAY, OR CHAOS/CUSTOM GAUSS AFTER IGRF).
+C  ALLOCATING ONLY ONCE LET A LONGER LATER CALL WRITE PAST THE END OF G AND H.
+      if (allocated(REC)) then
+        if (size(REC) .ne. Gaussianlen) deallocate(REC)
+      endif
+      if (allocated(G)) then
+        if (size(G) .ne. Gaussianlen) deallocate(G)
+      endif
+      if (allocated(H)) then
+        if (size(H) .ne. Gaussianlen) deallocate(H)
+      endif
       if (.not. allocated(REC)) allocate(REC(Gaussianlen))
       if (.not. allocated(G))   allocate(G(Gaussianlen))
       if (.not. allocated(H))   allocate(H(Gaussianlen))

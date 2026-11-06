@@ -26,13 +26,21 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
     hlist = []
     glist = []
 
+    N_COEFFS = (13 + 1) * (13 + 2) // 2   # maxdegree 13, as passed to the Fortran below
+    gauss_cache = {}   # IGRF coefficients once per distinct date, not once per location
     for x in Dates:
           DateCreate = date.Date(x)
           DateArray = DateCreate.GetDate()
           DateArrayList.append(DateArray)
-          gausscoefs = compute_gauss_coefficients(DateArray)
-          hlist.append(gausscoefs['H_coefficients'])
-          glist.append(gausscoefs['G_coefficients'])
+          key = tuple(np.asarray(DateArray).ravel().tolist())
+          if key not in gauss_cache:
+              gauss_cache[key] = compute_gauss_coefficients(DateArray)
+          gausscoefs = gauss_cache[key]
+          # Trim to degree 13 (105 coefficients) like every other OTSO function: GEOPACK's RECALC_08
+          # allocates its G/H arrays once, at the first call's length, so passing the untrimmed
+          # 136 after another function had run (105) overflowed them and corrupted the heap.
+          hlist.append(gausscoefs['H_coefficients'][:N_COEFFS])
+          glist.append(gausscoefs['G_coefficients'][:N_COEFFS])
 
     IndexList = np.array_split(np.arange(len(Locations)), corenum)
     LocationsList = np.array_split(Locations, corenum)
@@ -115,11 +123,11 @@ def OTSO_coordtrans(Locations,Dates,CoordIN,CoordOUT,corenum,Verbose):
           try:
             result_df = ProcessQueue.get(timeout=0.001)
             results.append(result_df)
-            processed += 1
+            processed += len(result_df)          # one DataFrame per worker chunk
 
             if Verbose:
                 if progress_bar is not None:
-                    progress_bar.update(1)
+                    progress_bar.update(len(result_df))
                 else:
                     percent_complete = (processed / total_stations) * 100
                     sys.stdout.write(f"\r{percent_complete:.2f}% complete")
