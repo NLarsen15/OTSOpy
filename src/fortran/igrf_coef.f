@@ -40,7 +40,9 @@ C
       REAL*8 Gnew(136),Hnew(136)
       INTEGER *4 N
        
-       DO N=1,136
+       Gnew=0.D0
+       Hnew=0.D0
+       DO N=1,MIN(136,SIZE(G))
               Gnew(N)=G(N)
               Hnew(N)=H(N)
        ENDDO

@@ -77,6 +77,14 @@ def internalmag_check(internalmag: str, DateArray, max_degree, g, h) -> tuple[in
     if internalmag == "NONE":
         new_max_degree = max_degree
 
+        if g is not None and h is not None and len(g) > 0 and len(h) > 0:
+            G, H = create_custom_coefficient_arrays(g, h, max_degree=new_max_degree)
+            G_norm, H_norm = schmidt_normalize(G, H, new_max_degree + 1)
+
+            n_coeffs = (new_max_degree + 1) * (new_max_degree + 2) // 2
+
+            return 0, new_max_degree, G_norm[1:n_coeffs + 1], H_norm[1:n_coeffs + 1]
+
         coeffs = compute_gauss_coefficients(DateArray)
         g = coeffs['G_coefficients']
         h = coeffs['H_coefficients']
@@ -154,7 +162,7 @@ def internalmag_check(internalmag: str, DateArray, max_degree, g, h) -> tuple[in
         new_max_degree = max_degree
 
         G, H = create_custom_coefficient_arrays(g, h, max_degree=new_max_degree)
-        G_norm, H_norm = schmidt_normalize(G, H, max_degree)
+        G_norm, H_norm = schmidt_normalize(G, H, max_degree + 1)
 
         n_coeffs = (new_max_degree + 1) * (new_max_degree + 2) // 2
 

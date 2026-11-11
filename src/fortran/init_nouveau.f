@@ -1023,7 +1023,7 @@ c
       b0 = sqrt(b02)
 c      write(6,*)b0
       alpha = acos(-g10/b0)
-      beta = atan(h11/g11)
+      beta = atan2(-h11,-g11)
 c
       sq3 = sqrt(3.D0)
       l0 = 2.D0*g10*g20 + sq3*(g11*g21 + h11*h21)
