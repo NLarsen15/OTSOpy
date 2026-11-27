@@ -3,7 +3,7 @@
 # OTSOpy
 ![License](https://img.shields.io/github/license/NLarsen15/OTSOpy)
 ![GitHub release](https://img.shields.io/github/v/release/NLarsen15/OTSOpy)
-![Python](https://img.shields.io/badge/python-3.11%20to%203.14-blue)
+![Python](https://img.shields.io/badge/python-3.11%20to%203.15-blue)
 [![Docs](https://img.shields.io/badge/docs-online-brightgreen)](https://nlarsen15.github.io/OTSOpy/)
 ![GitHub stars](https://img.shields.io/github/stars/NLarsen15/OTSOpy?style=social)
 
@@ -11,7 +11,9 @@ Python package version of the OTSO tool used for trajectory computations of char
 
 OTSO is designed to be open-source; all suggestions for improvement are welcome, and please report any bugs you find. I welcome any help provided by the community in the development of OTSO.
 
-__Supported Python Versions:__ 3.11, 3.12, 3.13, and 3.14 
+__Supported Python Versions:__ 3.11, 3.12, 3.13, 3.14, and 3.15
+
+__Supported Platforms:__ Linux (x86_64 and ARM64), Windows (x86_64), and macOS on Apple Silicon (M1 or later). Intel Macs are not supported: the prebuilt libraries for macOS are Apple Silicon only. 
 (I will endeavour to keep OTSO support as up-to-date as possible)
 
 # OTSO Documentation
@@ -42,6 +44,10 @@ This will install OTSO into your current Python environment.
 Sometimes there are errors regarding libgfortran. Make a note of the libgfortran error message and then install the appropriate libgfortran version that is being requested. This should resolve the issue.
 
 ## MAC
+OTSO only runs on Apple Silicon Macs (M1 or later). On an Intel Mac, importing OTSO fails because there is no Intel build of the compiled Fortran libraries.
+
+The compiled Fortran libraries link to the gcc runtime from Homebrew, so install it with `brew install gcc` if you get an error about libgfortran or libgomp.
+
 The compiled fortran libraries can be flagged as potential malware. To resolve this you can attempt to compile the libraries yourself or in your settings grant permission for your computer to access the required .so file. 
 
 # Functions
