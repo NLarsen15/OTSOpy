@@ -20,6 +20,8 @@ C
        SUBROUTINE INIT_DTD(year)
 
        USE dipigrf
+       USE irbem_cache
+       USE GEOPACK2, ONLY: gh_version
 C
        IMPLICIT NONE
 C
@@ -27,6 +29,8 @@ C
        REAL*8    year
        REAL*8    ga(136),ha(136)              
        REAL*8    thet,phit           
+C
+       IF (dtd_valid .AND. dtd_ghver.EQ.gh_version) RETURN
 C
        call get_igrf_coeffs(year,ga,ha)
 c
@@ -40,6 +44,10 @@ C
        cp = COS(phit)
        sp = SIN(phit)
 C
+       dtd_ghver = gh_version
+       dtd_valid = .TRUE.
+       dtd_gen = dtd_gen + 1
+C
        RETURN
        END
 C
@@ -50,6 +58,7 @@ C
        USE Soleil
        USE dipigrf
        USE sundip
+       USE irbem_cache
 C
        IMPLICIT NONE
 C
@@ -59,6 +68,16 @@ C
        REAL*8      xDip,yDip,zDip               
        REAL*8      norm
        REAL*8      psi
+C
+C OTSO: the Soleil/sundip state and psi depend only on iyr, iday,
+C secs and the dipole from INIT_DTD. Return early when all are
+C bitwise identical to this thread's last call.
+       IF (gsm_valid .AND. gsm_gen.EQ.dtd_gen .AND. iyr.EQ.gsm_iyr
+     &     .AND. iday.EQ.gsm_iday
+     &     .AND. TRANSFER(secs,1_8).EQ.gsm_secs) THEN
+         psi = gsm_psi
+         RETURN
+       ENDIF
 C
        CALL SUN(iyr,iday,secs,gst,Slong,Srasn,Sdec)
 C
@@ -108,6 +127,13 @@ C
        zSDD = zSDD/norm
 C
        psi = ASIN(xD*xS + yD*yS + zD*zS)
+C
+       gsm_valid = .TRUE.
+       gsm_gen = dtd_gen
+       gsm_iyr = iyr
+       gsm_iday = iday
+       gsm_secs = TRANSFER(secs,1_8)
+       gsm_psi = psi
 C
        RETURN
        END
@@ -516,6 +542,9 @@ C
 C
 C program to calculate sideral, time and position of the Sun
 C good for years 1901 through 2099. accuracy 0.006 degree
+C OTSO: no longer returns without setting the outputs outside 1900-2099;
+C dj uses Gregorian leap days for any year (unchanged for 1900-2099), and
+C negative angles (dj < 0) are wrapped into 0-360 deg.
 C input is iyr,iday (INTEGER*4s), and secs, defining universal time
 C output is Greenwich mean sidereal time (gst) in degrees,
 C longitude along ecliptic (Slong), and apparent right ascension
@@ -523,6 +552,7 @@ C and declination (Srasn,Sdec) of the Sun, all in degrees.
 C
       INTEGER*4 iyr,iday
       INTEGER*4 iaux
+      INTEGER   NLEAP_SINCE_1900
       REAL*8    secs,gst,Slong,Srasn,Sdec
 C
         REAL*8 aux
@@ -530,21 +560,23 @@ C
       REAL*8 t,vl,g,obliq,slp,sind,cosd
 C
 C
-      IF (iyr.LT.1900 .OR. iyr.GT.2099) RETURN
-C
       fday = secs/86400.D0
-      dj   = 365.D0*(iyr-1900.D0) + INT((iyr-1901)/4)
+      dj   = 365.D0*(iyr-1900.D0) + NLEAP_SINCE_1900(iyr)
      &       + iday + fday - 0.5D0
         t    = dj/36525.D0
       aux = 279.696678D0 + 0.9856473354D0*dj
       iaux = INT(aux/360.D0)
       vl = aux-360.D0*iaux
+      IF (vl.LT.0.D0) vl = vl + 360.D0
       aux = 279.690983D0 + 0.9856473354D0*dj + 360.D0*fday + 180.D0
       iaux = INT(aux/360.D0)
       gst = aux-360.D0*iaux
+      IF (gst.LT.0.D0) gst = gst + 360.D0
       aux = 358.475845D0 + 0.985600267D0*dj
       iaux = INT(aux/360.D0)
-      g = (aux-360.D0*iaux)*rad
+      g = aux-360.D0*iaux
+      IF (g.LT.0.D0) g = g + 360.D0
+      g = g*rad
 C
         Slong = vl + (1.91946D0-0.004789D0*t)*SIN(g)
      &         + 0.020094D0*SIN(2.D0*g)

@@ -75,10 +75,6 @@ rem ============================================================
 set "PYVER=%~1"
 set "ENV_NAME=middleman_py%PYVER%"
 set "PYVER_NODOT=%PYVER:.=%"
-rem conda-forge ships both the standard and free-threaded ("t"/no-GIL) ABI variants of
-rem Python 3.13+. Without this pin, the solver is free to pick either - pin explicitly to
-rem the standard build string (ends "_cpNNN", not "_cpNNNt") so we don't silently end up
-rem with a cp314t extension that won't import under a normal cp314 interpreter.
 set "PYTHON_ABI_PIN=python_abi=%PYVER%=*_cp%PYVER_NODOT%"
 
 echo.
@@ -684,8 +680,10 @@ echo RUNNING F2PY
 echo ============================================================
 echo.
 
-set "F90FLAGS=-O3 -fopenmp -funroll-loops -fautomatic -frecursive"
-set "F77FLAGS=-O3 -fopenmp -funroll-loops -fautomatic -frecursive"
+rem -ftls-model=local-dynamic: one TLS-block lookup per routine for threadprivate variables
+rem (~1.25x and bit-identical on Linux; untested on Windows).
+set "F90FLAGS=-O3 -fopenmp -funroll-loops -fautomatic -frecursive -ftls-model=local-dynamic"
+set "F77FLAGS=-O3 -fopenmp -funroll-loops -fautomatic -frecursive -ftls-model=local-dynamic"
 set "OPTFLAGS=-O3 -fopenmp -funroll-loops -fautomatic -frecursive"
 
 echo F90 flags:

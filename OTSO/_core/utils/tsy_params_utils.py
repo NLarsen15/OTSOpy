@@ -3,23 +3,15 @@ import pandas
 import numpy as np
 
 def IOPTprocess(Kp:float) -> int:
-    # TSY89 IOPT bins: 1 = Kp 0,0+; 2 = Kp 1-,1,1+; ...; 7 = Kp >= 6-
-    # Rounding puts fractional Kp values (e.g. 1- = 0.67) into the correct bin
     IOPT = min(int(round(Kp)) + 1, 7)
 
     return IOPT
 
 def IOPTprocess_refit(Kp:float) -> int:
-    # Sub model uses fractional Kp values indexed as integers
-    # Kp=0 -> IOPT=1 (0.0), Kp=1 -> IOPT=2 (0.333), Kp=2 -> IOPT=3 (0.666),
-    # Kp=3 -> IOPT=4 (1.0), Kp=4 -> IOPT=5 (1.333), etc.
-    # Goes up to Kp=7 -> IOPT=22 (7.0) and beyond
     if Kp >= 7:
         IOPT = 22  # Corresponds to Kp=7.0
     else:
-        # Map Kp (0-9) to integer IOPT values (1-22)
-        # Each Kp unit has 3 sub-divisions (0, 0.333, 0.666)
-        IOPT = int(Kp * 3) + 1
+        IOPT = max(int(round(Kp * 3)) + 1, 1)
 
     return IOPT
 

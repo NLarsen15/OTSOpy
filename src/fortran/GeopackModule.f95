@@ -25,5 +25,6 @@ module GEOPACK2
     save
 
     REAL(8), allocatable :: G(:), H(:), REC(:)
+    integer(8) :: gh_version = 0
 
 end module GEOPACK2

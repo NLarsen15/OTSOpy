@@ -139,17 +139,19 @@ Xnew = x0 + h_used*Vnew
 
 Xnew_Re = Xnew / Re_m
 
-call CoordinateTransform("GSM", "GDZ", &
-                            year, day, &
-                            secondTotal + h_used, &
-                            Xnew_Re, XnewGDZ)
-
 if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
 
     call CoordinateTransform("GEO", "GDZ", &
                              year, day, &
                              secondTotal + h_used, &
                              Xnew_Re, XnewGDZ)
+
+else
+
+    call CoordinateTransform("GSM", "GDZ", &
+                            year, day, &
+                            secondTotal + h_used, &
+                            Xnew_Re, XnewGDZ)
 
 end if
 
@@ -253,9 +255,6 @@ if (FinalStep) then
     h = Lasth
 end if
 
-! Leapfrog staggering: Vnew is the velocity at t + h_used/2. If the next step uses a different h, re-centre it to
-! t + h_used + h/2 by rotating through (h_used - h)/2 with the field at the new position (cached by NewMax), so the
-! next kick spans (h_used + h)/2 and the scheme stays second order under variable steps.
 if ((adaptivestep .eqv. .TRUE.) .and. (.not. FinalStep) .and. (h /= h_used) .and. CachedBfieldValid) then
 
     Bnorm = sqrt(dot_product(CachedBfield,CachedBfield))

@@ -60,8 +60,8 @@ python3 -m numpy.f2py \
 -c \
 --backend=meson \
 --opt="-O3" \
---f90flags="-O3 -fopenmp -fautomatic -frecursive -fno-fast-math -ffp-contract=off -fno-tree-slp-vectorize -fno-math-errno" \
---f77flags="-O3 -fopenmp -fautomatic -frecursive -fno-fast-math -ffp-contract=off -fno-tree-slp-vectorize -fno-math-errno" \
+--f90flags="-O3 -fopenmp -fautomatic -frecursive -fno-fast-math -ffp-contract=off -fno-tree-slp-vectorize -fno-math-errno -ftls-model=local-dynamic" \
+--f77flags="-O3 -fopenmp -fautomatic -frecursive -fno-fast-math -ffp-contract=off -fno-tree-slp-vectorize -fno-math-errno -ftls-model=local-dynamic" \
 MiddleMan.f95 \
 SolarWindModule.f95 \
 SharedParameters.f95 \

@@ -70,3 +70,21 @@ module sunMAH
 !$omp threadprivate(T0, Lamda0, st, ct, sl, cl, so, co)
 
 end module sunMAH
+
+module irbem_cache
+  implicit none
+
+  logical :: dtd_valid = .false.
+  integer(8) :: dtd_ghver = -1
+  integer(8) :: dtd_gen = 0
+
+  logical :: gsm_valid = .false.
+  integer(8) :: gsm_gen = -1
+  integer(4) :: gsm_iyr = 0, gsm_iday = 0
+  integer(8) :: gsm_secs = 0
+  real(8) :: gsm_psi = 0.0d0
+
+!$omp threadprivate(dtd_valid, dtd_ghver, dtd_gen, gsm_valid, gsm_gen, &
+!$omp              gsm_iyr, gsm_iday, gsm_secs, gsm_psi)
+
+end module irbem_cache

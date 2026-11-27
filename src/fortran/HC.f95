@@ -208,17 +208,19 @@ Xnew = x0 + h_used*Vnew
 
 Xnew_Re = Xnew / Re_m
 
-call CoordinateTransform("GSM", "GDZ", &
-                         year, day, &
-                         secondTotal + h_used, &
-                         Xnew_Re, XnewGDZ)
-
 if (model(1) == 4 .or. model(1) == 1 .or. model(1) == 5) then
 
     call CoordinateTransform("GEO", "GDZ", &
                              year, day, &
                              secondTotal + h_used, &
                              Xnew_Re, XnewGDZ)
+
+else
+
+    call CoordinateTransform("GSM", "GDZ", &
+                         year, day, &
+                         secondTotal + h_used, &
+                         Xnew_Re, XnewGDZ)
 
 end if
 

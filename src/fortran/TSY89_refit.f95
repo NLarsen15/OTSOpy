@@ -58,7 +58,7 @@
 
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 PARMOD,PS,X,Y,Z,BX,BY,BZ,DST,Kp
-      REAL*8 PredictedDst, Zscore, DSTmeanval, DSTstdval
+      REAL*8 PredictedDst, Zscore, DSTmeanval, DSTstdval, DSTB
       INTEGER*4 IOPT, KPINT
       INTEGER*4 model(4)
       DIMENSION PARAM(30,22),PARMOD(10)
@@ -221,7 +221,9 @@
      37.45D0, 42.57D0, 50.83D0, 53.64D0, 59.75D0, 66.16D0, &
      83.83D0, 79.52D0, 98.82D0, 106.44D0, 152.06D0/
 
-       KPINT = INT(Kp * 3.0D0 + 1.0D0)
+! Nearest Kp bin. OMNI gives Kp+ as e.g. 2.3 (not 2.333), so INT() put
+! every '+' value one bin too low; NINT rounds to the nearest third.
+       KPINT = MIN(MAX(NINT(Kp * 3.0D0) + 1, 1), 28)
 
        DSTmeanval = DSTMEAN(KPINT)
        DSTstdval = DSTSTD(KPINT)
@@ -310,22 +312,20 @@
 
        ENDIF
 
-! Boberg ring-current (AK5) override: intentionally OUTSIDE the IOP.NE.IOPT
-! cache guard above, since it depends on DST (which can vary every call)
-! rather than on IOPT (the discrete Kp bin, which only updates every 3
-! hours). Nesting it inside that guard previously froze the "continuous"
-! and Dst-dependent variants for the entire 3-hour Kp window.
+
        AK5 = A(5)
+
+       DSTB = MIN(DST, DSTMEAN(1))
 
        IF (model(3) == 1) THEN
        IF (model(4) == 1) THEN
        IF (Kp > 7) THEN
-       AK5 = -2923.09D0*(abs(DST)+2.01D0)**0.78
+       AK5 = -2923.09D0*(abs(DSTB)+2.01D0)**0.78
        END IF
        END IF
 
        IF (model(4) == 2) THEN
-       AK5 = -2923.09D0*(abs(DST)+2.01D0)**0.78
+       AK5 = -2923.09D0*(abs(DSTB)+2.01D0)**0.78
        END IF
 
        IF (model(4) == 3) THEN
@@ -334,7 +334,7 @@
        AK5= A(5)
        ELSE
        !print *, "DST is within expected range or below for the given Kp."
-       AK5 = -2923.09D0*(abs(DST)+2.01D0)**0.78
+       AK5 = -2923.09D0*(abs(DSTB)+2.01D0)**0.78
        END IF
        END IF
 
@@ -342,10 +342,10 @@
        IF (model(4) == 4) THEN
        IF (Zscore .GT. 1.2D0) THEN
        !print *, "DST is much weaker than expected for this Kp, averaging refit and Boberg"
-       AK5 = ((-2923.09D0*(abs(DST)+2.01D0)**0.78) + A(5)) / 2
+       AK5 = ((-2923.09D0*(abs(DSTB)+2.01D0)**0.78) + A(5)) / 2
        ELSE
        !print *, "DST is within the expected range or below for this Kp, using Boberg"
-       AK5 = -2923.09D0*(abs(DST)+2.01D0)**0.78
+       AK5 = -2923.09D0*(abs(DSTB)+2.01D0)**0.78
        END IF
        END IF
 
