@@ -7,6 +7,7 @@ import random
 import numpy as np
 import gc
 import os
+from OTSO._core.utils.cpus_utils import get_available_cpus
 import tempfile
 from tqdm import tqdm
 import pandas as pd
@@ -25,7 +26,7 @@ def OTSO_trace(TraceDataInstance: TraceData) -> list:
 
     gc.enable()
 
-    available_cpus = sorted(os.sched_getaffinity(0))
+    available_cpus = get_available_cpus()
     num_available = len(available_cpus)
 
     next_cpu = 0

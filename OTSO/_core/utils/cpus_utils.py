@@ -4,6 +4,17 @@ import ctypes
 from ctypes import wintypes
 
 
+def get_available_cpus():
+    """Sorted list of the CPU indices this process may run on.
+
+    os.sched_getaffinity only exists on Linux; elsewhere every logical CPU is assumed available.
+    """
+    if hasattr(os, "sched_getaffinity"):
+        return sorted(os.sched_getaffinity(0))
+    count = getattr(os, "process_cpu_count", os.cpu_count)() or 1
+    return list(range(count))
+
+
 def set_process_affinity(cpus):
 
     # ---------------------------------------------------------

@@ -1,6 +1,7 @@
 import time
 import multiprocessing as mp
 import os
+from OTSO._core.utils.cpus_utils import get_available_cpus
 import pandas as pd
 import sys
 import queue
@@ -41,7 +42,7 @@ def OTSO_flight(FlightDataInstance: FlightData) -> list:
 
     flight_inputs.FlightInputs(FlightDataInstance)
 
-    available_cpus = sorted(os.sched_getaffinity(0))
+    available_cpus = get_available_cpus()
     num_available = len(available_cpus)
 
     next_cpu = 0
