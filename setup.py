@@ -32,7 +32,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.11, <3.15',
+    python_requires='>=3.11, <3.16',
     install_requires=[
         'python-dateutil',   # Common dependency across all versions
         'six',              # Common dependency across all versions
@@ -42,7 +42,9 @@ setup(
         'requests',
         'numba',
         'f90wrap',
-        'chaosmagpy',
+        # chaosmagpy (CHAOS model only, imported on use) needs h5py, which has no
+        # Python 3.15 wheel yet; install it by hand on 3.15 once h5py supports it.
+        'chaosmagpy; python_version < "3.15"',
         'matplotlib'
     ],
     extras_require={
@@ -73,6 +75,12 @@ setup(
         ':python_version=="3.14"': [
             'meson',
             'numpy>=2.4.2, <2.5.0',
+            'pandas',
+        ],
+        # Python 3.15 requirements (numpy 2.5.2 is the first release with cp315 wheels)
+        ':python_version=="3.15"': [
+            'meson',
+            'numpy>=2.5.2, <2.6.0',
             'pandas',
         ],
         'test': [

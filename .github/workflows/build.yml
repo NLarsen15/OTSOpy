@@ -6,25 +6,26 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.architecture == 'arm64' && 'ubuntu-22.04-arm' || matrix.os }}
+    runs-on: ${{ matrix.platform.runner }}
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-latest, windows-latest]
-        #os: [ubuntu-22.04]
-        architecture: [x64, arm64]
+        # os names the artifact, runner is the GitHub-hosted image, arch is the real CPU
+        # architecture. macos-latest is Apple Silicon (arm64); macos-15-intel is GitHub's
+        # last Intel (x64) image, supported until the macOS 15 image is retired in fall 2027.
+        # The two macOS builds are merged into one universal2 library by merge-macos below,
+        # because both builds produce the same file name (_MiddleMan.cpython-3XX-darwin.so).
+        platform:
+          - { os: ubuntu-22.04, runner: ubuntu-22.04, arch: x64 }
+          - { os: ubuntu-22.04, runner: ubuntu-22.04-arm, arch: arm64 }
+          - { os: macos, runner: macos-latest, arch: arm64 }
+          - { os: macos, runner: macos-15-intel, arch: x64 }
+          - { os: windows-latest, runner: windows-latest, arch: x64 }
         # 3.10 excluded: numpy's f2py has a derived-type wrapper bug (getpydocsign
         # KeyError 'void') that's fixed in numpy>=2.3, but numpy dropped cp310
         # wheels around the same release, so no numpy version supports both.
-        python-version: ["3.11","3.12","3.13","3.14"]
-        exclude:
-          # Exclude arm64 for macOS, as GitHub Actions only supports x64 runners for macOS
-          - os: macos-latest
-            architecture: arm64
-          # Exclude arm64 for Windows, as GitHub Actions only supports x64 runners for Windows
-          - os: windows-latest
-            architecture: arm64
+        python-version: ["3.11","3.12","3.13","3.14","3.15"]
 
     steps:
     - uses: actions/checkout@v4
@@ -262,15 +263,83 @@ jobs:
           ls -la
         fi
 
+    # GitHub's artifact service sometimes times out (CreateArtifact request timeout) even
+    # though the build succeeded. If the upload fails, wait and try once more before
+    # failing the job.
     - name: Upload compiled library
+      id: upload
+      continue-on-error: true
       uses: actions/upload-artifact@v4
       with:
-        name: MiddleMan-${{ matrix.os }}-${{ matrix.architecture }}-py${{ matrix.python-version }}
+        name: MiddleMan-${{ matrix.platform.os }}-${{ matrix.platform.arch }}-py${{ matrix.python-version }}
         path: OTSO/_core/libs/build_artifacts/
+
+    - name: Wait before retrying upload
+      if: steps.upload.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "Upload failed, retrying in 120 s..."
+        sleep 120
+
+    - name: Upload compiled library (retry)
+      if: steps.upload.outcome == 'failure'
+      uses: actions/upload-artifact@v4
+      with:
+        name: MiddleMan-${{ matrix.platform.os }}-${{ matrix.platform.arch }}-py${{ matrix.python-version }}
+        path: OTSO/_core/libs/build_artifacts/
+        overwrite: true
+
+  # Combine each Python version's arm64 and x64 macOS libraries into one universal2 file, so
+  # OTSO/_core/libs can ship a single _MiddleMan.cpython-3XX-darwin.so that loads on both.
+  merge-macos:
+    runs-on: macos-latest
+    needs: build
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11","3.12","3.13","3.14","3.15"]
+    steps:
+      - name: Download arm64 and x64 macOS builds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: MiddleMan-macos-*-py${{ matrix.python-version }}
+          path: macos_builds
+
+      - name: Merge into universal2 library
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -R macos_builds
+          ARM=$(ls macos_builds/MiddleMan-macos-arm64-py${{ matrix.python-version }}/_MiddleMan*.so 2>/dev/null | head -n1 || true)
+          X64=$(ls macos_builds/MiddleMan-macos-x64-py${{ matrix.python-version }}/_MiddleMan*.so 2>/dev/null | head -n1 || true)
+          if [[ -z "$ARM" || -z "$X64" ]]; then
+            echo "ERROR: need both the arm64 and x64 builds for Python ${{ matrix.python-version }} (arm64: '${ARM}', x64: '${X64}')"
+            exit 1
+          fi
+          lipo -info "$ARM"
+          lipo -info "$X64"
+          mkdir -p universal
+          OUT="universal/$(basename "$ARM")"
+          lipo -create "$ARM" "$X64" -output "$OUT"
+          # lipo invalidates the per-architecture ad-hoc signatures; sign the merged file again
+          codesign --force --sign - "$OUT"
+          codesign --verify --verbose "$OUT"
+          lipo -info "$OUT"
+          cp macos_builds/MiddleMan-macos-arm64-py${{ matrix.python-version }}/python_requirements_py*.txt universal/ || true
+
+      - name: Upload universal2 library
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiddleMan-macos-universal2-py${{ matrix.python-version }}
+          path: universal/
 
   combine-artifacts:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, merge-macos]
+    # Run even if a merge-macos job failed, so the other libraries are still collected.
+    # The per-architecture macOS artifacts are included too; use MiddleMan-macos-universal2-*.
+    if: ${{ !cancelled() }}
     steps:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4

@@ -11,7 +11,7 @@ set "MODULE_NAME=MiddleMan"
 set "EXTENSION_NAME=_MiddleMan"
 
 rem Python versions
-set "PYTHON_VERSIONS=3.11 3.12 3.13 3.14"
+set "PYTHON_VERSIONS=3.11 3.12 3.13 3.14 3.15"
 
 echo.
 echo ============================================================

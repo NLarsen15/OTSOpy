@@ -79,7 +79,14 @@ def get_chaos_g_h(dt, model_path=None, nmax=15):
 
     #print(f"Using CHAOS model: {model_path}")
 
-    import chaosmagpy as cp
+    try:
+        import chaosmagpy as cp
+    except ImportError as e:
+        raise ImportError(
+            "The CHAOS model needs chaosmagpy, which is not installed. It is not installed "
+            "automatically on Python 3.15 because its dependency h5py has no 3.15 wheel yet; "
+            "try 'pip install chaosmagpy' or use Python 3.14 or older for CHAOS."
+        ) from e
 
     # load model
     model = cp.load_CHAOS_matfile(model_path)
