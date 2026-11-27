@@ -1,6 +1,6 @@
 # Python caches and packaging output
 __pycache__/
-*.py[cod]
+*.py[co]
 *.egg-info/
 build/
 dist/
